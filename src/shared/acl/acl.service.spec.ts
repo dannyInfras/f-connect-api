@@ -1,10 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 
-import { Article } from '../../article/entities/article.entity';
-import { ROLE } from './../../auth/constants/role.constant';
-import { BaseAclService } from './acl.service';
-import { RuleCallback } from './acl-rule.constant';
-import { Action } from './action.constant';
+import { Article } from '@/modules/article/entities/article.entity';
+import { ROLE } from '@/modules/auth/constants/role.constant';
+import { BaseAclService } from '@/shared/acl/acl.service';
+import { RuleCallback } from '@/shared/acl/acl-rule.constant';
+import { Action } from '@/shared/acl/action.constant';
 
 class MockResource {
   id: number;

@@ -2,9 +2,10 @@ import { HttpStatus, INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 
+import { AuthTokenOutput } from '@/modules/auth/dtos/auth-token-output.dto';
+import { UserOutput } from '@/modules/user/dtos/user-output.dto';
+
 import { AppModule } from '../../src/app.module';
-import { AuthTokenOutput } from '../../src/auth/dtos/auth-token-output.dto';
-import { UserOutput } from '../../src/user/dtos/user-output.dto';
 import {
   closeDBAfterTest,
   createDBEntities,

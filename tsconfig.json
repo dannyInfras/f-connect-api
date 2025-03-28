@@ -17,6 +17,10 @@
     "noImplicitAny": true,
     "noFallthroughCasesInSwitch": true,
     "sourceMap": true,
+    "paths": {
+      "@/modules/*": ["src/modules/*"],
+      "@/shared/*": ["src/shared/*"]
+    },
     "inlineSourceMap": false,
     "inlineSources": true,
     "declaration": true,

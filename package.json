@@ -1,16 +1,9 @@
 {
-  "name": "nestjs-starter-rest-api",
+  "name": "fconnect-api",
   "private": true,
   "version": "1.0.0",
-  "description": "NestJS Starter REST API Repository",
+  "description": "FConnect API",
   "license": "MIT",
-  "contributors": [
-    "Yash Murty <yashmurty@gmail.com> (https://github.com/yashmurty)",
-    "S M Asad Rahman<asad.rahman@monstar-lab.com> (https://github.com/asad-mlbd)",
-    "Tanveer Hassan <mailtanveerhassan@gmail.com> (https://github.com/war1oc)",
-    "Saad Bin Amjad <saadbinamjad@gmail.com> (https://github.com/Saad-Amjad)",
-    "Sivan Payyadakath <sivanp77@gmail.com > (https://github.com/sivanpayyadakath)"
-  ],
   "scripts": {
     "prebuild": "rimraf dist",
     "build": "nest build",

@@ -21,4 +21,8 @@
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
   "typescript.preferences.importModuleSpecifier": "relative",
+  "sonarlint.connectedMode.project": {
+    "connectionId": "dannyinfras",
+    "projectKey": "fconnect-api"
+  },
 }

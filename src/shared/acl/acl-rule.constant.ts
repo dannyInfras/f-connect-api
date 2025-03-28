@@ -1,6 +1,6 @@
-import { ROLE } from './../../auth/constants/role.constant';
-import { Action } from './action.constant';
-import { Actor } from './actor.constant';
+import { ROLE } from '@/modules/auth/constants/role.constant';
+import { Action } from '@/shared/acl/action.constant';
+import { Actor } from '@/shared/acl/actor.constant';
 
 /**
  * Custom rule callback definition

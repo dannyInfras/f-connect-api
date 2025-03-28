@@ -1,15 +1,15 @@
 import { Request } from 'express';
 
-import { UserAccessTokenClaims } from '../../../auth/dtos/auth-token-output.dto';
+import { UserAccessTokenClaims } from '@/modules/auth/dtos/auth-token-output.dto';
 import {
   FORWARDED_FOR_TOKEN_HEADER,
   REQUEST_ID_TOKEN_HEADER,
-} from '../../constants';
-import { createRequestContext } from '.';
+} from '@/shared/constants';
+import { createRequestContext } from '@/shared/request-context/util';
 
 describe('createRequestContext function', () => {
   const user = new UserAccessTokenClaims();
-  const request = ({
+  const request = {
     url: 'someUrl',
     ip: 'someIP',
 
@@ -24,7 +24,7 @@ describe('createRequestContext function', () => {
           break;
       }
     }),
-  } as unknown) as Request;
+  } as unknown as Request;
 
   const expectedOutput = {
     url: 'someUrl',
