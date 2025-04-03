@@ -393,3 +393,8 @@ local/
 documentation
 test-report.xml
 tsconfig.build.tsbuildinfo
+
+=======
+#cursor
+.cursor
+.cursorrules
