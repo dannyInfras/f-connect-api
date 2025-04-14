@@ -28,17 +28,13 @@ export class AuthService {
 
   async validateUser(
     ctx: RequestContext,
-    username: string,
+    email: string,
     pass: string,
   ): Promise<UserAccessTokenClaims> {
     this.logger.log(ctx, `${this.validateUser.name} was called`);
 
-    // The userService will throw Unauthorized in case of invalid username/password.
-    const user = await this.userService.validateUsernamePassword(
-      ctx,
-      username,
-      pass,
-    );
+    // The userService will throw Unauthorized in case of invalid email/password.
+    const user = await this.userService.validateEmailPassword(ctx, email, pass);
 
     // Prevent disabled users from logging in.
     if (user.isAccountDisabled) {
@@ -89,7 +85,7 @@ export class AuthService {
 
     const subject = { sub: user.id };
     const payload = {
-      username: user.username,
+      email: user.email,
       sub: user.id,
       roles: user.roles,
     };

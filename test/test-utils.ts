@@ -70,7 +70,7 @@ export const seedAdminUser = async (
   const userOutput = await userService.createUser(ctx, defaultAdmin);
 
   const loginInput: LoginInput = {
-    username: defaultAdmin.username,
+    email: defaultAdmin.email,
     password: defaultAdmin.password,
   };
 

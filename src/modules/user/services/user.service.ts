@@ -55,6 +55,25 @@ export class UserService {
     });
   }
 
+  async validateEmailPassword(
+    ctx: RequestContext,
+    email: string,
+    pass: string,
+  ): Promise<UserOutput> {
+    this.logger.log(ctx, `${this.validateEmailPassword.name} was called`);
+
+    this.logger.log(ctx, `calling ${UserRepository.name}.findOne`);
+    const user = await this.repository.findOne({ where: { email } });
+    if (!user) throw new UnauthorizedException();
+
+    const match = await compare(pass, user.password);
+    if (!match) throw new UnauthorizedException();
+
+    return plainToClass(UserOutput, user, {
+      excludeExtraneousValues: true,
+    });
+  }
+
   async getUsers(
     ctx: RequestContext,
     limit: number,

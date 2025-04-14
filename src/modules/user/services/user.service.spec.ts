@@ -244,6 +244,51 @@ describe('UserService', () => {
     });
   });
 
+  describe('validateEmailPassword', () => {
+    it('should fail when email is invalid', async () => {
+      jest
+        .spyOn(mockedRepository, 'findOne')
+        .mockImplementation(async () => null);
+
+      await expect(
+        service.validateEmailPassword(ctx, 'jhon@example.com', 'password'),
+      ).rejects.toThrowError();
+    });
+
+    it('should fail when password is invalid', async () => {
+      jest
+        .spyOn(mockedRepository, 'findOne')
+        .mockImplementation(async () => user);
+
+      jest.spyOn(bcrypt, 'compare').mockImplementation(async () => false);
+
+      await expect(
+        service.validateEmailPassword(ctx, 'jhon@example.com', 'password'),
+      ).rejects.toThrowError();
+    });
+
+    it('should return user when credentials are valid', async () => {
+      jest
+        .spyOn(mockedRepository, 'findOne')
+        .mockImplementation(async () => user);
+
+      jest.spyOn(bcrypt, 'compare').mockImplementation(async () => true);
+
+      const result = await service.validateEmailPassword(
+        ctx,
+        'jhon@example.com',
+        'password',
+      );
+
+      expect(result).toEqual({
+        id: user.id,
+        name: user.name,
+        username: user.username,
+        roles: [ROLE.USER],
+      });
+    });
+  });
+
   describe('getUsers', () => {
     it('gets users as a list', async () => {
       const offset = 0;

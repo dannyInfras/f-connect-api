@@ -19,7 +19,7 @@ describe('AuthService', () => {
 
   const accessTokenClaims: UserAccessTokenClaims = {
     id: 6,
-    username: 'john',
+    email: 'john@example.com',
     roles: [ROLE.USER],
   };
 
@@ -51,7 +51,7 @@ describe('AuthService', () => {
   const mockedUserService = {
     findById: jest.fn(),
     createUser: jest.fn(),
-    validateUsernamePassword: jest.fn(),
+    validateEmailPassword: jest.fn(),
   };
 
   const mockedJwtService = {
@@ -83,40 +83,40 @@ describe('AuthService', () => {
   const ctx = new RequestContext();
 
   describe('validateUser', () => {
-    it('should success when username/password valid', async () => {
+    it('should success when email/password valid', async () => {
       jest
-        .spyOn(mockedUserService, 'validateUsernamePassword')
+        .spyOn(mockedUserService, 'validateEmailPassword')
         .mockImplementation(() => userOutput);
 
-      expect(await service.validateUser(ctx, 'jhon', 'somepass')).toEqual(
-        userOutput,
-      );
-      expect(mockedUserService.validateUsernamePassword).toBeCalledWith(
+      expect(
+        await service.validateUser(ctx, 'john@example.com', 'somepass'),
+      ).toEqual(userOutput);
+      expect(mockedUserService.validateEmailPassword).toBeCalledWith(
         ctx,
-        'jhon',
+        'john@example.com',
         'somepass',
       );
     });
 
-    it('should fail when username/password invalid', async () => {
+    it('should fail when email/password invalid', async () => {
       jest
-        .spyOn(mockedUserService, 'validateUsernamePassword')
+        .spyOn(mockedUserService, 'validateEmailPassword')
         .mockImplementation(() => {
           throw new UnauthorizedException();
         });
 
       await expect(
-        service.validateUser(ctx, 'jhon', 'somepass'),
+        service.validateUser(ctx, 'john@example.com', 'somepass'),
       ).rejects.toThrowError(UnauthorizedException);
     });
 
     it('should fail when user account is disabled', async () => {
       jest
-        .spyOn(mockedUserService, 'validateUsernamePassword')
+        .spyOn(mockedUserService, 'validateEmailPassword')
         .mockImplementation(() => ({ ...userOutput, isAccountDisabled: true }));
 
       await expect(
-        service.validateUser(ctx, 'jhon', 'somepass'),
+        service.validateUser(ctx, 'john@example.com', 'somepass'),
       ).rejects.toThrowError(UnauthorizedException);
     });
   });
@@ -179,11 +179,11 @@ describe('AuthService', () => {
   describe('getAuthToken', () => {
     const accessTokenExpiry = 100;
     const refreshTokenExpiry = 200;
-    const user = { id: 5, username: 'username', roles: [ROLE.USER] };
+    const user = { id: 5, email: 'user@example.com', roles: [ROLE.USER] };
 
     const subject = { sub: user.id };
     const payload = {
-      username: user.username,
+      email: user.email,
       sub: user.id,
       roles: [ROLE.USER],
     };

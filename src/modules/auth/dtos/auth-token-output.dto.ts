@@ -17,7 +17,7 @@ export class UserAccessTokenClaims {
   @Expose()
   id: number;
   @Expose()
-  username: string;
+  email: string;
   @Expose()
   roles: ROLE[];
 }
