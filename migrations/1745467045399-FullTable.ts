@@ -1,7 +1,7 @@
-import { MigrationInterface, QueryRunner } from "typeorm";
+import { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class FullTable1745467045399 implements MigrationInterface {
-    name = 'FullTable1745467045399'
+    name = 'FullTable1745467045399';
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         // ROLES
@@ -30,21 +30,21 @@ export class FullTable1745467045399 implements MigrationInterface {
             )
         `);
 
-        // // USERS
-        // await queryRunner.query(`
-        //     CREATE TABLE "users" (
-        //         "id" BIGSERIAL PRIMARY KEY,
-        //         "role_id" BIGINT NOT NULL,
-        //         "email" VARCHAR(255) NOT NULL UNIQUE,
-        //         "password" VARCHAR(255) NOT NULL,
-        //         "full_name" VARCHAR(255),
-        //         "phone" VARCHAR(255),
-        //         "is_verified" BOOLEAN DEFAULT FALSE,
-        //         "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        //         "updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        //         CONSTRAINT "fk_users_role_id" FOREIGN KEY ("role_id") REFERENCES "roles"("id") ON DELETE NO ACTION
-        //     )
-        // `);
+        // USERS
+        await queryRunner.query(`
+            CREATE TABLE "users" (
+                "id" BIGSERIAL PRIMARY KEY,
+                "role_id" BIGINT NOT NULL,
+                "email" VARCHAR(255) NOT NULL UNIQUE,
+                "password" VARCHAR(255) NOT NULL,
+                "full_name" VARCHAR(255),
+                "phone" VARCHAR(255),
+                "is_verified" BOOLEAN DEFAULT FALSE,
+                "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                "updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                CONSTRAINT "fk_users_role_id" FOREIGN KEY ("role_id") REFERENCES "roles"("id") ON DELETE NO ACTION
+            )
+        `);
 
         // CANDIDATE_PROFILE
         await queryRunner.query(`
@@ -388,5 +388,4 @@ export class FullTable1745467045399 implements MigrationInterface {
         await queryRunner.query(`DROP TABLE "skill"`);
         await queryRunner.query(`DROP TABLE "roles"`);
     }
-
 }

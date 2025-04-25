@@ -108,7 +108,7 @@ $ npm run test:cov
 $ docker compose exec app npm run migration:run
 
 # generate migration (replace CreateUsers with name of the migration)
-$ npm run migration:generate --name=CreateUsers
+$ npm run migration:generate -- migrations/UpdateRoleEnum
 
 # run migration
 $ npm run migration:run
