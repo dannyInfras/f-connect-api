@@ -4,6 +4,7 @@ import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { configModuleOptions } from './configs/module-options';
+import { EventEmitterService } from './events/event-emitter.service';
 import { AllExceptionsFilter } from './filters/all-exceptions.filter';
 import { LoggingInterceptor } from './interceptors/logging.interceptor';
 import { AppLoggerModule } from './logger/logger.module';
@@ -31,7 +32,7 @@ import { AppLoggerModule } from './logger/logger.module';
     }),
     AppLoggerModule,
   ],
-  exports: [AppLoggerModule, ConfigModule],
+  exports: [AppLoggerModule, ConfigModule, EventEmitterService],
   providers: [
     { provide: APP_INTERCEPTOR, useClass: LoggingInterceptor },
 
@@ -39,6 +40,7 @@ import { AppLoggerModule } from './logger/logger.module';
       provide: APP_FILTER,
       useClass: AllExceptionsFilter,
     },
+    EventEmitterService,
   ],
 })
 export class SharedModule {}

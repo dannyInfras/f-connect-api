@@ -14,7 +14,7 @@ WORKDIR /usr/src/app
 
 # Copy and install dependencies
 COPY package.json package-lock.json ./
-RUN npm install
+RUN npm install --legacy-peer-deps
 
 # Copy the rest of the application files
 COPY . .

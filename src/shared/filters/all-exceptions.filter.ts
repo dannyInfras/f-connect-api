@@ -79,10 +79,45 @@ export class AllExceptionsFilter<T> implements ExceptionFilter {
       requestId,
       timestamp,
     };
-    this.logger.warn(requestContext, error.message, {
-      error,
-      stack,
+
+    // Use concise logging format instead of detailed object logging
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('en-US', {
+      hour12: false,
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      fractionalSecondDigits: 3,
     });
+
+    // Only log stack trace for 500 errors in console
+    const shouldLogStack = statusCode === HttpStatus.INTERNAL_SERVER_ERROR;
+    const logMessage = `[${timeStr}] ERROR (${process.pid}): ${req.method} ${path} failed with status ${statusCode}: ${message}`;
+
+    // Log to console with simplified format
+    console.error(logMessage);
+    if (shouldLogStack && stack) {
+      console.error(stack);
+    }
+
+    // Log the full error details to file using the logger service
+    // Always include stack for file logging, regardless of status code
+    this.logger.logError(
+      requestContext,
+      message,
+      stack || 'No stack trace available',
+      {
+        error: {
+          statusCode,
+          message,
+          errorName,
+          details: typeof details === 'object' ? details : { message: details },
+          path,
+          requestId,
+          timestamp,
+        },
+      },
+    );
 
     // Suppress original internal server error details in prod mode
     const isProMood = this.config.get<string>('env') !== 'development';
