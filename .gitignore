@@ -398,3 +398,10 @@ tsconfig.build.tsbuildinfo
 #cursor
 .cursor
 .cursorrules
+
+# MCP
+mcp/
+
+# Logs
+logs/
+*.log

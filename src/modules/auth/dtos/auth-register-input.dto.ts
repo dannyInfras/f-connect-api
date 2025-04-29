@@ -1,6 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
+  IsArray,
   IsEmail,
+  IsEnum,
   IsNotEmpty,
   IsString,
   Length,
@@ -34,6 +36,10 @@ export class RegisterInput {
   email: string;
 
   // These keys can only be set by ADMIN user.
-  roles: ROLE[] = [ROLE.USER];
+  @ApiProperty()
+  @IsArray()
+  @IsEnum(ROLE, { each: true })
+  roles: ROLE[];
+
   isAccountDisabled: boolean;
 }

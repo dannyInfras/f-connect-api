@@ -5,12 +5,12 @@ export class FullTable1745467045399 implements MigrationInterface {
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         // ROLES
-        await queryRunner.query(`
-            CREATE TABLE "roles" (
-                "id" BIGSERIAL PRIMARY KEY,
-                "name" VARCHAR(255) NOT NULL UNIQUE
-            )
-        `);
+        // await queryRunner.query(`
+        //     CREATE TABLE "roles" (
+        //         "id" BIGSERIAL PRIMARY KEY,
+        //         "name" VARCHAR(255) NOT NULL UNIQUE
+        //     )
+        // `);
 
         // SKILL
         await queryRunner.query(`
@@ -31,20 +31,22 @@ export class FullTable1745467045399 implements MigrationInterface {
         `);
 
         // USERS
-        await queryRunner.query(`
-            CREATE TABLE "users" (
-                "id" BIGSERIAL PRIMARY KEY,
-                "role_id" BIGINT NOT NULL,
-                "email" VARCHAR(255) NOT NULL UNIQUE,
-                "password" VARCHAR(255) NOT NULL,
-                "full_name" VARCHAR(255),
-                "phone" VARCHAR(255),
-                "is_verified" BOOLEAN DEFAULT FALSE,
-                "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                "updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                CONSTRAINT "fk_users_role_id" FOREIGN KEY ("role_id") REFERENCES "roles"("id") ON DELETE NO ACTION
-            )
-        `);
+        await queryRunner.query(
+            `CREATE TABLE "users" ("id" SERIAL NOT NULL,
+            "full_name" VARCHAR(100) NOT NULL,
+            "password" VARCHAR(100) NOT NULL,
+            "username" VARCHAR(30) NOT NULL,
+            "roles" text NOT NULL,
+            "is_verified" boolean NOT NULL DEFAULT true,
+            "email" VARCHAR(50) NOT NULL,
+            "phone" VARCHAR(12),
+            "created_at" TIMESTAMP DEFAULT now(),
+            "updated_at" TIMESTAMP DEFAULT now(),
+            CONSTRAINT "username" UNIQUE ("username"),
+            CONSTRAINT "email" UNIQUE ("email"),
+            CONSTRAINT "phone" UNIQUE ("phone"),
+            CONSTRAINT "PK_a3ffb1c0c8416b9fc6f907b7433" PRIMARY KEY ("id"))`,
+        );
 
         // CANDIDATE_PROFILE
         await queryRunner.query(`
@@ -383,9 +385,9 @@ export class FullTable1745467045399 implements MigrationInterface {
         await queryRunner.query(`DROP TABLE "company"`);
         await queryRunner.query(`DROP TABLE "candidate_skill"`);
         await queryRunner.query(`DROP TABLE "candidate_profile"`);
-        // await queryRunner.query(`DROP TABLE "users"`);
+        await queryRunner.query(`DROP TABLE "users"`);
         await queryRunner.query(`DROP TABLE "category"`);
         await queryRunner.query(`DROP TABLE "skill"`);
-        await queryRunner.query(`DROP TABLE "roles"`);
+        // await queryRunner.query(`DROP TABLE "roles"`);
     }
 }

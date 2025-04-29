@@ -15,30 +15,34 @@ export class User {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ length: 100 })
+  @Column({ length: 100, name: 'full_name' })
   name: string;
 
-  @Column()
+  @Column({ length: 100, name: 'password' })
   password: string;
 
   @Unique('username', ['username'])
-  @Column({ length: 200 })
+  @Column({ length: 30 })
   username: string;
 
   @Column('simple-array')
   roles: string[];
 
-  @Column()
+  @Column({ name: 'is_verified', default: true })
   isAccountDisabled: boolean;
 
   @Unique('email', ['email'])
-  @Column({ length: 200 })
+  @Column({ length: 50 })
   email: string;
 
-  @CreateDateColumn({ name: 'createdAt', nullable: true })
+  @Unique('phone', ['phone'])
+  @Column({ length: 30, nullable: true })
+  phone?: string;
+
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  @UpdateDateColumn({ name: 'updatedAt', nullable: true })
+  @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 
   @OneToMany(() => Article, (article) => article.author)

@@ -3,7 +3,6 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { plainToClass } from 'class-transformer';
 
-import { ROLE } from '@/modules/auth/constants/role.constant';
 import { RegisterInput } from '@/modules/auth/dtos/auth-register-input.dto';
 import { RegisterOutput } from '@/modules/auth/dtos/auth-register-output.dto';
 import {
@@ -12,6 +11,8 @@ import {
 } from '@/modules/auth/dtos/auth-token-output.dto';
 import { UserOutput } from '@/modules/user/dtos/user-output.dto';
 import { UserService } from '@/modules/user/services/user.service';
+import { AppEvents } from '@/shared/events/event.constants';
+import { EventEmitterService } from '@/shared/events/event-emitter.service';
 import { AppLogger } from '@/shared/logger/logger.service';
 import { RequestContext } from '@/shared/request-context/request-context.dto';
 
@@ -22,6 +23,7 @@ export class AuthService {
     private jwtService: JwtService,
     private configService: ConfigService,
     private readonly logger: AppLogger,
+    private readonly eventEmitter: EventEmitterService,
   ) {
     this.logger.setContext(AuthService.name);
   }
@@ -57,10 +59,13 @@ export class AuthService {
     this.logger.log(ctx, `${this.register.name} was called`);
 
     // TODO : Setting default role as USER here. Will add option to change this later via ADMIN users.
-    input.roles = [ROLE.USER];
     input.isAccountDisabled = false;
 
     const registeredUser = await this.userService.createUser(ctx, input);
+
+    // Emit user registered event to create candidate profile
+    this.eventEmitter.emit(AppEvents.USER_REGISTERED, registeredUser);
+
     return plainToClass(RegisterOutput, registeredUser, {
       excludeExtraneousValues: true,
     });
