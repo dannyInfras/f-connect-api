@@ -37,7 +37,7 @@
   },
   "dependencies": {
     "@nestjs/common": "^10.3.9",
-    "@nestjs/config": "^3.2.2",
+    "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.0.12",
     "@nestjs/jwt": "^11.0.0",
     "@nestjs/passport": "^10.0.3",
