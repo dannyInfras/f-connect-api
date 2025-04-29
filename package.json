@@ -63,7 +63,7 @@
     "rxjs": "^7.8.2",
     "swagger-ui-express": "5.0.1",
     "typeorm": "^0.3.20",
-    "uuid": "^10.0.0",
+    "uuid": "^11.1.0",
     "winston": "^3.13.0"
   },
   "devDependencies": {
