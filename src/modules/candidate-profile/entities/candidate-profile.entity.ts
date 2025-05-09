@@ -2,11 +2,14 @@ import {
   Column,
   Entity,
   JoinColumn,
+  OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
 import { User } from '@/modules/user/entities/user.entity';
+
+import { Education } from './education.entity';
 
 @Entity('candidate_profile')
 export class CandidateProfile {
@@ -17,11 +20,11 @@ export class CandidateProfile {
   @JoinColumn({ name: 'user_id' })
   user: User;
 
-  @Column({ type: 'text', nullable: true })
-  description: string;
+  @OneToMany(() => Education, (education) => education.candidateProfile)
+  educations: Education[];
 
   @Column({ type: 'text', nullable: true })
-  education: string;
+  description: string;
 
   @Column({ type: 'varchar', length: 50, nullable: true })
   title: string;
