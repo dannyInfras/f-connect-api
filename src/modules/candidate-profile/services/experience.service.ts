@@ -15,12 +15,14 @@ import { Actor } from '@/shared/acl/actor.constant';
 import { AppLogger } from '@/shared/logger/logger.service';
 import { RequestContext } from '@/shared/request-context/request-context.dto';
 
+import { CandidateProfileService } from './candidate-profile.service';
 @Injectable()
 export class ExperienceService {
   constructor(
     private readonly experienceRepository: ExperienceRepository,
     private readonly experienceAcl: ExperienceAclService,
     private readonly logger: AppLogger,
+    private readonly candidateProfileService: CandidateProfileService,
   ) {
     this.logger.setContext(ExperienceService.name);
   }
@@ -29,7 +31,9 @@ export class ExperienceService {
     if (!this.experienceAcl.forActor(actor).canDoAction('Read'))
       throw new UnauthorizedException();
     const experiences = await this.experienceRepository.findAll();
-    return experiences.map((exp) => plainToInstance(ExperienceDto, exp));
+    return experiences.map((exp) =>
+      plainToInstance(ExperienceDto, exp, { excludeExtraneousValues: true }),
+    );
   }
 
   async findById(ctx: RequestContext, id: string): Promise<ExperienceDto> {
@@ -44,7 +48,9 @@ export class ExperienceService {
     const experience = await this.experienceRepository.findById(id);
     if (!experience) throw new NotFoundException('Experience not found');
 
-    return plainToInstance(ExperienceDto, experience);
+    return plainToInstance(ExperienceDto, experience, {
+      excludeExtraneousValues: true,
+    });
   }
 
   async findByCandidateProfile(
@@ -67,7 +73,9 @@ export class ExperienceService {
         candidateProfileId,
       );
 
-    return experiences.map((exp) => plainToInstance(ExperienceDto, exp));
+    return experiences.map((exp) =>
+      plainToInstance(ExperienceDto, exp, { excludeExtraneousValues: true }),
+    );
   }
 
   async createExperience(
@@ -88,9 +96,40 @@ export class ExperienceService {
       ctx,
       `calling ${ExperienceRepository.name}.createExperience`,
     );
-    const created = await this.experienceRepository.createExperience(dto);
 
-    return plainToInstance(ExperienceDto, created);
+    const profileId = Number(
+      await this.candidateProfileService.getProfileIdByUserId(ctx),
+    );
+    console.log('profileId', profileId);
+
+    const {
+      role,
+      description,
+      location,
+      startDate,
+      endDate,
+      employmentType,
+      company,
+    } = dto;
+
+    // Use candidate_profile_id which will be handled by the repository
+    const experienceData = {
+      role,
+      company,
+      description,
+      employmentType,
+      location,
+      startDate,
+      endDate,
+      candidate_profile_id: profileId.toString(),
+    };
+
+    const created =
+      await this.experienceRepository.createExperience(experienceData);
+
+    return plainToInstance(ExperienceDto, created, {
+      excludeExtraneousValues: true,
+    });
   }
 
   async updateExperience(
@@ -115,9 +154,38 @@ export class ExperienceService {
       ctx,
       `calling ${ExperienceRepository.name}.updateExperience`,
     );
-    const updated = await this.experienceRepository.updateExperience(id, dto);
 
-    return plainToInstance(ExperienceDto, updated);
+    const {
+      role,
+      description,
+      location,
+      startDate,
+      endDate,
+      employmentType,
+      company,
+    } = dto;
+
+    // Make sure to maintain the existing candidateProfile relationship
+    const experienceData = {
+      role,
+      company,
+      description,
+      employmentType,
+      location,
+      startDate,
+      endDate,
+      candidate_profile_id: experience.candidateProfile.id,
+    };
+
+    const updated = await this.experienceRepository.updateExperience(
+      id,
+      experienceData,
+    );
+
+    // Transform to DTO to exclude unwanted properties
+    return plainToInstance(ExperienceDto, updated, {
+      excludeExtraneousValues: true,
+    });
   }
 
   async deleteExperience(

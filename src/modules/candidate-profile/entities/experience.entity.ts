@@ -8,6 +8,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
+import { EmploymentTypeEnum } from '../enums/employee-type';
 import { CandidateProfile } from './candidate-profile.entity';
 // import { Company } from '../../company/entities/company.entity'; // Uncomment and adjust path if company entity exists
 
@@ -24,11 +25,25 @@ export class Experience {
   // @JoinColumn({ name: 'company_id' })
   // company: Company;
 
+  @Column({ type: 'varchar', name: 'company', nullable: true })
+  company: string;
+
   @Column({ type: 'varchar', length: 255, nullable: false })
-  position: string;
+  role: string;
 
   @Column({ type: 'text', nullable: true })
   description: string;
+
+  @Column({
+    type: 'enum',
+    name: 'employment_type',
+    nullable: true,
+    enum: EmploymentTypeEnum,
+  })
+  employmentType: string;
+
+  @Column({ type: 'varchar', name: 'location', nullable: true })
+  location: string;
 
   @Column({ type: 'date', name: 'start_date', nullable: false })
   startDate: string;

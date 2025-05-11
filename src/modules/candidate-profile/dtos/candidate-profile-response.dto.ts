@@ -2,9 +2,10 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Expose, Type } from 'class-transformer';
 
 import { ContactDto } from './contact.dto';
-import { EducationDto } from './education.dto';
-import { ExperienceDto } from './experience.dto';
-import { PortfolioDto } from './portfolio.dto';
+// import { EducationDto } from './education.dto';
+// import { ExperienceDto } from './experience.dto';
+// import { PortfolioDto } from './portfolio.dto';
+import { SkillDto } from './skill.dto';
 import { SocialDto } from './social.dto';
 
 export class CandidateProfileResponseDto {
@@ -54,24 +55,25 @@ export class CandidateProfileResponseDto {
   @Type(() => SocialDto)
   social: SocialDto;
 
-  @Expose()
-  @ApiProperty({ type: [ExperienceDto] })
-  @Type(() => ExperienceDto)
-  experiences: ExperienceDto[];
+  // @Expose()
+  // @ApiProperty({ type: [ExperienceDto] })
+  // @Type(() => ExperienceDto)
+  // experiences: ExperienceDto[];
+
+  // @Expose()
+  // @ApiProperty({ type: [EducationDto] })
+  // @Type(() => EducationDto)
+  // education: EducationDto[];
 
   @Expose()
-  @ApiProperty({ type: [EducationDto] })
-  @Type(() => EducationDto)
-  education: EducationDto[];
+  @ApiProperty({ type: [SkillDto] })
+  @Type(() => SkillDto)
+  skills: SkillDto[];
 
-  @Expose()
-  @ApiProperty({ type: [String] })
-  skills: string[];
-
-  @Expose()
-  @ApiProperty({ type: [PortfolioDto] })
-  @Type(() => PortfolioDto)
-  portfolios: PortfolioDto[];
+  // @Expose()
+  // @ApiProperty({ type: [PortfolioDto] })
+  // @Type(() => PortfolioDto)
+  // portfolios: PortfolioDto[];
 
   @Expose()
   @ApiProperty()
