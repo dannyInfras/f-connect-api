@@ -21,6 +21,11 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.DO_SSH_PRIVATE_KEY }}
 
+      - name: Add droplet to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.DO_DEPLOY_HOST }} >> ~/.ssh/known_hosts
+
       - name: Sync project
         run: |
           rsync -avz --delete \
