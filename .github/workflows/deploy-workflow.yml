@@ -39,18 +39,18 @@ jobs:
       - name: Deploy development environment
         run: |
           ssh -o BatchMode=yes -o StrictHostKeyChecking=no \
-            ${{ secrets.DO_DEPLOY_USER }}@${{ secrets.DO_DEPLOY_HOST }} <<-'EOF'
-              # copy env and tighten permissions
-              cp -r ${{ secrets.SECRET_PATH }}/.env ${{ secrets.DEPLOY_PATH }}/.env
-              chmod 600 ${{ secrets.DEPLOY_PATH }}/.env
+            ${{ secrets.DO_DEPLOY_USER }}@${{ secrets.DO_DEPLOY_HOST }} << 'EOF'
+            # copy env and tighten permissions
+            cp -r ${{ secrets.SECRET_PATH }}/.env ${{ secrets.DEPLOY_PATH }}/.env
+            chmod 600 ${{ secrets.DEPLOY_PATH }}/.env
 
-              cd ${{ secrets.DEPLOY_PATH }}
+            cd ${{ secrets.DEPLOY_PATH }}
 
-              docker compose config > /dev/null
-              docker compose down --rmi local || true
-              docker compose up -d --build --no-deps app
-              docker image prune -f
-            EOF
+            docker compose config > /dev/null
+            docker compose down --rmi local || true
+            docker compose up -d --build
+            docker image prune -f
+          EOF
 
       - name: Healthcheck
         run: |
