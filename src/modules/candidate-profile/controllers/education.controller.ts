@@ -14,21 +14,21 @@ import {
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
-import { ExperienceDto } from '@/modules/candidate-profile/dtos/experience.dto';
-import { ExperienceInputDto } from '@/modules/candidate-profile/dtos/experience-input.dto';
-import { ExperienceService } from '@/modules/candidate-profile/services/experience.service';
+import { EducationDto } from '@/modules/candidate-profile/dtos/education.dto';
+import { EducationInputDto } from '@/modules/candidate-profile/dtos/education-input.dto';
+import { EducationService } from '@/modules/candidate-profile/services/education.service';
 import { AppLogger } from '@/shared/logger/logger.service';
 import { ReqContext } from '@/shared/request-context/req-context.decorator';
 import { RequestContext } from '@/shared/request-context/request-context.dto';
 
-@ApiTags('Experiences')
-@Controller('experiences')
-export class ExperienceController {
+@ApiTags('Education')
+@Controller('education')
+export class EducationController {
   constructor(
-    private readonly experienceService: ExperienceService,
+    private readonly educationService: EducationService,
     private readonly logger: AppLogger,
   ) {
-    this.logger.setContext(ExperienceController.name);
+    this.logger.setContext(EducationController.name);
   }
 
   @Get(':id')
@@ -38,9 +38,9 @@ export class ExperienceController {
   async findById(
     @ReqContext() ctx: RequestContext,
     @Param('id') id: string,
-  ): Promise<ExperienceDto> {
+  ): Promise<EducationDto> {
     this.logger.log(ctx, `${this.findById.name} was called`);
-    return this.experienceService.findById(ctx, id);
+    return this.educationService.findById(ctx, id);
   }
 
   @Get('candidate-profile/:candidateProfileId')
@@ -50,9 +50,9 @@ export class ExperienceController {
   async findByCandidateProfile(
     @ReqContext() ctx: RequestContext,
     @Param('candidateProfileId') candidateProfileId: string,
-  ): Promise<ExperienceDto[]> {
+  ): Promise<EducationDto[]> {
     this.logger.log(ctx, `${this.findByCandidateProfile.name} was called`);
-    return this.experienceService.findByCandidateProfile(
+    return this.educationService.findByCandidateProfile(
       ctx,
       candidateProfileId,
     );
@@ -65,10 +65,10 @@ export class ExperienceController {
   async create(
     @ReqContext() ctx: RequestContext,
     @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
-    dto: ExperienceInputDto,
-  ): Promise<ExperienceDto> {
+    dto: EducationInputDto,
+  ): Promise<EducationDto> {
     this.logger.log(ctx, `${this.create.name} was called`);
-    return this.experienceService.createExperience(ctx, dto);
+    return this.educationService.createEducation(ctx, dto);
   }
 
   @Patch(':id')
@@ -79,10 +79,10 @@ export class ExperienceController {
     @ReqContext() ctx: RequestContext,
     @Param('id') id: string,
     @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
-    dto: ExperienceInputDto,
-  ): Promise<ExperienceDto> {
+    dto: EducationInputDto,
+  ): Promise<EducationDto> {
     this.logger.log(ctx, `${this.update.name} was called`);
-    return this.experienceService.updateExperience(ctx, id, dto);
+    return this.educationService.updateEducation(ctx, id, dto);
   }
 
   @Delete(':id')
@@ -94,6 +94,6 @@ export class ExperienceController {
     @Param('id') id: string,
   ): Promise<{ deleted: boolean }> {
     this.logger.log(ctx, `${this.delete.name} was called`);
-    return this.experienceService.deleteExperience(ctx, id);
+    return this.educationService.deleteEducation(ctx, id);
   }
 }

@@ -7,35 +7,50 @@ import {
 } from 'class-validator';
 
 export class ExperienceInputDto {
-  @ApiProperty({ required: false })
+  // @ApiProperty({ required: false })
+  // @IsOptional()
+  // @IsString()
+  // id?: string;
+
+  @ApiProperty({ required: false, example: 'Company Name' })
   @IsOptional()
   @IsString()
-  id?: string;
+  company?: string;
 
-  @ApiProperty()
+  @ApiProperty({ example: 'Software Engineer' })
   @IsNotEmpty()
   @IsString()
-  position: string;
+  role: string;
 
-  @ApiProperty({ required: false })
+  @ApiProperty({ required: false, example: 'Software Engineer' })
   @IsOptional()
   @IsString()
   description?: string;
 
-  @ApiProperty()
+  @ApiProperty({ required: false, example: 'full_time' })
+  @IsOptional()
+  @IsString()
+  employmentType?: string;
+
+  @ApiProperty({ required: false, example: 'San Francisco' })
+  @IsOptional()
+  @IsString()
+  location?: string;
+
+  @ApiProperty({ example: '2021-01-01' })
   @IsNotEmpty()
   @IsDateString()
   startDate: string;
 
-  @ApiProperty({ required: false })
+  @ApiProperty({ example: '2021-01-01' })
   @IsOptional()
   @IsDateString()
   endDate?: string | null;
 
-  @ApiProperty()
-  @IsNotEmpty()
-  @IsString()
-  candidateProfileId: string;
+  // @ApiProperty()
+  // @IsNotEmpty()
+  // @IsString()
+  // candidateProfileId: string;
 
   // @ApiProperty()
   // @IsNotEmpty()

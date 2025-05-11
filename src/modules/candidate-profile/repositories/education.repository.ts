@@ -2,20 +2,20 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
-import { Experience } from '../entities/experience.entity';
+import { Education } from '../entities/education.entity';
 
 @Injectable()
-export class ExperienceRepository {
+export class EducationRepository {
   constructor(
-    @InjectRepository(Experience)
-    private readonly repo: Repository<Experience>,
+    @InjectRepository(Education)
+    private readonly repo: Repository<Education>,
   ) {}
 
-  async findAll(): Promise<Experience[]> {
+  async findAll(): Promise<Education[]> {
     return this.repo.find({ relations: ['candidateProfile'] });
   }
 
-  async findById(id: string): Promise<Experience | null> {
+  async findById(id: string): Promise<Education | null> {
     return this.repo.findOne({
       where: { id },
       relations: ['candidateProfile'],
@@ -24,16 +24,16 @@ export class ExperienceRepository {
 
   async findByCandidateProfile(
     candidateProfileId: string,
-  ): Promise<Experience[]> {
+  ): Promise<Education[]> {
     return this.repo.find({
       where: { candidateProfile: { id: candidateProfileId } },
       relations: ['candidateProfile'],
     });
   }
 
-  async createExperience(
-    data: Partial<Experience> & { candidate_profile_id?: string },
-  ): Promise<Experience> {
+  async createEducation(
+    data: Partial<Education> & { candidate_profile_id?: string },
+  ): Promise<Education> {
     if (data.candidate_profile_id) {
       data.candidateProfile = { id: data.candidate_profile_id } as any;
       delete data.candidate_profile_id;
@@ -43,10 +43,10 @@ export class ExperienceRepository {
     return this.repo.save(entity);
   }
 
-  async updateExperience(
+  async updateEducation(
     id: string,
-    data: Partial<Experience> & { candidate_profile_id?: string },
-  ): Promise<Experience> {
+    data: Partial<Education> & { candidate_profile_id?: string },
+  ): Promise<Education> {
     if (data.candidate_profile_id) {
       data.candidateProfile = { id: data.candidate_profile_id } as any;
       delete data.candidate_profile_id;
@@ -54,11 +54,11 @@ export class ExperienceRepository {
 
     await this.repo.update(id, data);
     const updated = await this.findById(id);
-    if (!updated) throw new NotFoundException('Experience not found');
+    if (!updated) throw new NotFoundException('Education not found');
     return updated;
   }
 
-  async deleteExperience(id: string): Promise<{ deleted: boolean }> {
+  async deleteEducation(id: string): Promise<{ deleted: boolean }> {
     const result = await this.repo.delete(id);
     return { deleted: !!result.affected };
   }

@@ -1,0 +1,70 @@
+name: Deploy to DigitalOcean (Docker Compose)
+
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+  deploy:
+    name: 🐳 Deploy with Docker Compose
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Setup SSH agent
+        uses: webfactory/ssh-agent@v0.5.4
+        with:
+          ssh-private-key: ${{ secrets.DO_SSH_PRIVATE_KEY }}
+
+      - name: Add droplet to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.DO_DEPLOY_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Sync project
+        run: |
+          rsync -avz --delete \
+            --exclude='.git' \
+            --exclude='node_modules' \
+            --exclude='logs' \
+            ./ \
+            ${{ secrets.DO_DEPLOY_USER }}@${{ secrets.DO_DEPLOY_HOST }}:${{ secrets.DEPLOY_PATH }}
+
+      - name: Deploy development environment
+        run: |
+          ssh -o BatchMode=yes -o StrictHostKeyChecking=no \
+            ${{ secrets.DO_DEPLOY_USER }}@${{ secrets.DO_DEPLOY_HOST }} << 'EOF'
+              # copy env and tighten permissions
+              cp -r ${{ secrets.SECRET_PATH }}/.env ${{ secrets.DEPLOY_PATH }}/.env
+              chmod 600 ${{ secrets.DEPLOY_PATH }}/.env
+
+              cd ${{ secrets.DEPLOY_PATH }}
+
+              docker compose config > /dev/null
+
+              docker compose down --rmi local || true
+
+              docker compose up -d --build
+
+              docker image prune -f
+
+             
+            EOF
+
+      - name: Healthcheck
+        run: |
+          for i in {1..5}; do
+            if curl -sSf http://${{ secrets.DO_DEPLOY_HOST }}:${{ secrets.DEPLOY_PORT }}/${{ secrets.HEALTHCHECK_PATH }}; then
+              echo "✅ App is healthy."
+              exit 0
+            fi
+            echo "Waiting for app… ($i/5)"
+            sleep 5
+          done
+          echo "❌ Healthcheck failed."
+          exit 1

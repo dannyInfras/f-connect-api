@@ -10,16 +10,17 @@ import {
 } from 'class-validator';
 
 import { ContactDto } from './contact.dto';
-import { EducationDto } from './education.dto';
-import { ExperienceDto } from './experience.dto';
-import { PortfolioDto } from './portfolio.dto';
+// import { EducationDto } from './education.dto';
+// import { ExperienceDto } from './experience.dto';
+// import { PortfolioDto } from './portfolio.dto';
+import { SkillDto } from './skill.dto';
 import { SocialDto } from './social.dto';
 
 export class CandidateProfileInputDto {
-  @ApiProperty()
-  @IsOptional()
-  @IsString()
-  id?: string;
+  // @ApiProperty()
+  // @IsOptional()
+  // @IsString()
+  // id?: string;
 
   @ApiProperty()
   @IsNotEmpty()
@@ -73,31 +74,33 @@ export class CandidateProfileInputDto {
   @IsOptional()
   social?: SocialDto;
 
-  @ApiProperty({ type: [ExperienceDto] })
-  @ValidateNested({ each: true })
-  @Type(() => ExperienceDto)
-  @IsArray()
-  @IsOptional()
-  experiences?: ExperienceDto[];
+  // @ApiProperty({ type: [ExperienceDto] })
+  // @ValidateNested({ each: true })
+  // @Type(() => ExperienceDto)
+  // @IsArray()
+  // @IsOptional()
+  // experiences?: ExperienceDto[];
 
-  @ApiProperty({ type: [EducationDto] })
-  @ValidateNested({ each: true })
-  @Type(() => EducationDto)
-  @IsArray()
-  @IsOptional()
-  education?: EducationDto[];
+  // @ApiProperty({ type: [EducationDto] })
+  // @ValidateNested({ each: true })
+  // @Type(() => EducationDto)
+  // @IsArray()
+  // @IsOptional()
+  // education?: EducationDto[];
 
-  @ApiProperty({ type: [String] })
-  @IsArray()
-  @IsOptional()
-  skills?: string[];
-
-  @ApiProperty({ type: [PortfolioDto] })
+  @ApiProperty({ type: [SkillDto] })
   @ValidateNested({ each: true })
-  @Type(() => PortfolioDto)
+  @Type(() => SkillDto)
   @IsArray()
   @IsOptional()
-  portfolios?: PortfolioDto[];
+  skills?: SkillDto[];
+
+  // @ApiProperty({ type: [PortfolioDto] })
+  // @ValidateNested({ each: true })
+  // @Type(() => PortfolioDto)
+  // @IsArray()
+  // @IsOptional()
+  // portfolios?: PortfolioDto[];
 
   @ApiProperty()
   @IsOptional()

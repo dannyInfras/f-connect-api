@@ -5,8 +5,8 @@ import {
   Delete,
   Get,
   Param,
+  Patch,
   Post,
-  Put,
   UseGuards,
   UseInterceptors,
   ValidationPipe,
@@ -67,7 +67,7 @@ export class CandidateProfileController {
     return this.candidateProfileService.createProfile(ctx, dto);
   }
 
-  @Put(':id')
+  @Patch(':id')
   @UseInterceptors(ClassSerializerInterceptor)
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)

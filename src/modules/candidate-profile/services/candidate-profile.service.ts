@@ -52,6 +52,32 @@ export class CandidateProfileService {
     return profile;
   }
 
+  async getProfileIdByUserId(
+    ctx: RequestContext,
+  ): Promise<CandidateProfile['id']> {
+    this.logger.log(ctx, `${this.getProfileIdByUserId.name} was called`);
+
+    const actor: Actor = ctx.user!;
+
+    if (!actor || !actor.id) {
+      throw new ForbiddenException('Not allowed to access this resource');
+    }
+
+    this.logger.log(
+      ctx,
+      `calling ${CandidateProfileRepository.name}.findByUserId`,
+    );
+    const profile = await this.candidateProfileRepository.findByUserId(
+      Number(ctx.user!.id),
+    );
+
+    if (!profile) {
+      throw new NotFoundException('Candidate profile not found');
+    }
+
+    return profile.id;
+  }
+
   async getCurrentUserProfile(
     ctx: RequestContext,
   ): Promise<CandidateProfileResponseDto> {

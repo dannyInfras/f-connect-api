@@ -11,15 +11,11 @@ export class EducationDto {
   institution: string;
 
   @Expose()
-  @ApiProperty()
-  logo: string;
-
-  @Expose()
-  @ApiProperty()
+  @ApiProperty({ nullable: true })
   degree: string;
 
   @Expose()
-  @ApiProperty()
+  @ApiProperty({ nullable: true })
   field: string;
 
   @Expose()
@@ -27,10 +23,18 @@ export class EducationDto {
   startYear: number;
 
   @Expose()
-  @ApiProperty()
-  endYear: number;
+  @ApiProperty({ nullable: true })
+  endYear: number | null;
 
   @Expose()
-  @ApiProperty({ required: false })
-  description?: string;
+  @ApiProperty({ nullable: true })
+  description: string;
+
+  @Expose()
+  @ApiProperty()
+  createdAt: Date;
+
+  @Expose()
+  @ApiProperty()
+  updatedAt: Date;
 }
