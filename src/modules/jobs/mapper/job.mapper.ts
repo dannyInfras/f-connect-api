@@ -16,7 +16,10 @@ export class JobMapper {
         id: job.company.id,
         companyName: job.company.companyName,
         logoUrl: job.company.logoUrl,
-        address: job.company.address,
+        // Take first address or join multiple addresses with comma
+        address: Array.isArray(job.company.address)
+          ? job.company.address[0] || ''
+          : job.company.address || '',
       },
       typeOfEmployment: job.typeOfEmployment,
       responsibility: job.responsibility,

@@ -11,9 +11,25 @@ export class CreateCompanyResDto {
   @Expose()
   companyName: string;
 
-  @ApiProperty({ example: '123456789', description: 'Company tax code' })
+  @ApiProperty({ example: '2024-01-01T00:00:00.000Z' })
   @Expose()
-  taxCode: string;
+  foundedAt: Date;
+
+  @ApiProperty({ example: 100 })
+  @Expose()
+  employees: number;
+
+  @ApiProperty({
+    example: ['San Francisco, CA'],
+    description: 'Company addresses',
+    type: [String],
+  })
+  @Expose()
+  address: string[];
+
+  @ApiProperty({ example: 'https://company.com' })
+  @Expose()
+  website: string;
 
   @ApiProperty({ example: 'Technology', required: false })
   @Expose()
@@ -27,11 +43,19 @@ export class CreateCompanyResDto {
   @Expose()
   logoUrl?: string;
 
-  @ApiProperty({ example: 'San Francisco, CA', required: false })
+  @ApiProperty({ example: ['twitter.com/company'] })
   @Expose()
-  address?: string;
+  socialMedia: string[];
 
-  @ApiProperty({ example: 'https://license.url/openai.pdf', required: false })
+  @ApiProperty({ example: ['https://work-image.url/1.png'] })
+  @Expose()
+  workImageUrl: string[];
+
+  @ApiProperty({ example: '123456789', description: 'Company tax code' })
+  @Expose()
+  taxCode: string;
+
+  @ApiProperty({ example: 'https://license.url/doc.pdf', required: false })
   @Expose()
   businessLicenseUrl?: string;
 
@@ -47,12 +71,17 @@ export class CreateCompanyResDto {
   static example = {
     id: 'abc123',
     companyName: 'OpenAI',
-    taxCode: '123456789',
+    foundedAt: '2024-01-01T00:00:00.000Z',
+    employees: 100,
+    address: ['San Francisco, CA'],
+    website: 'https://company.com',
     industry: 'Technology',
     description: 'AI Research Company',
     logoUrl: 'https://logo.url/openai.png',
-    address: 'San Francisco, CA',
-    businessLicenseUrl: 'https://license.url/openai.pdf',
+    socialMedia: ['twitter.com/company'],
+    workImageUrl: ['https://work-image.url/1.png'],
+    taxCode: '123456789',
+    businessLicenseUrl: 'https://license.url/doc.pdf',
     createdAt: '2024-01-01T00:00:00.000Z',
     updatedAt: '2024-01-01T00:00:00.000Z',
   };
@@ -61,12 +90,17 @@ export class CreateCompanyResDto {
   static updateExample = {
     id: 'abc123',
     companyName: 'OpenAI Updated',
-    taxCode: '123456789',
+    foundedAt: '2024-01-01T00:00:00.000Z',
+    employees: 120,
+    address: ['San Francisco, CA'],
+    website: 'https://company.com',
     industry: 'AI Technology',
     description: 'Updated AI Research Company',
     logoUrl: 'https://logo.url/openai.png',
-    address: 'San Francisco, CA',
-    businessLicenseUrl: 'https://license.url/openai.pdf',
+    socialMedia: ['twitter.com/company'],
+    workImageUrl: ['https://work-image.url/1.png'],
+    taxCode: '123456789',
+    businessLicenseUrl: 'https://license.url/doc.pdf',
     createdAt: '2024-01-01T00:00:00.000Z',
     updatedAt: '2024-01-02T00:00:00.000Z',
   };

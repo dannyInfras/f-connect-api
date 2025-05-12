@@ -4,12 +4,17 @@ import {
   CreateDateColumn,
   Entity,
   JoinColumn,
+  OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
-  UpdateDateColumn
+  UpdateDateColumn,
 } from 'typeorm';
 
-import { User } from '../../user/entities/user.entity';
+import { Job } from '@/modules/jobs/entities/jobs.entity';
+import { User } from '@/modules/user/entities/user.entity';
+
+import { Benefit } from './benefit.entity';
+import { CoreTeam } from './coreteam.entity';
 
 @Entity('company')
 export class Company {
@@ -23,8 +28,17 @@ export class Company {
   @Column({ name: 'company_name', length: 255 })
   companyName: string;
 
-  @Column({ name: 'tax_code', length: 255, unique: true })
-  taxCode: string;
+  @Column({ name: 'founded_at', type: 'timestamp', nullable: true })
+  foundedAt: Date;
+
+  @Column({ type: 'int', nullable: true })
+  employees: number;
+
+  @Column('text', { array: true, nullable: true })
+  address: string[];
+
+  @Column({ length: 255, nullable: true })
+  website: string;
 
   @Column({ length: 100, nullable: true })
   industry: string;
@@ -35,14 +49,26 @@ export class Company {
   @Column({ name: 'logo_url', length: 255, nullable: true })
   logoUrl: string;
 
-  @Column({ length: 255, nullable: true })
-  address: string;
+  @Column('text', { array: true, nullable: true })
+  socialMedia: string[];
+
+  @Column('text', { array: true, nullable: true })
+  workImageUrl: string[];
+
+  @Column({ name: 'tax_code', length: 255, unique: true })
+  taxCode: string;
 
   @Column({ name: 'business_license_url', length: 255, nullable: true })
   businessLicenseUrl: string;
 
-  @Column({ name: 'is_verified', default: false })
-  isVerified: boolean;
+  @OneToMany(() => Benefit, (benefit) => benefit.company)
+  benefits: Benefit[];
+
+  @OneToMany(() => CoreTeam, (coreTeam) => coreTeam.company)
+  coreTeam: CoreTeam[];
+
+  @OneToMany(() => Job, (job) => job.company)
+  jobs: Job[];
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
