@@ -3,6 +3,8 @@ import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ArticleModule } from '@/modules/article/article.module';
 import { AuthModule } from '@/modules/auth/auth.module';
 import { CandidateProfileModule } from '@/modules/candidate-profile/candidate-profile.module';
+import { CompanyModule } from '@/modules/company/company.module';
+import { JobsModule } from '@/modules/jobs/jobs.module';
 import { UserModule } from '@/modules/user/user.module';
 
 import { AppController } from './app.controller';
@@ -17,6 +19,8 @@ import { SharedModule } from './shared/shared.module';
     AuthModule,
     ArticleModule,
     CandidateProfileModule,
+    CompanyModule,
+    JobsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
