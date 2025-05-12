@@ -33,6 +33,7 @@ import { RequestContext } from '@/shared/request-context/request-context.dto';
 
 import { CreateCompanyReqDto } from '../dtos/req/create-company.req';
 import { UpdateCompanyDto } from '../dtos/req/update-company.req';
+import { CompanyDetailResponseDto } from '../dtos/res/company-detail.res';
 import { CompanyService } from '../services/company.service';
 
 @ApiTags('Companies')
@@ -107,16 +108,16 @@ export class CompanyController {
   @ApiOperation({ summary: 'Get a company by ID' })
   @ApiResponse({
     status: HttpStatus.OK,
-    type: CreateCompanyResDto,
+    type: CompanyDetailResponseDto,
     description: 'The requested company',
-    example: CreateCompanyResDto.example,
+    example: CompanyDetailResponseDto.example,
   })
   async findOne(@Param('id') id: string, @ReqContext() ctx: RequestContext) {
     if (!ctx.user) {
       throw new UnauthorizedException('User must be logged in');
     }
     const company = await this.companyService.findOne(id, ctx.user as Actor);
-    return plainToInstance(CreateCompanyResDto, company, {
+    return plainToInstance(CompanyDetailResponseDto, company, {
       excludeExtraneousValues: true,
     });
   }

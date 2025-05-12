@@ -5,10 +5,12 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { DeepPartial } from 'typeorm';
 
 import { CompanyAclService } from '@/modules/company/acl/company.acl';
 import { CreateCompanyReqDto } from '@/modules/company/dtos/req/create-company.req';
 import { UpdateCompanyDto } from '@/modules/company/dtos/req/update-company.req';
+import { CompanyMapper } from '@/modules/company/mapper/company.map';
 import { Action } from '@/shared/acl/action.constant';
 import { Actor } from '@/shared/acl/actor.constant';
 
@@ -27,14 +29,22 @@ export class CompanyService {
       throw new UnauthorizedException();
     }
 
-    const company = this.companyRepo.create({ ...dto, user: { id: actor.id } });
+    const companyData: DeepPartial<Company> = {
+      ...dto,
+      user: { id: actor.id },
+      address: Array.isArray(dto.address) ? dto.address : [],
+      socialMedia: Array.isArray(dto.socialMedia) ? dto.socialMedia : [],
+      workImageUrl: Array.isArray(dto.workImageUrl) ? dto.workImageUrl : [],
+    };
+
+    const company = this.companyRepo.create(companyData);
     return this.companyRepo.save(company);
   }
 
   async findOne(id: string, actor: Actor) {
     const company = await this.companyRepo.findOne({
       where: { id },
-      relations: ['user'],
+      relations: ['user', 'benefits', 'coreTeam', 'jobs', 'jobs.category'],
     });
 
     if (!company) throw new NotFoundException('Company not found');
@@ -43,7 +53,7 @@ export class CompanyService {
       throw new UnauthorizedException();
     }
 
-    return company;
+    return CompanyMapper.toDetailResponse(company);
   }
 
   async findAll(

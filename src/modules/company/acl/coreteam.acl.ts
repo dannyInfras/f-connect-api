@@ -1,14 +1,13 @@
-// src/modules/company/acl/company.acl.ts
 import { Injectable } from '@nestjs/common';
 
 import { ROLE } from '@/modules/auth/constants/role.constant';
 import { BaseAclService } from '@/shared/acl/acl.service';
 import { Action } from '@/shared/acl/action.constant';
 
-import { Company } from '../entities/company.entity';
+import { CoreTeam } from '../entities/coreteam.entity';
 
 @Injectable()
-export class CompanyAclService extends BaseAclService<Company> {
+export class CoreTeamAclService extends BaseAclService<CoreTeam> {
   constructor() {
     super();
     this.canDo(ROLE.ADMIN, [Action.Manage]);
@@ -25,7 +24,7 @@ export class CompanyAclService extends BaseAclService<Company> {
     this.canDo(ROLE.USER, [Action.Read, Action.List]);
   }
 
-  private isCompanyOwner = (resource: Company, actor: any): boolean => {
-    return resource.user?.id === actor.id;
+  private isCompanyOwner = (resource: CoreTeam, actor: any): boolean => {
+    return resource.company?.user?.id === actor.id;
   };
 }
