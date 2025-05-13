@@ -48,7 +48,8 @@ jobs:
 
             docker compose config > /dev/null
             docker compose down --rmi local || true
-            docker compose up -d --build
+            docker compose up -d --build --no-deps app
+            docker exec -it f-connect-api npm run migration:run
             docker image prune -f
           EOF
 
