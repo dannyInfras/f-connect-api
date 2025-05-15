@@ -12,13 +12,15 @@ export class ExperienceRepository {
   ) {}
 
   async findAll(): Promise<Experience[]> {
-    return this.repo.find({ relations: ['candidateProfile'] });
+    return this.repo.find({
+      relations: ['candidateProfile', 'candidateProfile.user'],
+    });
   }
 
   async findById(id: string): Promise<Experience | null> {
     return this.repo.findOne({
       where: { id },
-      relations: ['candidateProfile'],
+      relations: ['candidateProfile', 'candidateProfile.user'],
     });
   }
 
@@ -27,7 +29,7 @@ export class ExperienceRepository {
   ): Promise<Experience[]> {
     return this.repo.find({
       where: { candidateProfile: { id: candidateProfileId } },
-      relations: ['candidateProfile'],
+      relations: ['candidateProfile', 'candidateProfile.user'],
     });
   }
 

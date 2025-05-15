@@ -5,8 +5,8 @@ import {
   Delete,
   Get,
   Param,
-  Patch,
   Post,
+  Put,
   UseGuards,
   UseInterceptors,
   ValidationPipe,
@@ -14,21 +14,30 @@ import {
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
-import { EducationDto } from '@/modules/candidate-profile/dtos/education.dto';
-import { EducationInputDto } from '@/modules/candidate-profile/dtos/education-input.dto';
-import { EducationService } from '@/modules/candidate-profile/services/education.service';
+import { SkillDto } from '@/modules/skill/dtos/skill.dto';
+import { SkillInputDto } from '@/modules/skill/dtos/skill-input.dto';
+import { SkillService } from '@/modules/skill/services/skill.service';
 import { AppLogger } from '@/shared/logger/logger.service';
 import { ReqContext } from '@/shared/request-context/req-context.decorator';
 import { RequestContext } from '@/shared/request-context/request-context.dto';
 
-@ApiTags('Education')
-@Controller('education')
-export class EducationController {
+@ApiTags('Skills')
+@Controller('skills')
+export class SkillController {
   constructor(
-    private readonly educationService: EducationService,
+    private readonly skillService: SkillService,
     private readonly logger: AppLogger,
   ) {
-    this.logger.setContext(EducationController.name);
+    this.logger.setContext(SkillController.name);
+  }
+
+  @Get()
+  @UseInterceptors(ClassSerializerInterceptor)
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  async findAll(@ReqContext() ctx: RequestContext): Promise<SkillDto[]> {
+    this.logger.log(ctx, `${this.findAll.name} was called`);
+    return this.skillService.findAll(ctx);
   }
 
   @Get(':id')
@@ -38,24 +47,9 @@ export class EducationController {
   async findById(
     @ReqContext() ctx: RequestContext,
     @Param('id') id: string,
-  ): Promise<EducationDto> {
+  ): Promise<SkillDto> {
     this.logger.log(ctx, `${this.findById.name} was called`);
-    return this.educationService.findById(ctx, id);
-  }
-
-  @Get('candidate-profile/:candidateProfileId')
-  @UseInterceptors(ClassSerializerInterceptor)
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
-  async findByCandidateProfile(
-    @ReqContext() ctx: RequestContext,
-    @Param('candidateProfileId') candidateProfileId: string,
-  ): Promise<EducationDto[]> {
-    this.logger.log(ctx, `${this.findByCandidateProfile.name} was called`);
-    return this.educationService.findByCandidateProfile(
-      ctx,
-      candidateProfileId,
-    );
+    return this.skillService.findById(ctx, id);
   }
 
   @Post()
@@ -65,13 +59,13 @@ export class EducationController {
   async create(
     @ReqContext() ctx: RequestContext,
     @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
-    dto: EducationInputDto,
-  ): Promise<EducationDto> {
+    dto: SkillInputDto,
+  ): Promise<SkillDto> {
     this.logger.log(ctx, `${this.create.name} was called`);
-    return this.educationService.createEducation(ctx, dto);
+    return this.skillService.createSkill(ctx, dto);
   }
 
-  @Patch(':id')
+  @Put(':id')
   @UseInterceptors(ClassSerializerInterceptor)
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
@@ -79,10 +73,10 @@ export class EducationController {
     @ReqContext() ctx: RequestContext,
     @Param('id') id: string,
     @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
-    dto: EducationInputDto,
-  ): Promise<EducationDto> {
+    dto: SkillInputDto,
+  ): Promise<SkillDto> {
     this.logger.log(ctx, `${this.update.name} was called`);
-    return this.educationService.updateEducation(ctx, id, dto);
+    return this.skillService.updateSkill(ctx, id, dto);
   }
 
   @Delete(':id')
@@ -94,6 +88,6 @@ export class EducationController {
     @Param('id') id: string,
   ): Promise<{ deleted: boolean }> {
     this.logger.log(ctx, `${this.delete.name} was called`);
-    return this.educationService.deleteEducation(ctx, id);
+    return this.skillService.deleteSkill(ctx, id);
   }
 }

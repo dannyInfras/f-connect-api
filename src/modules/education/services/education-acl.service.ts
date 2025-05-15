@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
 import { ROLE } from '@/modules/auth/constants/role.constant';
-import { Education } from '@/modules/candidate-profile/entities/education.entity';
+import { Education } from '@/modules/education/entities/education.entity';
 import { BaseAclService } from '@/shared/acl/acl.service';
 import { Action } from '@/shared/acl/action.constant';
 import { Actor } from '@/shared/acl/actor.constant';

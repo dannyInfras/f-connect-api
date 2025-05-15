@@ -14,10 +14,6 @@ export class ExperienceDto {
   @ApiProperty()
   company: string;
 
-  // @Expose()
-  // @ApiProperty()
-  // logo: string;
-
   @Expose()
   @ApiProperty()
   employmentType: string;

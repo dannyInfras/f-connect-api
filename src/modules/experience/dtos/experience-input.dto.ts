@@ -7,11 +7,6 @@ import {
 } from 'class-validator';
 
 export class ExperienceInputDto {
-  // @ApiProperty({ required: false })
-  // @IsOptional()
-  // @IsString()
-  // id?: string;
-
   @ApiProperty({ required: false, example: 'Company Name' })
   @IsOptional()
   @IsString()
@@ -46,14 +41,4 @@ export class ExperienceInputDto {
   @IsOptional()
   @IsDateString()
   endDate?: string | null;
-
-  // @ApiProperty()
-  // @IsNotEmpty()
-  // @IsString()
-  // candidateProfileId: string;
-
-  // @ApiProperty()
-  // @IsNotEmpty()
-  // @IsString()
-  // companyId: string;
 }

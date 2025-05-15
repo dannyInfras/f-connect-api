@@ -5,17 +5,16 @@ import {
 } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 
-import { EducationDto } from '@/modules/candidate-profile/dtos/education.dto';
-import { EducationInputDto } from '@/modules/candidate-profile/dtos/education-input.dto';
-import { Education } from '@/modules/candidate-profile/entities/education.entity';
-import { EducationRepository } from '@/modules/candidate-profile/repositories/education.repository';
-import { EducationAclService } from '@/modules/candidate-profile/services/education-acl.service';
+import { CandidateProfileService } from '@/modules/candidate-profile/services/candidate-profile.service';
+import { EducationDto } from '@/modules/education/dtos/education.dto';
+import { EducationInputDto } from '@/modules/education/dtos/education-input.dto';
+import { Education } from '@/modules/education/entities/education.entity';
+import { EducationRepository } from '@/modules/education/repositories/education.repository';
+import { EducationAclService } from '@/modules/education/services/education-acl.service';
 import { Action } from '@/shared/acl/action.constant';
 import { Actor } from '@/shared/acl/actor.constant';
 import { AppLogger } from '@/shared/logger/logger.service';
 import { RequestContext } from '@/shared/request-context/request-context.dto';
-
-import { CandidateProfileService } from './candidate-profile.service';
 
 @Injectable()
 export class EducationService {

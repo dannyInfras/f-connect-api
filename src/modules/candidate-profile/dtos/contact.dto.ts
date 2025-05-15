@@ -1,18 +1,24 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
+import { IsArray, IsOptional, IsString } from 'class-validator';
 
 export class ContactDto {
   @Expose()
   @ApiProperty()
-  email: string;
+  @IsOptional()
+  @IsString()
+  email?: string;
 
   @Expose()
   @ApiProperty()
-  phone: string;
+  @IsOptional()
+  @IsString()
+  phone?: string;
 
   @Expose()
   @ApiProperty({ type: [String] })
-  languages: string[];
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  languages?: string[];
 }
-
-export {};

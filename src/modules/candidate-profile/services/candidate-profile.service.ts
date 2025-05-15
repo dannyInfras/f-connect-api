@@ -8,6 +8,7 @@ import { plainToClass } from 'class-transformer';
 
 import { CandidateProfileInputDto } from '@/modules/candidate-profile/dtos/candidate-profile-input.dto';
 import { CandidateProfileResponseDto } from '@/modules/candidate-profile/dtos/candidate-profile-response.dto';
+import { UpdateCandidateProfileDto } from '@/modules/candidate-profile/dtos/update-candidate-profile.dto';
 import { CandidateProfile } from '@/modules/candidate-profile/entities/candidate-profile.entity';
 import { CandidateProfileRepository } from '@/modules/candidate-profile/repositories/candidate-profile.repository';
 import { CandidateProfileAclService } from '@/modules/candidate-profile/services/candidate-profile-acl.service';
@@ -74,7 +75,6 @@ export class CandidateProfileService {
     if (!profile) {
       throw new NotFoundException('Candidate profile not found');
     }
-
     return profile.id;
   }
 
@@ -133,23 +133,29 @@ export class CandidateProfileService {
 
   async updateProfile(
     ctx: RequestContext,
-    id: string,
-    dto: CandidateProfileInputDto,
+    dto: UpdateCandidateProfileDto,
   ): Promise<CandidateProfileResponseDto> {
     this.logger.log(ctx, `${this.updateProfile.name} was called`);
 
     const actor: Actor = ctx.user!;
 
     this.logger.log(ctx, `calling ${CandidateProfileRepository.name}.findById`);
-    const profile = await this.candidateProfileRepository.findById(id);
+    const profileId = await this.getProfileIdByUserId(ctx);
+    const profile = await this.candidateProfileRepository.findById(profileId);
 
     if (!profile) {
       throw new NotFoundException('Candidate profile not found');
     }
 
+    const profileWithUser =
+      await this.aclService.loadProfileWithUser(profileId);
+    if (!profileWithUser) {
+      throw new NotFoundException('Candidate profile not found');
+    }
+
     const isAllowed = this.aclService
       .forActor(actor)
-      .canDoAction(Action.Update, profile);
+      .canDoAction(Action.Update, profileWithUser);
     if (!isAllowed) {
       throw new UnauthorizedException();
     }
@@ -158,7 +164,7 @@ export class CandidateProfileService {
       ctx,
       `calling ${CandidateProfileRepository.name}.updateProfile`,
     );
-    return this.candidateProfileRepository.updateProfile(id, dto);
+    return this.candidateProfileRepository.updateProfile(profileId, dto);
   }
 
   async deleteProfile(
@@ -176,9 +182,14 @@ export class CandidateProfileService {
       throw new NotFoundException('Candidate profile not found');
     }
 
+    const profileWithUser = await this.aclService.loadProfileWithUser(id);
+    if (!profileWithUser) {
+      throw new NotFoundException('Candidate profile not found');
+    }
+
     const isAllowed = this.aclService
       .forActor(actor)
-      .canDoAction(Action.Delete, profile);
+      .canDoAction(Action.Delete, profileWithUser);
     if (!isAllowed) {
       throw new UnauthorizedException();
     }

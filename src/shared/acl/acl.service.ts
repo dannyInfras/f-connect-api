@@ -17,6 +17,7 @@ export class BaseAclService<Resource> {
     actions: Action[],
     ruleCallback?: RuleCallback<Resource>,
   ): void {
+    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
     ruleCallback
       ? this.aclRules.push({ role, actions, ruleCallback })
       : this.aclRules.push({ role, actions });

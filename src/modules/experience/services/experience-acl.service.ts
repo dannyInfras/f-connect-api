@@ -1,17 +1,22 @@
 import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 
 import { ROLE } from '@/modules/auth/constants/role.constant';
-import { Experience } from '@/modules/candidate-profile/entities/experience.entity';
+import { CandidateProfile } from '@/modules/candidate-profile/entities/candidate-profile.entity';
+import { Experience } from '@/modules/experience/entities/experience.entity';
 import { BaseAclService } from '@/shared/acl/acl.service';
 import { Action } from '@/shared/acl/action.constant';
 import { Actor } from '@/shared/acl/actor.constant';
 
 @Injectable()
 export class ExperienceAclService extends BaseAclService<Experience> {
-  constructor() {
+  constructor(
+    @InjectRepository(CandidateProfile)
+    private readonly candidateProfileRepository: Repository<CandidateProfile>,
+  ) {
     super();
     this.canDo(ROLE.ADMIN, [Action.Manage]);
-    this.canDo(ROLE.ADMIN, [Action.Create], this.isExperienceOwner);
     this.canDo(ROLE.USER, [Action.Create, Action.List, Action.Read]);
     this.canDo(
       ROLE.USER,
@@ -21,6 +26,9 @@ export class ExperienceAclService extends BaseAclService<Experience> {
   }
 
   isExperienceOwner(resource: Experience, actor: Actor): boolean {
-    return resource.candidateProfile?.user?.id === actor.id;
+    if (resource.candidateProfile?.user?.id) {
+      return resource.candidateProfile.user.id === actor.id;
+    }
+    return false;
   }
 }

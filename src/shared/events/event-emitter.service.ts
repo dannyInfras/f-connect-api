@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Observable,Subject } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 import { filter, map } from 'rxjs/operators';
 
 import { AppLogger } from '@/shared/logger/logger.service';

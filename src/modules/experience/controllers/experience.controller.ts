@@ -14,9 +14,9 @@ import {
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
-import { ExperienceDto } from '@/modules/candidate-profile/dtos/experience.dto';
-import { ExperienceInputDto } from '@/modules/candidate-profile/dtos/experience-input.dto';
-import { ExperienceService } from '@/modules/candidate-profile/services/experience.service';
+import { ExperienceDto } from '@/modules/experience/dtos/experience.dto';
+import { ExperienceInputDto } from '@/modules/experience/dtos/experience-input.dto';
+import { ExperienceService } from '@/modules/experience/services/experience.service';
 import { AppLogger } from '@/shared/logger/logger.service';
 import { ReqContext } from '@/shared/request-context/req-context.decorator';
 import { RequestContext } from '@/shared/request-context/request-context.dto';
