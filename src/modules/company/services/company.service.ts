@@ -108,4 +108,8 @@ export class CompanyService {
 
     return this.companyRepo.remove(company);
   }
+
+  async findByTaxCode(taxCode: string): Promise<Company | null> {
+    return this.companyRepo.findOne({ where: { taxCode } });
+  }
 }

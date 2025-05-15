@@ -1,28 +1,41 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { HttpService } from '@nestjs/axios';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { plainToClass } from 'class-transformer';
+import { firstValueFrom } from 'rxjs';
 
+import { RegisterCompanyInput } from '@/modules/auth/dtos/auth-register-company-input.dto';
 import { RegisterInput } from '@/modules/auth/dtos/auth-register-input.dto';
 import { RegisterOutput } from '@/modules/auth/dtos/auth-register-output.dto';
 import {
   AuthTokenOutput,
   UserAccessTokenClaims,
 } from '@/modules/auth/dtos/auth-token-output.dto';
+import { CompanyService } from '@/modules/company/services/company.service';
 import { UserOutput } from '@/modules/user/dtos/user-output.dto';
 import { UserService } from '@/modules/user/services/user.service';
 import { AppEvents } from '@/shared/events/event.constants';
 import { EventEmitterService } from '@/shared/events/event-emitter.service';
 import { AppLogger } from '@/shared/logger/logger.service';
+import { MailService } from '@/shared/mail/mail.service';
 import { RequestContext } from '@/shared/request-context/request-context.dto';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private userService: UserService,
-    private jwtService: JwtService,
-    private configService: ConfigService,
+    private readonly userService: UserService,
+    private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
+    private readonly companyService: CompanyService,
+    private readonly httpService: HttpService, // Inject HttpService
     private readonly logger: AppLogger,
+    private readonly mailService: MailService, // Use shared MailService
     private readonly eventEmitter: EventEmitterService,
   ) {
     this.logger.setContext(AuthService.name);
@@ -107,5 +120,109 @@ export class AuthService {
     return plainToClass(AuthTokenOutput, authToken, {
       excludeExtraneousValues: true,
     });
+  }
+
+  async registerCompany(
+    ctx: RequestContext,
+    input: RegisterCompanyInput, // Use the combined DTO
+  ): Promise<{ message: string }> {
+    const { taxCode, ...userInput } = input;
+
+    // // Step 1: Check if the company already exists
+    const existingCompany = await this.companyService.findByTaxCode(taxCode);
+    if (existingCompany) {
+      throw new BadRequestException(
+        'A company with this tax code already exists.',
+      );
+    }
+
+    // Step 2: Fetch data from the external API
+    let externalCompanyData;
+    try {
+      const response = await firstValueFrom(
+        this.httpService.get(`https://api.vietqr.io/v2/business/${taxCode}`),
+      );
+      externalCompanyData = response.data.data;
+      if (!externalCompanyData) {
+        throw new BadRequestException('Invalid tax code or company not found.');
+      }
+    } catch (error) {
+      this.logger.error(
+        ctx,
+        `Failed to fetch company data for taxCode: ${taxCode}, error: ${error}`,
+      );
+      throw new BadRequestException(
+        'Unable to verify company via external API.',
+      );
+    }
+
+    // Step 3: Register the user
+    const registeredUser = await this.userService.createUser(ctx, userInput);
+
+    // // Step 4: Create the company in the database
+    const company = await this.companyService.create(
+      {
+        companyName: externalCompanyData.name || 'Unknown',
+        taxCode,
+        address: externalCompanyData.address
+          ? [externalCompanyData.address]
+          : [],
+        industry: externalCompanyData.industry || 'Unknown',
+      },
+      registeredUser,
+    );
+
+    // // Step 5: Send a verification email
+    const verificationCode = this.jwtService.sign(
+      { userId: registeredUser.id },
+      { expiresIn: '1d' },
+    );
+
+    await this.mailService.sendMail(
+      registeredUser.email,
+      'Verify Your Company Registration',
+      './verify-company',
+      {
+        companyName: company.companyName,
+        verificationLink: `${process.env.BACKEND_URL}/api/v1/auth/verify-company?code=${verificationCode}`,
+      },
+    );
+
+    return {
+      message: 'Company registered successfully. Please verify your email.',
+    };
+  }
+
+  async verifyCompany(
+    ctx: RequestContext,
+    code: string,
+  ): Promise<{ message: string }> {
+    let payload: { userId: string };
+
+    try {
+      // Decode and verify JWT token
+      payload = this.jwtService.verify(code);
+    } catch (error) {
+      throw new BadRequestException(
+        'Invalid or expired verification code, error: ' + error,
+      );
+    }
+
+    // Find the user
+    const user = await this.userService.findById(ctx, Number(payload.userId));
+    if (!user) {
+      throw new NotFoundException('User not found.');
+    }
+
+    // Check if already active
+    if (!user.isAccountDisabled) {
+      return { message: 'User already verified.' };
+    }
+
+    // Enable account
+    user.isAccountDisabled = false;
+    await this.userService.verifyUser(ctx, user.id, false);
+
+    return { message: 'Email verified successfully!' };
   }
 }
