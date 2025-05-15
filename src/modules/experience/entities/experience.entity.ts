@@ -8,9 +8,9 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
+import { CandidateProfile } from '@/modules/candidate-profile/entities/candidate-profile.entity';
+
 import { EmploymentTypeEnum } from '../enums/employee-type';
-import { CandidateProfile } from './candidate-profile.entity';
-// import { Company } from '../../company/entities/company.entity'; // Uncomment and adjust path if company entity exists
 
 @Entity('experience')
 export class Experience {
@@ -20,10 +20,6 @@ export class Experience {
   @ManyToOne(() => CandidateProfile, { nullable: false, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'candidate_profile_id' })
   candidateProfile: CandidateProfile;
-
-  // @ManyToOne(() => Company, { nullable: false, onDelete: 'CASCADE' })
-  // @JoinColumn({ name: 'company_id' })
-  // company: Company;
 
   @Column({ type: 'varchar', name: 'company', nullable: true })
   company: string;

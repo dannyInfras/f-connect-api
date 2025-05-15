@@ -5,10 +5,10 @@ import {
 } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 
-import { SkillDto } from '@/modules/candidate-profile/dtos/skill.dto';
-import { SkillInputDto } from '@/modules/candidate-profile/dtos/skill-input.dto';
-import { SkillRepository } from '@/modules/candidate-profile/repositories/skill.repository';
-import { SkillAclService } from '@/modules/candidate-profile/services/skill-acl.service';
+import { SkillDto } from '@/modules/skill/dtos/skill.dto';
+import { SkillInputDto } from '@/modules/skill/dtos/skill-input.dto';
+import { SkillRepository } from '@/modules/skill/repositories/skill.repository';
+import { SkillAclService } from '@/modules/skill/services/skill-acl.service';
 import { Action } from '@/shared/acl/action.constant';
 import { Actor } from '@/shared/acl/actor.constant';
 import { AppLogger } from '@/shared/logger/logger.service';

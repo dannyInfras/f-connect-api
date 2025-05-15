@@ -5,17 +5,17 @@ import {
 } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 
-import { ExperienceDto } from '@/modules/candidate-profile/dtos/experience.dto';
-import { ExperienceInputDto } from '@/modules/candidate-profile/dtos/experience-input.dto';
-import { Experience } from '@/modules/candidate-profile/entities/experience.entity';
-import { ExperienceRepository } from '@/modules/candidate-profile/repositories/experience.repository';
-import { ExperienceAclService } from '@/modules/candidate-profile/services/experience-acl.service';
+import { CandidateProfileService } from '@/modules/candidate-profile/services/candidate-profile.service';
+import { ExperienceDto } from '@/modules/experience/dtos/experience.dto';
+import { ExperienceInputDto } from '@/modules/experience/dtos/experience-input.dto';
+import { Experience } from '@/modules/experience/entities/experience.entity';
+import { ExperienceRepository } from '@/modules/experience/repositories/experience.repository';
+import { ExperienceAclService } from '@/modules/experience/services/experience-acl.service';
 import { Action } from '@/shared/acl/action.constant';
 import { Actor } from '@/shared/acl/actor.constant';
 import { AppLogger } from '@/shared/logger/logger.service';
 import { RequestContext } from '@/shared/request-context/request-context.dto';
 
-import { CandidateProfileService } from './candidate-profile.service';
 @Injectable()
 export class ExperienceService {
   constructor(
@@ -100,7 +100,6 @@ export class ExperienceService {
     const profileId = Number(
       await this.candidateProfileService.getProfileIdByUserId(ctx),
     );
-    console.log('profileId', profileId);
 
     const {
       role,

@@ -7,10 +7,12 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
+import { Education } from '@/modules/education/entities/education.entity';
+import { Experience } from '@/modules/experience/entities/experience.entity';
 import { User } from '@/modules/user/entities/user.entity';
 
-import { Education } from './education.entity';
-
+import { ContactDto } from '../dtos/contact.dto';
+import { SocialDto } from '../dtos/social.dto';
 @Entity('candidate_profile')
 export class CandidateProfile {
   @PrimaryGeneratedColumn('increment', { type: 'bigint' })
@@ -22,6 +24,9 @@ export class CandidateProfile {
 
   @OneToMany(() => Education, (education) => education.candidateProfile)
   educations: Education[];
+
+  @OneToMany(() => Experience, (experience) => experience.candidateProfile)
+  experiences: Experience[];
 
   @Column({ type: 'text', nullable: true })
   description: string;
@@ -46,6 +51,12 @@ export class CandidateProfile {
 
   @Column({ type: 'text', nullable: true })
   about: string;
+
+  @Column({ type: 'jsonb', nullable: true })
+  contact: ContactDto;
+
+  @Column({ type: 'jsonb', nullable: true })
+  social: SocialDto;
 
   @Column({ type: 'varchar', length: 50, nullable: true })
   birthDate: string;

@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose, Type } from 'class-transformer';
 
-import { SkillDto } from './skill.dto';
+import { SkillDto } from '../../skill/dtos/skill.dto';
 
 export class CandidateSkillDto {
   @Expose()

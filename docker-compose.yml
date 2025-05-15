@@ -2,6 +2,7 @@ services:
   app:
     build:
       context: .
+      dockerfile: Dockerfile.prod
       args:
         - APP_ENV
     command: npm run start:dev

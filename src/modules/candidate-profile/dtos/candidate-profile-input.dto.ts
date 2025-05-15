@@ -1,32 +1,16 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
-  IsArray,
   IsBoolean,
-  IsNotEmpty,
   IsOptional,
   IsString,
   ValidateNested,
 } from 'class-validator';
 
 import { ContactDto } from './contact.dto';
-// import { EducationDto } from './education.dto';
-// import { ExperienceDto } from './experience.dto';
-// import { PortfolioDto } from './portfolio.dto';
-import { SkillDto } from './skill.dto';
 import { SocialDto } from './social.dto';
 
 export class CandidateProfileInputDto {
-  // @ApiProperty()
-  // @IsOptional()
-  // @IsString()
-  // id?: string;
-
-  @ApiProperty()
-  @IsNotEmpty()
-  @IsString()
-  name: string;
-
   @ApiProperty()
   @IsOptional()
   @IsString()
@@ -63,37 +47,23 @@ export class CandidateProfileInputDto {
   about?: string;
 
   @ApiProperty({ type: ContactDto })
+  @IsOptional()
   @ValidateNested()
   @Type(() => ContactDto)
-  @IsOptional()
   contact?: ContactDto;
 
   @ApiProperty({ type: SocialDto })
+  @IsOptional()
   @ValidateNested()
   @Type(() => SocialDto)
-  @IsOptional()
   social?: SocialDto;
 
-  // @ApiProperty({ type: [ExperienceDto] })
+  // @ApiProperty({ type: [SkillDto] })
   // @ValidateNested({ each: true })
-  // @Type(() => ExperienceDto)
+  // @Type(() => SkillDto)
   // @IsArray()
   // @IsOptional()
-  // experiences?: ExperienceDto[];
-
-  // @ApiProperty({ type: [EducationDto] })
-  // @ValidateNested({ each: true })
-  // @Type(() => EducationDto)
-  // @IsArray()
-  // @IsOptional()
-  // education?: EducationDto[];
-
-  @ApiProperty({ type: [SkillDto] })
-  @ValidateNested({ each: true })
-  @Type(() => SkillDto)
-  @IsArray()
-  @IsOptional()
-  skills?: SkillDto[];
+  // skills?: SkillDto[];
 
   // @ApiProperty({ type: [PortfolioDto] })
   // @ValidateNested({ each: true })

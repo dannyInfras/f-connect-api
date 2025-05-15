@@ -1,18 +1,23 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
+import { IsOptional, IsString } from 'class-validator';
 
 export class SocialDto {
   @Expose()
   @ApiProperty()
-  instagram: string;
+  @IsOptional()
+  @IsString()
+  instagram?: string;
 
   @Expose()
   @ApiProperty()
-  twitter: string;
+  @IsOptional()
+  @IsString()
+  twitter?: string;
 
   @Expose()
   @ApiProperty()
-  website: string;
+  @IsOptional()
+  @IsString()
+  website?: string;
 }
-
-export {};

@@ -8,7 +8,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
-import { CandidateProfile } from './candidate-profile.entity';
+import { CandidateProfile } from '@/modules/candidate-profile/entities/candidate-profile.entity';
 
 @Entity('education')
 export class Education {

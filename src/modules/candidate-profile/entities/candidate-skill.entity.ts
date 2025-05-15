@@ -8,8 +8,8 @@ import {
   Unique,
 } from 'typeorm';
 
+import { Skill } from '../../skill/entities/skill.entity';
 import { CandidateProfile } from './candidate-profile.entity';
-import { Skill } from './skill.entity';
 
 @Entity('candidate_skill')
 @Unique(['candidateProfile', 'skill'])

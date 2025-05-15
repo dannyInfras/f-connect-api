@@ -2,11 +2,9 @@ import {
   Body,
   ClassSerializerInterceptor,
   Controller,
-  Delete,
   Get,
   Param,
   Patch,
-  Post,
   UseGuards,
   UseInterceptors,
   ValidationPipe,
@@ -14,8 +12,8 @@ import {
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
-import { CandidateProfileInputDto } from '@/modules/candidate-profile/dtos/candidate-profile-input.dto';
 import { CandidateProfileResponseDto } from '@/modules/candidate-profile/dtos/candidate-profile-response.dto';
+import { UpdateCandidateProfileDto } from '@/modules/candidate-profile/dtos/update-candidate-profile.dto';
 import { CandidateProfileService } from '@/modules/candidate-profile/services/candidate-profile.service';
 import { AppLogger } from '@/shared/logger/logger.service';
 import { ReqContext } from '@/shared/request-context/req-context.decorator';
@@ -54,42 +52,18 @@ export class CandidateProfileController {
     return this.candidateProfileService.getProfileById(ctx, id);
   }
 
-  @Post()
-  @UseInterceptors(ClassSerializerInterceptor)
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
-  async createProfile(
-    @ReqContext() ctx: RequestContext,
-    @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
-    dto: CandidateProfileInputDto,
-  ): Promise<CandidateProfileResponseDto> {
-    this.logger.log(ctx, `${this.createProfile.name} was called`);
-    return this.candidateProfileService.createProfile(ctx, dto);
-  }
-
-  @Patch(':id')
+  @Patch()
   @UseInterceptors(ClassSerializerInterceptor)
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   async updateProfile(
     @ReqContext() ctx: RequestContext,
-    @Param('id') id: string,
     @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
-    dto: CandidateProfileInputDto,
-  ): Promise<CandidateProfileResponseDto> {
+    dto: UpdateCandidateProfileDto,
+  ): Promise<{ message: string }> {
     this.logger.log(ctx, `${this.updateProfile.name} was called`);
-    return this.candidateProfileService.updateProfile(ctx, id, dto);
-  }
 
-  @Delete(':id')
-  @UseInterceptors(ClassSerializerInterceptor)
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
-  async deleteProfile(
-    @ReqContext() ctx: RequestContext,
-    @Param('id') id: string,
-  ): Promise<{ deleted: boolean }> {
-    this.logger.log(ctx, `${this.deleteProfile.name} was called`);
-    return this.candidateProfileService.deleteProfile(ctx, id);
+    await this.candidateProfileService.updateProfile(ctx, dto);
+    return { message: 'Profile updated successfully' };
   }
 }
