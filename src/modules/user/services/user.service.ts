@@ -5,6 +5,7 @@ import { plainToClass } from 'class-transformer';
 import { CreateUserInput } from '@/modules/user/dtos/user-create-input.dto';
 import { UserOutput } from '@/modules/user/dtos/user-output.dto';
 import { UpdateUserInput } from '@/modules/user/dtos/user-update-input.dto';
+import { VerifyUserInput } from '@/modules/user/dtos/user-verify-input.dto';
 import { User } from '@/modules/user/entities/user.entity';
 import { UserRepository } from '@/modules/user/repositories/user.repository';
 import { AppLogger } from '@/shared/logger/logger.service';
@@ -156,6 +157,29 @@ export class UserService {
     await this.repository.save(updatedUser);
 
     return plainToClass(UserOutput, updatedUser, {
+      excludeExtraneousValues: true,
+    });
+  }
+
+  async verifyUser(
+    ctx: RequestContext,
+    id: number,
+    isAccountDisabled: boolean,
+  ): Promise<VerifyUserInput> {
+    this.logger.log(ctx, `${this.verifyUser.name} was called`);
+
+    this.logger.log(ctx, `calling ${UserRepository.name}.getById`);
+    const user = await this.repository.getById(id);
+
+    const updatedUser: User = {
+      ...user,
+      isAccountDisabled,
+    };
+
+    this.logger.log(ctx, `calling ${UserRepository.name}.save`);
+    await this.repository.save(updatedUser);
+
+    return plainToClass(VerifyUserInput, updatedUser, {
       excludeExtraneousValues: true,
     });
   }

@@ -2,9 +2,12 @@ import {
   Body,
   ClassSerializerInterceptor,
   Controller,
+  Get,
   HttpCode,
   HttpStatus,
   Post,
+  Query,
+  Redirect,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
@@ -12,6 +15,7 @@ import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { LoginInput } from '@/modules/auth/dtos/auth-login-input.dto';
 import { RefreshTokenInput } from '@/modules/auth/dtos/auth-refresh-token-input.dto';
+import { RegisterCompanyInput } from '@/modules/auth/dtos/auth-register-company-input.dto';
 import { RegisterInput } from '@/modules/auth/dtos/auth-register-input.dto';
 import { RegisterOutput } from '@/modules/auth/dtos/auth-register-output.dto';
 import { AuthTokenOutput } from '@/modules/auth/dtos/auth-token-output.dto';
@@ -102,5 +106,28 @@ export class AuthController {
 
     const authToken = await this.authService.refreshToken(ctx);
     return { data: authToken, meta: {} };
+  }
+
+  @Post('register-company')
+  @ApiOperation({ summary: 'Register a new company' })
+  @ApiResponse({
+    status: 201,
+    description: 'Company registered successfully',
+  })
+  async registerCompany(
+    @Body() input: RegisterCompanyInput, // Use the combined DTO
+    @ReqContext() ctx: RequestContext,
+  ): Promise<{ message: string }> {
+    return this.authService.registerCompany(ctx, input);
+  }
+
+  @Get('verify-company')
+  @Redirect(`${process.env.FRONTEND_URL}/signin`)
+  @ApiOperation({ summary: 'Verify company by code' })
+  async verifyCompany(
+    @ReqContext() ctx: RequestContext,
+    @Query('code') code: string,
+  ): Promise<{ message: string }> {
+    return this.authService.verifyCompany(ctx, code);
   }
 }

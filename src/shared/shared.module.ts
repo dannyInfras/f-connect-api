@@ -8,6 +8,7 @@ import { EventEmitterService } from './events/event-emitter.service';
 import { AllExceptionsFilter } from './filters/all-exceptions.filter';
 import { LoggingInterceptor } from './interceptors/logging.interceptor';
 import { AppLoggerModule } from './logger/logger.module';
+import { MailService } from './mail/mail.service';
 
 @Module({
   imports: [
@@ -32,7 +33,7 @@ import { AppLoggerModule } from './logger/logger.module';
     }),
     AppLoggerModule,
   ],
-  exports: [AppLoggerModule, ConfigModule, EventEmitterService],
+  exports: [AppLoggerModule, ConfigModule, EventEmitterService, MailService],
   providers: [
     { provide: APP_INTERCEPTOR, useClass: LoggingInterceptor },
 
@@ -41,6 +42,7 @@ import { AppLoggerModule } from './logger/logger.module';
       useClass: AllExceptionsFilter,
     },
     EventEmitterService,
+    MailService,
   ],
 })
 export class SharedModule {}
