@@ -1,7 +1,13 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { compare, hash } from 'bcrypt';
 import { plainToClass } from 'class-transformer';
+import { EntityManager } from 'typeorm';
 
+import { CompanyRepository } from '@/modules/company/repositories/company.repository';
 import { CreateUserInput } from '@/modules/user/dtos/user-create-input.dto';
 import { UserOutput } from '@/modules/user/dtos/user-output.dto';
 import { UpdateUserInput } from '@/modules/user/dtos/user-update-input.dto';
@@ -11,26 +17,46 @@ import { UserRepository } from '@/modules/user/repositories/user.repository';
 import { AppLogger } from '@/shared/logger/logger.service';
 import { RequestContext } from '@/shared/request-context/request-context.dto';
 
+import { Company } from '../../company/entities/company.entity';
+
 @Injectable()
 export class UserService {
   constructor(
     private repository: UserRepository,
     private readonly logger: AppLogger,
+    private readonly companyRepository: CompanyRepository,
   ) {
     this.logger.setContext(UserService.name);
   }
   async createUser(
     ctx: RequestContext,
     input: CreateUserInput,
+    manager?: EntityManager,
   ): Promise<UserOutput> {
     this.logger.log(ctx, `${this.createUser.name} was called`);
 
     const user = plainToClass(User, input);
-
     user.password = await hash(input.password, 10);
 
+    if (input.companyId) {
+      const companyRepo = manager
+        ? manager.getRepository(Company)
+        : this.companyRepository;
+
+      const company = await companyRepo.findOne({
+        where: { id: String(input.companyId) },
+      });
+
+      if (!company) {
+        throw new NotFoundException('Company not found');
+      }
+      user.company = company;
+    }
+
+    const userRepo = manager ? manager.getRepository(User) : this.repository;
+
     this.logger.log(ctx, `calling ${UserRepository.name}.saveUser`);
-    await this.repository.save(user);
+    await userRepo.save(user);
 
     return plainToClass(UserOutput, user, {
       excludeExtraneousValues: true,

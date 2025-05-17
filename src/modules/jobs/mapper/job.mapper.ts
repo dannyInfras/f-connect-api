@@ -25,6 +25,7 @@ export class JobMapper {
       responsibility: job.responsibility,
       jobFitAttributes: job.jobFitAttributes,
       niceToHave: job.niceToHave,
+      benefit: job.benefit,
       deadline: job.deadline,
       description: job.description,
       location: job.location,

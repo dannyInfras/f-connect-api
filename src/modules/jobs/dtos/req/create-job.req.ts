@@ -52,6 +52,15 @@ export class CreateJobReqDto {
   @IsString({ each: true })
   niceToHave: string[];
 
+  @ApiProperty({
+    example: ['Health insurance', 'Gym membership'],
+    description: 'benefit',
+    type: [String],
+  })
+  @IsNotEmpty()
+  @IsString({ each: true })
+  benefit: string[];
+
   @ApiProperty({ example: 'New York', required: true })
   @IsNotEmpty()
   location: string;

@@ -12,9 +12,10 @@ export class CompanyAclService extends BaseAclService<Company> {
   constructor() {
     super();
     this.canDo(ROLE.ADMIN, [Action.Manage]);
+    this.canDo(ROLE.ADMIN_RECRUITER, [Action.Create]);
     this.canDo(
       ROLE.ADMIN_RECRUITER,
-      [Action.Create, Action.Read, Action.Update, Action.Delete],
+      [Action.Read, Action.Update, Action.Delete],
       this.isCompanyOwner,
     );
     this.canDo(
@@ -26,6 +27,6 @@ export class CompanyAclService extends BaseAclService<Company> {
   }
 
   private isCompanyOwner = (resource: Company, actor: any): boolean => {
-    return resource.user?.id === actor.id;
+    return resource.users?.some((user) => user.id === actor.id);
   };
 }

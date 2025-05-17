@@ -25,6 +25,7 @@ import { EventEmitterService } from '@/shared/events/event-emitter.service';
 import { AppLogger } from '@/shared/logger/logger.service';
 import { MailService } from '@/shared/mail/mail.service';
 import { RequestContext } from '@/shared/request-context/request-context.dto';
+import { UnitOfWork } from '@/shared/unit-of-work/unit-of-work.service';
 
 @Injectable()
 export class AuthService {
@@ -37,6 +38,7 @@ export class AuthService {
     private readonly logger: AppLogger,
     private readonly mailService: MailService, // Use shared MailService
     private readonly eventEmitter: EventEmitterService,
+    private readonly unitOfWork: UnitOfWork,
   ) {
     this.logger.setContext(AuthService.name);
   }
@@ -124,11 +126,11 @@ export class AuthService {
 
   async registerCompany(
     ctx: RequestContext,
-    input: RegisterCompanyInput, // Use the combined DTO
+    input: RegisterCompanyInput,
   ): Promise<{ message: string }> {
     const { taxCode, ...userInput } = input;
 
-    // // Step 1: Check if the company already exists
+    // Step 1: Check if the company already exists
     const existingCompany = await this.companyService.findByTaxCode(taxCode);
     if (existingCompany) {
       throw new BadRequestException(
@@ -136,7 +138,7 @@ export class AuthService {
       );
     }
 
-    // Step 2: Fetch data from the external API
+    // Step 2: Fetch data from external API
     let externalCompanyData;
     try {
       const response = await firstValueFrom(
@@ -156,23 +158,35 @@ export class AuthService {
       );
     }
 
-    // Step 3: Register the user
-    const registeredUser = await this.userService.createUser(ctx, userInput);
+    // Step 3: Create company + user in one transaction
+    const { company, registeredUser } = await this.unitOfWork.doTransactional(
+      async (manager) => {
+        const company = await this.companyService.create(
+          {
+            companyName: externalCompanyData.name || 'Unknown',
+            taxCode,
+            address: externalCompanyData.address
+              ? [externalCompanyData.address]
+              : [],
+            industry: externalCompanyData.industry || 'Unknown',
+          },
+          manager,
+        );
 
-    // // Step 4: Create the company in the database
-    const company = await this.companyService.create(
-      {
-        companyName: externalCompanyData.name || 'Unknown',
-        taxCode,
-        address: externalCompanyData.address
-          ? [externalCompanyData.address]
-          : [],
-        industry: externalCompanyData.industry || 'Unknown',
+        const registeredUser = await this.userService.createUser(
+          ctx,
+          {
+            ...userInput,
+            companyId: Number(company.id),
+          },
+          manager,
+        );
+
+        return { company, registeredUser };
       },
-      registeredUser,
     );
 
-    // // Step 5: Send a verification email
+    // Step 4: Send email (outside transaction)
     const verificationCode = this.jwtService.sign(
       { userId: registeredUser.id },
       { expiresIn: '1d' },

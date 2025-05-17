@@ -4,7 +4,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 import { DeepPartial } from 'typeorm';
 
 import { CompanyAclService } from '@/modules/company/acl/company.acl';
@@ -24,21 +24,19 @@ export class CompanyService {
     private readonly aclService: CompanyAclService,
   ) {}
 
-  async create(dto: CreateCompanyReqDto, actor: Actor) {
-    if (!this.aclService.forActor(actor).canDoAction(Action.Create)) {
-      throw new UnauthorizedException();
-    }
-
+  async create(dto: CreateCompanyReqDto, manager?: EntityManager) {
     const companyData: DeepPartial<Company> = {
       ...dto,
-      user: { id: actor.id },
+      phone: dto.phone || 0,
+      email: dto.email || '...@example.com',
       address: Array.isArray(dto.address) ? dto.address : [],
       socialMedia: Array.isArray(dto.socialMedia) ? dto.socialMedia : [],
       workImageUrl: Array.isArray(dto.workImageUrl) ? dto.workImageUrl : [],
     };
 
-    const company = this.companyRepo.create(companyData);
-    return this.companyRepo.save(company);
+    const repo = manager ? manager.getRepository(Company) : this.companyRepo;
+    const company = repo.create(companyData);
+    return repo.save(company);
   }
 
   async findOne(id: string, actor: Actor) {

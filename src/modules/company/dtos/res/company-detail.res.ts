@@ -20,6 +20,14 @@ export class CompanyDetailResponseDto {
   companyName: string;
 
   @Expose()
+  @ApiProperty({ example: '01234567890' })
+  phone: number;
+
+  @Expose()
+  @ApiProperty({ example: '...@example.com' })
+  email: string;
+
+  @Expose()
   @ApiProperty({ example: '2024-01-01T00:00:00.000Z' })
   foundedAt: Date;
 
@@ -86,6 +94,8 @@ export class CompanyDetailResponseDto {
     id: 'abc123',
     logoUrl: 'https://logo.url/openai.png',
     companyName: 'OpenAI',
+    phone: 1234567890,
+    email: '..@example.com',
     foundedAt: '2024-01-01T00:00:00.000Z',
     employees: 100,
     address: ['San Francisco, CA', 'New York, NY'],

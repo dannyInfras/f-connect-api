@@ -3,9 +3,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
-  JoinColumn,
   OneToMany,
-  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -21,15 +19,17 @@ export class Company {
   @PrimaryGeneratedColumn('increment', { type: 'bigint' })
   id: string;
 
-  @OneToOne(() => User)
-  @JoinColumn({ name: 'user_id' })
-  user: User;
-
   @Column({ name: 'company_name', length: 255 })
   companyName: string;
 
   @Column({ name: 'founded_at', type: 'timestamp', nullable: true })
   foundedAt: Date;
+
+  @Column({ type: 'int', nullable: true })
+  phone: number;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  email: string;
 
   @Column({ type: 'int', nullable: true })
   employees: number;
@@ -75,4 +75,7 @@ export class Company {
 
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
+
+  @OneToMany(() => User, (user) => user.company)
+  users: User[];
 }

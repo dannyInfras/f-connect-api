@@ -72,6 +72,9 @@ export class Job {
   @Column('text', { array: true })
   niceToHave: string[];
 
+  @Column('text', { array: true })
+  benefit: string[];
+
   @Column({ name: 'is_vip', type: 'boolean', default: false })
   isVip: boolean;
 

@@ -3,8 +3,10 @@ import { ApiProperty } from '@nestjs/swagger';
 import {
   IsArray,
   IsDateString,
+  IsEmail,
   IsInt,
   IsNotEmpty,
+  IsNumber,
   IsOptional,
   IsString,
   IsUrl,
@@ -54,6 +56,16 @@ export class CreateCompanyReqDto {
   @IsOptional()
   @IsString()
   industry?: string;
+
+  @ApiProperty({ example: '0123456789', required: false })
+  @IsOptional()
+  @IsNumber()
+  phone?: number;
+
+  @ApiProperty({ example: 'example@example.com', required: false })
+  @IsOptional()
+  @IsEmail()
+  email?: string;
 
   @ApiProperty({ example: 'AI Research Company', required: false })
   @IsOptional()

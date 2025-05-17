@@ -97,11 +97,8 @@ export class CompanyController {
     description: 'The created company',
     example: CreateCompanyResDto.example,
   })
-  create(@Body() dto: CreateCompanyReqDto, @ReqContext() ctx: RequestContext) {
-    if (!ctx.user) {
-      throw new UnauthorizedException('User must be logged in');
-    }
-    return this.companyService.create(dto, ctx.user as Actor);
+  create(@Body() dto: CreateCompanyReqDto) {
+    return this.companyService.create(dto);
   }
 
   @Get(':id')

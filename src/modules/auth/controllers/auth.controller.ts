@@ -118,7 +118,12 @@ export class AuthController {
     @Body() input: RegisterCompanyInput, // Use the combined DTO
     @ReqContext() ctx: RequestContext,
   ): Promise<{ message: string }> {
-    return this.authService.registerCompany(ctx, input);
+    try {
+      return await this.authService.registerCompany(ctx, input);
+    } catch (err) {
+      console.error('Register failed:', err);
+      throw err;
+    }
   }
 
   @Get('verify-company')
