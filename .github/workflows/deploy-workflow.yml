@@ -49,19 +49,71 @@ jobs:
             docker compose config > /dev/null
             docker compose down --rmi local || true
             docker compose up -d --build --no-deps app
-            docker exec -it f-connect-api npm run migration:run
             docker image prune -f
           EOF
 
       - name: Healthcheck
+        id: healthcheck
         run: |
+          echo "🔍 Healthcheck started"
           for i in {1..5}; do
             if curl -sSf http://${{ secrets.DO_DEPLOY_HOST }}:${{ secrets.DEPLOY_PORT }}/${{ secrets.HEALTHCHECK_PATH }}; then
               echo "✅ App is healthy."
+              echo "status=success" >> $GITHUB_OUTPUT
               exit 0
             fi
             echo "Waiting for app… ($i/5)"
-            sleep 5
+            sleep 10
           done
           echo "❌ Healthcheck failed."
+          echo "status=failure" >> $GITHUB_OUTPUT
           exit 1
+
+      - name: Send deployment report to Slack
+        if: always()
+        uses: slackapi/slack-github-action@v1.23.0
+        with:
+          payload: |
+            {
+              "text": "Deployment Report",
+              "blocks": [
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "Deployment Report"
+                  }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Status:* ${{ steps.healthcheck.outcome == 'success' && '✅ Success' || '❌ Failed' }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Branch:* ${{ github.ref_name }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Commit:* ${{ github.sha }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Triggered by:* ${{ github.actor }}"
+                    }
+                  ]
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Workflow Run>*"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK

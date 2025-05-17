@@ -1,5 +1,5 @@
 # Development Dockerfile
-FROM node:24.0.1-bookworm-slim
+FROM node:22.15.1-bookworm-slim
 
 # Install additional tools for development
 RUN apt-get update && apt-get install -y \
@@ -25,6 +25,3 @@ ENV NODE_ENV=${APP_ENV}
 
 # Expose the application port
 EXPOSE 3000
-
-# Set the default command to run the application with nodemon
-CMD ["npm", "start:dev"]
