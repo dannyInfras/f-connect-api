@@ -12,7 +12,7 @@ async function bootstrap() {
   try {
     // Create app and disable default logger
     const app = await NestFactory.create(AppModule, {
-      logger: ['error'],
+      logger: ['error', 'warn'],
       bufferLogs: true,
     });
 

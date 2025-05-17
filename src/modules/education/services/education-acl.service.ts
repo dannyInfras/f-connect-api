@@ -5,22 +5,31 @@ import { Education } from '@/modules/education/entities/education.entity';
 import { BaseAclService } from '@/shared/acl/acl.service';
 import { Action } from '@/shared/acl/action.constant';
 import { Actor } from '@/shared/acl/actor.constant';
+import { CandidateProfile } from '../../candidate-profile/entities/candidate-profile.entity';
+import { Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
 export class EducationAclService extends BaseAclService<Education> {
-  constructor() {
+  constructor(
+    @InjectRepository(CandidateProfile)
+    private readonly candidateProfileRepository: Repository<CandidateProfile>,
+  ) {
     super();
     this.canDo(ROLE.ADMIN, [Action.Manage]);
-    this.canDo(ROLE.ADMIN, [Action.Create], this.isEducationOwner);
-    this.canDo(ROLE.USER, [Action.Create, Action.List, Action.Read]);
+    this.canDo(ROLE.USER, [Action.Create]);
     this.canDo(
       ROLE.USER,
-      [Action.Update, Action.Delete],
+      [Action.List, Action.Read, Action.Update, Action.Delete],
       this.isEducationOwner,
     );
   }
 
   isEducationOwner(resource: Education, actor: Actor): boolean {
-    return resource.candidateProfile?.user?.id === actor.id;
+    if (!resource.candidateProfile.user) {
+      return false;
+    }
+
+    return resource.candidateProfile.user.id === actor.id;
   }
 }

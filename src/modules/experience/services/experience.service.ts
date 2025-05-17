@@ -1,7 +1,7 @@
 import {
+  ForbiddenException,
   Injectable,
   NotFoundException,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 
@@ -27,11 +27,22 @@ export class ExperienceService {
     this.logger.setContext(ExperienceService.name);
   }
 
-  async findAll(actor: Actor): Promise<ExperienceDto[]> {
-    if (!this.experienceAcl.forActor(actor).canDoAction('Read'))
-      throw new UnauthorizedException();
+  async findAll(ctx: RequestContext): Promise<ExperienceDto[]> {
+    this.logger.log(ctx, `${this.findAll.name} was called`);
+
+    const actor: Actor = ctx.user!;
+
+    if (!this.experienceAcl.forActor(actor).canDoAction(Action.List))
+      throw new ForbiddenException();
+
     const experiences = await this.experienceRepository.findAll();
-    return experiences.map((exp) =>
+
+    // Filter experiences that the user is allowed to read
+    const allowedExperiences = experiences.filter((experience) =>
+      this.experienceAcl.forActor(actor).canDoAction(Action.Read, experience),
+    );
+
+    return allowedExperiences.map((exp) =>
       plainToInstance(ExperienceDto, exp, { excludeExtraneousValues: true }),
     );
   }
@@ -41,12 +52,14 @@ export class ExperienceService {
 
     const actor: Actor = ctx.user!;
 
-    if (!this.experienceAcl.forActor(actor).canDoAction(Action.Read))
-      throw new UnauthorizedException();
-
     this.logger.log(ctx, `calling ${ExperienceRepository.name}.findById`);
     const experience = await this.experienceRepository.findById(id);
     if (!experience) throw new NotFoundException('Experience not found');
+
+    if (
+      !this.experienceAcl.forActor(actor).canDoAction(Action.Read, experience)
+    )
+      throw new ForbiddenException();
 
     return plainToInstance(ExperienceDto, experience, {
       excludeExtraneousValues: true,
@@ -61,8 +74,8 @@ export class ExperienceService {
 
     const actor: Actor = ctx.user!;
 
-    if (!this.experienceAcl.forActor(actor).canDoAction(Action.Read))
-      throw new UnauthorizedException();
+    if (!this.experienceAcl.forActor(actor).canDoAction(Action.List))
+      throw new ForbiddenException();
 
     this.logger.log(
       ctx,
@@ -73,7 +86,12 @@ export class ExperienceService {
         candidateProfileId,
       );
 
-    return experiences.map((exp) =>
+    // Filter experiences that the user is allowed to read
+    const allowedExperiences = experiences.filter((experience) =>
+      this.experienceAcl.forActor(actor).canDoAction(Action.Read, experience),
+    );
+
+    return allowedExperiences.map((exp) =>
       plainToInstance(ExperienceDto, exp, { excludeExtraneousValues: true }),
     );
   }
@@ -90,7 +108,7 @@ export class ExperienceService {
     if (
       !this.experienceAcl.forActor(actor).canDoAction(Action.Create, experience)
     )
-      throw new UnauthorizedException();
+      throw new ForbiddenException();
 
     this.logger.log(
       ctx,
@@ -147,7 +165,7 @@ export class ExperienceService {
     if (
       !this.experienceAcl.forActor(actor).canDoAction(Action.Update, experience)
     )
-      throw new UnauthorizedException();
+      throw new ForbiddenException();
 
     this.logger.log(
       ctx,
@@ -202,7 +220,7 @@ export class ExperienceService {
     if (
       !this.experienceAcl.forActor(actor).canDoAction(Action.Delete, experience)
     )
-      throw new UnauthorizedException();
+      throw new ForbiddenException();
 
     this.logger.log(
       ctx,

@@ -43,11 +43,16 @@ export class CandidateProfileService {
       throw new NotFoundException('Candidate profile not found');
     }
 
+    const profileWithUser = await this.aclService.loadProfileWithUser(id);
+    if (!profileWithUser) {
+      throw new NotFoundException('Candidate profile not found');
+    }
+
     const isAllowed = this.aclService
       .forActor(actor)
-      .canDoAction(Action.Read, profile);
+      .canDoAction(Action.Read, profileWithUser);
     if (!isAllowed) {
-      throw new UnauthorizedException();
+      throw new ForbiddenException();
     }
 
     return profile;
@@ -119,7 +124,7 @@ export class CandidateProfileService {
       .forActor(actor)
       .canDoAction(Action.Create, candidateProfile);
     if (!isAllowed) {
-      throw new UnauthorizedException();
+      throw new ForbiddenException();
     }
 
     candidateProfile.user = plainToClass(User, { id: actor.id });
@@ -157,7 +162,7 @@ export class CandidateProfileService {
       .forActor(actor)
       .canDoAction(Action.Update, profileWithUser);
     if (!isAllowed) {
-      throw new UnauthorizedException();
+      throw new ForbiddenException();
     }
 
     this.logger.log(
@@ -191,7 +196,7 @@ export class CandidateProfileService {
       .forActor(actor)
       .canDoAction(Action.Delete, profileWithUser);
     if (!isAllowed) {
-      throw new UnauthorizedException();
+      throw new ForbiddenException();
     }
 
     this.logger.log(
