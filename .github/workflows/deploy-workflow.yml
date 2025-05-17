@@ -97,7 +97,7 @@ jobs:
                     },
                     {
                       "type": "mrkdwn",
-                      "text": "*Commit:* ${{ github.sha }}"
+                      "text": "*Commit:* ${{ github.event.head_commit.message }}"
                     },
                     {
                       "type": "mrkdwn",
