@@ -1,4 +1,5 @@
 import {
+  ForbiddenException,
   Injectable,
   NotFoundException,
   UnauthorizedException,
@@ -27,11 +28,22 @@ export class EducationService {
     this.logger.setContext(EducationService.name);
   }
 
-  async findAll(actor: Actor): Promise<EducationDto[]> {
-    if (!this.educationAcl.forActor(actor).canDoAction('Read'))
+  async findAll(ctx: RequestContext): Promise<EducationDto[]> {
+    this.logger.log(ctx, `${this.findAll.name} was called`);
+
+    const actor: Actor = ctx.user!;
+
+    if (!this.educationAcl.forActor(actor).canDoAction(Action.List))
       throw new UnauthorizedException();
+
     const educations = await this.educationRepository.findAll();
-    return educations.map((edu) =>
+
+    // Filter educations that the user is allowed to read
+    const allowedEducations = educations.filter((education) =>
+      this.educationAcl.forActor(actor).canDoAction(Action.Read, education),
+    );
+
+    return allowedEducations.map((edu) =>
       plainToInstance(EducationDto, edu, { excludeExtraneousValues: true }),
     );
   }
@@ -41,12 +53,12 @@ export class EducationService {
 
     const actor: Actor = ctx.user!;
 
-    if (!this.educationAcl.forActor(actor).canDoAction(Action.Read))
-      throw new UnauthorizedException();
-
     this.logger.log(ctx, `calling ${EducationRepository.name}.findById`);
     const education = await this.educationRepository.findById(id);
     if (!education) throw new NotFoundException('Education not found');
+
+    if (!this.educationAcl.forActor(actor).canDoAction(Action.Read, education))
+      throw new ForbiddenException();
 
     return plainToInstance(EducationDto, education, {
       excludeExtraneousValues: true,
@@ -61,8 +73,8 @@ export class EducationService {
 
     const actor: Actor = ctx.user!;
 
-    if (!this.educationAcl.forActor(actor).canDoAction(Action.Read))
-      throw new UnauthorizedException();
+    if (!this.educationAcl.forActor(actor).canDoAction(Action.List))
+      throw new ForbiddenException();
 
     this.logger.log(
       ctx,
@@ -71,7 +83,12 @@ export class EducationService {
     const educations =
       await this.educationRepository.findByCandidateProfile(candidateProfileId);
 
-    return educations.map((edu) =>
+    // Filter educations that the user is allowed to read
+    const allowedEducations = educations.filter((education) =>
+      this.educationAcl.forActor(actor).canDoAction(Action.Read, education),
+    );
+
+    return allowedEducations.map((edu) =>
       plainToInstance(EducationDto, edu, { excludeExtraneousValues: true }),
     );
   }
@@ -88,7 +105,7 @@ export class EducationService {
     if (
       !this.educationAcl.forActor(actor).canDoAction(Action.Create, education)
     )
-      throw new UnauthorizedException();
+      throw new ForbiddenException();
 
     this.logger.log(ctx, `calling ${EducationRepository.name}.createEducation`);
 
@@ -132,7 +149,7 @@ export class EducationService {
     if (
       !this.educationAcl.forActor(actor).canDoAction(Action.Update, education)
     )
-      throw new UnauthorizedException();
+      throw new ForbiddenException();
 
     this.logger.log(ctx, `calling ${EducationRepository.name}.updateEducation`);
 
@@ -173,7 +190,7 @@ export class EducationService {
     if (
       !this.educationAcl.forActor(actor).canDoAction(Action.Delete, education)
     )
-      throw new UnauthorizedException();
+      throw new ForbiddenException();
 
     this.logger.log(ctx, `calling ${EducationRepository.name}.deleteEducation`);
     return this.educationRepository.deleteEducation(id);

@@ -16,8 +16,12 @@ export class CandidateProfileAclService extends BaseAclService<CandidateProfile>
   ) {
     super();
     this.canDo(ROLE.ADMIN, [Action.Manage]);
-    this.canDo(ROLE.USER, [Action.Create, Action.List, Action.Read]);
-    this.canDo(ROLE.USER, [Action.Update, Action.Delete], this.isProfileOwner);
+    this.canDo(ROLE.USER, [Action.Create, Action.List]);
+    this.canDo(
+      ROLE.USER,
+      [Action.Read, Action.Update, Action.Delete],
+      this.isProfileOwner,
+    );
   }
 
   async loadProfileWithUser(

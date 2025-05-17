@@ -17,16 +17,16 @@ export class ExperienceAclService extends BaseAclService<Experience> {
   ) {
     super();
     this.canDo(ROLE.ADMIN, [Action.Manage]);
-    this.canDo(ROLE.USER, [Action.Create, Action.List, Action.Read]);
+    this.canDo(ROLE.USER, [Action.Create]);
     this.canDo(
       ROLE.USER,
-      [Action.Update, Action.Delete],
+      [Action.List, Action.Read, Action.Update, Action.Delete],
       this.isExperienceOwner,
     );
   }
 
   isExperienceOwner(resource: Experience, actor: Actor): boolean {
-    if (resource.candidateProfile?.user?.id) {
+    if (resource.candidateProfile?.user) {
       return resource.candidateProfile.user.id === actor.id;
     }
     return false;
