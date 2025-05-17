@@ -12,26 +12,20 @@ export class JobAclService extends BaseAclService<Job> {
   constructor() {
     super();
     this.canDo(ROLE.ADMIN, [Action.Manage]);
-    this.canDo(ROLE.ADMIN_RECRUITER, [
-      Action.Create,
-      Action.Delete,
-      Action.Read,
-      Action.List,
-    ]);
-    this.canDo(ROLE.RECRUITER, [
-      Action.Create,
-      Action.Delete,
-      Action.Read,
-      Action.List,
-    ]);
     this.canDo(
-      ROLE.USER,
-      [Action.Update, Action.Read, Action.List],
+      ROLE.ADMIN_RECRUITER,
+      [Action.Create, Action.Delete, Action.Read, Action.List],
       this.isOwner,
     );
+    this.canDo(
+      ROLE.RECRUITER,
+      [Action.Create, Action.Delete, Action.Read, Action.List],
+      this.isOwner,
+    );
+    this.canDo(ROLE.USER, [Action.Update, Action.Read, Action.List]);
   }
 
   private isOwner(job: Job, actor: Actor): boolean {
-    return job.company?.user?.id === actor.id;
+    return job.company?.users?.some((user) => user.id === actor.id);
   }
 }

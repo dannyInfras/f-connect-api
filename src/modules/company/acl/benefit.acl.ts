@@ -1,11 +1,9 @@
 import { Injectable } from '@nestjs/common';
 
 import { ROLE } from '@/modules/auth/constants/role.constant';
+import { Benefit } from '@/modules/company/entities/benefit.entity';
 import { BaseAclService } from '@/shared/acl/acl.service';
 import { Action } from '@/shared/acl/action.constant';
-
-import { Benefit } from '../entities/benefit.entity';
-
 @Injectable()
 export class BenefitAclService extends BaseAclService<Benefit> {
   constructor() {
@@ -25,8 +23,4 @@ export class BenefitAclService extends BaseAclService<Benefit> {
     ]);
     this.canDo(ROLE.USER, [Action.Read, Action.List]);
   }
-
-  private isCompanyOwner = (resource: Benefit, actor: any): boolean => {
-    return resource.company?.user?.id === actor.id;
-  };
 }

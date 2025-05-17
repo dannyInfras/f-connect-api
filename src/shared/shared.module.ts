@@ -9,6 +9,7 @@ import { AllExceptionsFilter } from './filters/all-exceptions.filter';
 import { LoggingInterceptor } from './interceptors/logging.interceptor';
 import { AppLoggerModule } from './logger/logger.module';
 import { MailService } from './mail/mail.service';
+import { UnitOfWork } from './unit-of-work/unit-of-work.service';
 
 @Module({
   imports: [
@@ -33,7 +34,13 @@ import { MailService } from './mail/mail.service';
     }),
     AppLoggerModule,
   ],
-  exports: [AppLoggerModule, ConfigModule, EventEmitterService, MailService],
+  exports: [
+    AppLoggerModule,
+    ConfigModule,
+    EventEmitterService,
+    MailService,
+    UnitOfWork,
+  ],
   providers: [
     { provide: APP_INTERCEPTOR, useClass: LoggingInterceptor },
 
@@ -43,6 +50,7 @@ import { MailService } from './mail/mail.service';
     },
     EventEmitterService,
     MailService,
+    UnitOfWork,
   ],
 })
 export class SharedModule {}

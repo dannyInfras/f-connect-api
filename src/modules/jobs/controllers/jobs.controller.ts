@@ -84,6 +84,32 @@ export class JobsController {
     };
   }
 
+  @Get('company/:companyId')
+  @ApiOperation({ summary: 'Get jobs for a company with pagination' })
+  @ApiResponse({
+    status: 200,
+    type: ListJobResponseDto,
+    description: 'List of jobs for a company with pagination metadata',
+  })
+  async findJobsByCompany(
+    @Param('companyId') companyId: string,
+    @Query() query: PaginationParamsDto,
+  ): Promise<ListJobResponseDto> {
+    const { jobs, count } = await this.jobService.findJobsByCompany(
+      companyId,
+      query.limit,
+      query.offset,
+    );
+
+    return {
+      data: jobs,
+      meta: {
+        count,
+        page: Math.floor(query.offset / query.limit) + 1,
+      },
+    };
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get job by ID' })
   @ApiResponse({
@@ -93,20 +119,6 @@ export class JobsController {
       example: JobDetailResponseDto.example,
     },
   })
-  async findOne(
-    @Param('id') id: string,
-    @ReqContext() ctx: RequestContext,
-  ): Promise<BaseApiResponse<JobDetailResponseDto>> {
-    if (!ctx.user) {
-      throw new UnauthorizedException('User must be logged in');
-    }
-    const job = await this.jobService.findOne(ctx.user, id);
-    return {
-      data: job,
-      meta: {},
-    };
-  }
-
   @Patch(':id')
   @ApiOperation({ summary: 'Update job posting' })
   @ApiResponse({

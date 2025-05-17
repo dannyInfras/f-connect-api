@@ -2,11 +2,14 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
   Unique,
   UpdateDateColumn,
 } from 'typeorm';
+
+import { Company } from '@/modules/company/entities/company.entity';
 
 import { Article } from '../../article/entities/article.entity';
 
@@ -47,4 +50,7 @@ export class User {
 
   @OneToMany(() => Article, (article) => article.author)
   articles: Article[];
+
+  @ManyToOne(() => Company, (company) => company.users, { nullable: true })
+  company?: Company;
 }

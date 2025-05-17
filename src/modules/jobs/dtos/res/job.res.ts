@@ -82,6 +82,12 @@ export class JobDetailResponseDto {
   niceToHave: string[];
 
   @Expose()
+  @ApiProperty({
+    example: ['Health insurance', 'Gym membership'],
+  })
+  benefit: string[];
+
+  @Expose()
   @ApiProperty({ example: true })
   isVip: boolean;
 
@@ -118,6 +124,7 @@ export class JobDetailResponseDto {
     isVip: true,
     deadline: '2024-01-01T00:00:00.000Z',
     typeOfEmployment: 'FullTime',
+    benefit: ['Health insurance', 'Gym membership'],
     createdAt: '2024-01-01T00:00:00.000Z',
     updatedAt: '2024-01-01T00:00:00.000Z',
   };

@@ -49,6 +49,29 @@ export class JobService {
     };
   }
 
+  async findJobsByCompany(
+    companyId: string,
+    limit: number,
+    offset: number,
+  ): Promise<{ jobs: JobResponseDto[]; count: number }> {
+    const [jobs, count] = await this.repository.findAndCount({
+      where: { company: { id: companyId } },
+      take: limit,
+      skip: offset,
+      relations: ['company', 'category'], // Load necessary relations
+      order: { createdAt: 'DESC' },
+    });
+
+    if (!jobs.length) {
+      throw new NotFoundException('No jobs found for this company');
+    }
+
+    return {
+      jobs: jobs.map((job) => JobMapper.toListJobResponse(job)),
+      count,
+    };
+  }
+
   async create(
     actor: Actor,
     dto: CreateJobReqDto,
