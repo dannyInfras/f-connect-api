@@ -1,18 +1,39 @@
 services:
+  traefik:
+    image: traefik:v2.10
+    container_name: traefik
+    restart: unless-stopped
+    command:
+      - --log.level=INFO
+      - --api.dashboard=true
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      - --providers.docker=true
+      - --providers.docker.exposedByDefault=false
+      - --certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web
+      - --certificatesresolvers.letsencrypt.acme.email=${LETSENCRYPT_EMAIL}
+      - --certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./letsencrypt:/letsencrypt
+    networks:
+      - web
   app:
     build:
       context: .
       dockerfile: Dockerfile
       args:
         - APP_ENV
-    # Wait for the database to be ready before starting the app
+    container_name: f-connect-api
     command: >
       bash -c "npm install @nestjs/axios nodemailer --legacy-peer-deps &&
                npm run migration:run &&
                npm run start:dev"
-    container_name: f-connect-api
     ports:
-      - 3000:3000
+      - '${APP_PORT}:${APP_PORT}'
     volumes:
       - ./:/usr/src/app:cached
       - node_modules:/usr/src/app/node_modules
@@ -20,6 +41,16 @@ services:
       - .env
     depends_on:
       - pgsqldb
+    labels:
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.f-connect-api.rule=Host(`${SERVER_DOMAIN}`)'
+      - 'traefik.http.routers.f-connect-api.entrypoints=websecure'
+      - 'traefik.http.routers.f-connect-api.tls=true'
+      - 'traefik.http.routers.f-connect-api.tls.certresolver=letsencrypt'
+      - 'traefik.http.services.f-connect-api.loadbalancer.server.port=${APP_PORT}'
+    networks:
+      - web
+      - f-connect-server
 
   pgsqldb:
     image: postgres:16.3
@@ -31,6 +62,8 @@ services:
       - 5432:5432
     volumes:
       - pgsqldata:/var/lib/postgresql/data
+    networks:
+      - f-connect-server
 
   pgadmin:
     container_name: space-study-api-pgadmin
@@ -42,6 +75,13 @@ services:
     depends_on:
       - pgsqldb
 
+networks:
+  f-connect-server:
+    driver: bridge
+  web:
+    driver: bridge
+
 volumes:
   node_modules:
   pgsqldata:
+  letsencrypt:
