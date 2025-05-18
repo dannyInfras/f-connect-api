@@ -128,7 +128,7 @@ export class AuthService {
     ctx: RequestContext,
     input: RegisterCompanyInput,
   ): Promise<{ message: string }> {
-    const { taxCode, ...userInput } = input;
+    const { taxCode, companyEmail, ...userInput } = input;
 
     // Step 1: Check if the company already exists
     const existingCompany = await this.companyService.findByTaxCode(taxCode);
@@ -165,6 +165,7 @@ export class AuthService {
           {
             companyName: externalCompanyData.name || 'Unknown',
             taxCode,
+            email: companyEmail,
             address: externalCompanyData.address
               ? [externalCompanyData.address]
               : [],
@@ -193,7 +194,7 @@ export class AuthService {
     );
 
     await this.mailService.sendMail(
-      registeredUser.email,
+      companyEmail,
       'Verify Your Company Registration',
       './verify-company',
       {

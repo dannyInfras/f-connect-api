@@ -38,6 +38,12 @@ export class RegisterCompanyInput {
 
   @ApiProperty()
   @IsNotEmpty()
+  @IsEmail()
+  @MaxLength(100)
+  companyEmail: string;
+
+  @ApiProperty()
+  @IsNotEmpty()
   @IsString()
   taxCode: string;
 

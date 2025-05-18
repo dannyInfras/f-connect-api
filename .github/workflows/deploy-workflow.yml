@@ -59,14 +59,14 @@ jobs:
           for i in {1..5}; do
             if curl -sSf http://${{ secrets.DO_DEPLOY_HOST }}:${{ secrets.DEPLOY_PORT }}/${{ secrets.HEALTHCHECK_PATH }}; then
               echo "✅ App is healthy."
-              echo "status=success" >> $GITHUB_OUTPUT
+              echo "status= :white_check_mark: Success" >> $GITHUB_OUTPUT
               exit 0
             fi
             echo "Waiting for app… ($i/5)"
             sleep 10
           done
           echo "❌ Healthcheck failed."
-          echo "status=failure" >> $GITHUB_OUTPUT
+          echo "status= :x: Failed" >> $GITHUB_OUTPUT
           exit 1
 
       - name: Send deployment report to Slack
@@ -89,7 +89,7 @@ jobs:
                   "fields": [
                     {
                       "type": "mrkdwn",
-                      "text": "*Status:* ${{ steps.healthcheck.outcome == 'success' && '✅ Success' || '❌ Failed' }}"
+                      "text": "*Status:* ${{ steps.healthcheck.outputs.status }}"
                     },
                     {
                       "type": "mrkdwn",
