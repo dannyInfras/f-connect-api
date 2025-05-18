@@ -1,10 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
   IsDateString,
+  IsEnum,
   IsNotEmpty,
   IsOptional,
   IsString,
 } from 'class-validator';
+import { EmploymentTypeEnum } from '../enums/employee-type';
 
 export class ExperienceInputDto {
   @ApiProperty({ required: false, example: 'Company Name' })
@@ -22,10 +24,10 @@ export class ExperienceInputDto {
   @IsString()
   description?: string;
 
-  @ApiProperty({ required: false, example: 'full_time' })
+  @ApiProperty({ required: false, example: 'Full Time' })
   @IsOptional()
-  @IsString()
-  employmentType?: string;
+  @IsEnum(EmploymentTypeEnum)
+  employmentType?: EmploymentTypeEnum;
 
   @ApiProperty({ required: false, example: 'San Francisco' })
   @IsOptional()
