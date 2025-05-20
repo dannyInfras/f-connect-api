@@ -34,6 +34,19 @@ export class JobResponseDto {
   };
 
   @Expose()
+  @ApiProperty({
+    example: [
+      { id: '1', name: 'JavaScript' },
+      { id: '2', name: 'TypeScript' },
+    ],
+    description: 'The skills required for the job',
+  })
+  skills: {
+    id: string;
+    name: string;
+  }[];
+
+  @Expose()
   @ApiProperty({ example: 'New York', required: false })
   location: string;
 
@@ -66,6 +79,10 @@ export class JobResponseDto {
       companyName: 'Tech Corp',
       logoUrl: 'https://example.com/logo.png',
     },
+    skills: [
+      { id: '1', name: 'JavaScript' },
+      { id: '2', name: 'TypeScript' },
+    ],
     location: 'New York',
     typeOfEmployment: 'FullTime',
     status: 'OPEN',

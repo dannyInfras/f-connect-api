@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In,Repository } from 'typeorm';
 
 import { Skill } from '../entities/skill.entity';
 
@@ -17,6 +17,10 @@ export class SkillRepository {
 
   async findById(id: string): Promise<Skill | null> {
     return this.repo.findOne({ where: { id } });
+  }
+
+  async findByIds(ids: string[]): Promise<Skill[]> {
+    return this.repo.findBy({ id: In(ids) });
   }
 
   async createSkill(data: Partial<Skill>): Promise<Skill> {

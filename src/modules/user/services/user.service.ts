@@ -113,10 +113,14 @@ export class UserService {
       where: {},
       take: limit,
       skip: offset,
+      relations: ['company']
     });
 
     const usersOutput = plainToClass(UserOutput, users, {
       excludeExtraneousValues: true,
+    });
+    usersOutput.forEach((u, i) => {
+      u.companyId = users[i].company?.id || null;
     });
 
     return { users: usersOutput, count };
@@ -126,11 +130,17 @@ export class UserService {
     this.logger.log(ctx, `${this.findById.name} was called`);
 
     this.logger.log(ctx, `calling ${UserRepository.name}.findOne`);
-    const user = await this.repository.findOne({ where: { id } });
+    const user = await this.repository.findOne({ 
+      where: { id },
+      relations: ['company']
+    });
+    if (!user) throw new NotFoundException('User not found');
 
-    return plainToClass(UserOutput, user, {
+    const userOutput = plainToClass(UserOutput, user, {
       excludeExtraneousValues: true,
     });
+    userOutput.companyId = user.company?.id || null;
+    return userOutput;
   }
 
   async getUserById(ctx: RequestContext, id: number): Promise<UserOutput> {
@@ -138,10 +148,13 @@ export class UserService {
 
     this.logger.log(ctx, `calling ${UserRepository.name}.getById`);
     const user = await this.repository.getById(id);
+    if (!user) throw new NotFoundException('User not found');
 
-    return plainToClass(UserOutput, user, {
+    const userOutput = plainToClass(UserOutput, user, {
       excludeExtraneousValues: true,
     });
+    userOutput.companyId = user.company?.id || null;
+    return userOutput;
   }
 
   async findByUsername(
@@ -151,11 +164,17 @@ export class UserService {
     this.logger.log(ctx, `${this.findByUsername.name} was called`);
 
     this.logger.log(ctx, `calling ${UserRepository.name}.findOne`);
-    const user = await this.repository.findOne({ where: { username } });
+    const user = await this.repository.findOne({ 
+      where: { username },
+      relations: ['company']
+    });
+    if (!user) throw new NotFoundException('User not found');
 
-    return plainToClass(UserOutput, user, {
+    const userOutput = plainToClass(UserOutput, user, {
       excludeExtraneousValues: true,
     });
+    userOutput.companyId = user.company?.id || null;
+    return userOutput;
   }
 
   async updateUser(
@@ -167,6 +186,7 @@ export class UserService {
 
     this.logger.log(ctx, `calling ${UserRepository.name}.getById`);
     const user = await this.repository.getById(userId);
+    if (!user) throw new NotFoundException('User not found');
 
     // Hash the password if it exists in the input payload.
     if (input.password) {
@@ -182,9 +202,11 @@ export class UserService {
     this.logger.log(ctx, `calling ${UserRepository.name}.save`);
     await this.repository.save(updatedUser);
 
-    return plainToClass(UserOutput, updatedUser, {
+    const userOutput = plainToClass(UserOutput, updatedUser, {
       excludeExtraneousValues: true,
     });
+    userOutput.companyId = updatedUser.company?.id || null;
+    return userOutput;
   }
 
   async verifyUser(

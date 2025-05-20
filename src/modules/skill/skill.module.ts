@@ -13,6 +13,6 @@ import { SkillAclService } from './services/skill-acl.service';
   imports: [TypeOrmModule.forFeature([Skill]), AppLoggerModule],
   controllers: [SkillController],
   providers: [SkillService, SkillAclService, SkillRepository],
-  exports: [SkillService],
+  exports: [SkillService, SkillRepository],
 })
 export class SkillModule {}

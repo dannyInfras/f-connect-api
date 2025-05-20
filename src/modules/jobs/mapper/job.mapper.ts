@@ -21,6 +21,10 @@ export class JobMapper {
           ? job.company.address[0] || ''
           : job.company.address || '',
       },
+      skills: job.skills?.map(skill => ({
+        id: skill.id,
+        name: skill.name,
+      })) || [],
       typeOfEmployment: job.typeOfEmployment,
       responsibility: job.responsibility,
       jobFitAttributes: job.jobFitAttributes,
@@ -52,6 +56,10 @@ export class JobMapper {
         companyName: job.company.companyName,
         logoUrl: job.company.logoUrl,
       },
+      skills: job.skills?.map(skill => ({
+        id: skill.id,
+        name: skill.name,
+      })) || [],
       location: job.location,
       status: job.status,
       typeOfEmployment: job.typeOfEmployment,

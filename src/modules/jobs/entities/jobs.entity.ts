@@ -3,6 +3,8 @@ import {
   CreateDateColumn,
   Entity,
   JoinColumn,
+  JoinTable,
+  ManyToMany,
   ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -10,6 +12,7 @@ import {
 
 import { Category } from '@/modules/category/entities/category.entity';
 import { Company } from '@/modules/company/entities/company.entity';
+import { Skill } from '@/modules/skill/entities/skill.entity';
 
 @Entity('job')
 export class Job {
@@ -85,6 +88,20 @@ export class Job {
   @ManyToOne(() => Category)
   @JoinColumn({ name: 'category_id' })
   category: Category;
+
+  @ManyToMany(() => Skill)
+  @JoinTable({
+    name: 'job_skill',
+    joinColumn: {
+      name: 'job_id',
+      referencedColumnName: 'id',
+    },
+    inverseJoinColumn: {
+      name: 'skill_id',
+      referencedColumnName: 'id',
+    },
+  })
+  skills: Skill[];
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

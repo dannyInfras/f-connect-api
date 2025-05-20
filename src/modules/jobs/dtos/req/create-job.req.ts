@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsArray, IsNotEmpty, IsString } from 'class-validator';
 
 export class CreateJobReqDto {
   @ApiProperty({ example: 'Senior Software Engineer' })
@@ -21,6 +21,15 @@ export class CreateJobReqDto {
   @IsNotEmpty()
   @IsString()
   companyId: string;
+
+  @ApiProperty({
+    example: ['1', '2', '3'],
+    description: 'Array of skill IDs',
+    type: [String],
+  })
+  @IsArray()
+  @IsString({ each: true })
+  skillIds: string[];
 
   @ApiProperty({
     example: ['Develop web applications', 'Write clean code'],

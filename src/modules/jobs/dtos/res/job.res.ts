@@ -33,6 +33,19 @@ export class JobDetailResponseDto {
   };
 
   @Expose()
+  @ApiProperty({
+    example: [
+      { id: '1', name: 'JavaScript' },
+      { id: '2', name: 'TypeScript' },
+    ],
+    description: 'The skills required for the job',
+  })
+  skills: {
+    id: string;
+    name: string;
+  }[];
+
+  @Expose()
   @ApiProperty({ example: 'We are looking for a senior software engineer...' })
   description: string;
 
@@ -109,6 +122,10 @@ export class JobDetailResponseDto {
       logoUrl: 'https://example.com/logo.png',
       address: '123 Tech Street, New York, NY',
     },
+    skills: [
+      { id: '1', name: 'JavaScript' },
+      { id: '2', name: 'TypeScript' },
+    ],
     responsibility: ['Develop web applications', 'Write clean code'],
     jobFitAttributes: [
       'You get energy from people and building the ideal work environment',

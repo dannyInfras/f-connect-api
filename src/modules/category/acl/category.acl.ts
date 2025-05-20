@@ -13,7 +13,13 @@ export class CategoryAclService extends BaseAclService<Category> {
     // Admins can manage all actions
     this.canDo(ROLE.ADMIN, [Action.Manage]);
 
-    // Regular users can only read categories
+    this.canDo(ROLE.ADMIN_RECRUITER, [
+      Action.Read,
+      Action.Update,
+      Action.Delete,
+      Action.List,
+    ]);
+    this.canDo(ROLE.RECRUITER, [Action.Read, Action.Update, Action.List]);
     this.canDo(ROLE.USER, [Action.Read, Action.List]);
   }
 }
