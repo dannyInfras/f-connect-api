@@ -4,20 +4,38 @@ on:
   push:
     branches:
       - develop
+  workflow_dispatch:
+    inputs:
+      force_deploy:
+        description: "Force deployment even if no changes detected"
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   deploy:
     name: 🐳 Deploy with Docker Compose
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 1
+
+      - name: Cache Docker layers
+        uses: actions/cache@v3
+        with:
+          path: /tmp/docker-cache
+          key: ${{ runner.os }}-docker-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-docker-
 
       - name: Setup SSH agent
-        uses: webfactory/ssh-agent@v0.5.4
+        uses: webfactory/ssh-agent@v0.8.0
         with:
           ssh-private-key: ${{ secrets.DO_SSH_PRIVATE_KEY }}
 
@@ -25,6 +43,7 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           ssh-keyscan -H ${{ secrets.DO_DEPLOY_HOST }} >> ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
 
       - name: Sync project
         run: |
@@ -33,22 +52,26 @@ jobs:
             --exclude='node_modules' \
             --exclude='logs' \
             --exclude='dist' \
+            --exclude='.github' \
             ./ \
             ${{ secrets.DO_DEPLOY_USER }}@${{ secrets.DO_DEPLOY_HOST }}:${{ secrets.DEPLOY_PATH }}
 
       - name: Deploy development environment
+        id: deploy
         run: |
           ssh -o BatchMode=yes -o StrictHostKeyChecking=no \
             ${{ secrets.DO_DEPLOY_USER }}@${{ secrets.DO_DEPLOY_HOST }} << 'EOF'
-            # copy env and tighten permissions
+            set -e
+
             cp -r ${{ secrets.SECRET_PATH }}/.env ${{ secrets.DEPLOY_PATH }}/.env
             chmod 600 ${{ secrets.DEPLOY_PATH }}/.env
 
             cd ${{ secrets.DEPLOY_PATH }}
 
             docker compose config > /dev/null
-            docker compose down --rmi local || true
-            docker compose up -d --build --no-deps app
+            docker compose down app traefik --remove-orphans || true
+            docker image prune -f
+            docker compose up -d --build --no-deps app traefik
             docker image prune -f
           EOF
 
@@ -56,22 +79,58 @@ jobs:
         id: healthcheck
         run: |
           echo "🔍 Healthcheck started"
-          for i in {1..5}; do
-            if curl -sSf http://${{ secrets.DO_DEPLOY_HOST }}:${{ secrets.DEPLOY_PORT }}/${{ secrets.HEALTHCHECK_PATH }}; then
+          max_retries=12
+          retry_interval=10
+          for i in $(seq 1 $max_retries); do
+            echo "Attempt $i of $max_retries..."
+            if curl -sSf --max-time 5 http://${{ secrets.DO_DEPLOY_HOST }}:${{ secrets.DO_DEPLOY_PORT }}/${{ secrets.HEALTHCHECK_PATH }}; then
               echo "✅ App is healthy."
-              echo "status= :white_check_mark: Success" >> $GITHUB_OUTPUT
+              echo "status=success" >> $GITHUB_OUTPUT
               exit 0
             fi
-            echo "Waiting for app… ($i/5)"
-            sleep 10
+            echo "Waiting for app… ($i/$max_retries)"
+            sleep $retry_interval
           done
-          echo "❌ Healthcheck failed."
-          echo "status= :x: Failed" >> $GITHUB_OUTPUT
+          echo "❌ Healthcheck failed after $max_retries attempts."
+          echo "status=failed" >> $GITHUB_OUTPUT
+
+          echo "Collecting container logs for troubleshooting..."
+          ssh -o BatchMode=yes ${{ secrets.DO_DEPLOY_USER }}@${{ secrets.DO_DEPLOY_HOST }} \
+            "cd ${{ secrets.DEPLOY_PATH }} && docker compose logs --tail=100 app" > deployment-logs.txt
+
+          cat deployment-logs.txt
           exit 1
 
+      - name: Rollback on failure
+        if: failure() && steps.deploy.outcome == 'success'
+        run: |
+          echo "🔄 Deployment failed, attempting rollback..."
+          ssh -o BatchMode=yes -o StrictHostKeyChecking=no \
+            ${{ secrets.DO_DEPLOY_USER }}@${{ secrets.DO_DEPLOY_HOST }} << 'EOF'
+            cd ${{ secrets.DEPLOY_PATH }}
+            docker compose down app
+            docker compose up -d app
+          EOF
+
+  notify:
+    name: 📢 Send notifications
+    runs-on: ubuntu-latest
+    needs: deploy
+    if: always()
+    steps:
+      - name: Set status
+        id: status
+        run: |
+          if [[ "${{ needs.deploy.result }}" == "success" ]]; then
+            echo "result=success" >> $GITHUB_OUTPUT
+            echo "message=Deployment completed successfully" >> $GITHUB_OUTPUT
+          else
+            echo "result=failed" >> $GITHUB_OUTPUT
+            echo "message=Deployment failed, see logs for details" >> $GITHUB_OUTPUT
+          fi
+
       - name: Send deployment report to Slack
-        if: always()
-        uses: slackapi/slack-github-action@v1.23.0
+        uses: slackapi/slack-github-action@v1.24.0
         with:
           payload: |
             {
@@ -89,7 +148,11 @@ jobs:
                   "fields": [
                     {
                       "type": "mrkdwn",
-                      "text": "*Status:* ${{ steps.healthcheck.outputs.status }}"
+                      "text": "*Status:* ${{ steps.status.outputs.result == 'success' && ':white_check_mark: Success' || ':x: Failed' }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Details:* ${{ steps.status.outputs.message }}"
                     },
                     {
                       "type": "mrkdwn",
