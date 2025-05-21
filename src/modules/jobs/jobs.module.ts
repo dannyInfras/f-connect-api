@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { SharedModule } from '@/shared/shared.module';
 
 import { CategoryModule } from '../category/category.module';
+import { SkillModule } from '../skill/skill.module';
 import { JobAclService } from './acl/jobs.acl';
 import { JobsController } from './controllers/jobs.controller';
 import { Job } from './entities/jobs.entity';
@@ -14,6 +15,7 @@ import { JobService } from './services/jobs.service';
   imports: [
     TypeOrmModule.forFeature([Job]),
     forwardRef(() => CategoryModule),
+    SkillModule,
     SharedModule,
   ],
   controllers: [JobsController],

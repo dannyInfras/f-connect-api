@@ -119,6 +119,29 @@ export class JobsController {
       example: JobDetailResponseDto.example,
     },
   })
+  @Get(':id')
+  @ApiOperation({ summary: 'Get job by ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Job found successfully',
+    schema: {
+      example: JobDetailResponseDto.example,
+    },
+  })
+  async findOne(
+    @Param('id') id: string,
+    @ReqContext() ctx: RequestContext,
+  ): Promise<BaseApiResponse<JobDetailResponseDto>> {
+    if (!ctx.user) {
+      throw new UnauthorizedException('User must be logged in');
+    }
+    const job = await this.jobService.findOne(ctx.user, id);
+    return {
+      data: job,
+      meta: {},
+    };
+  }
+
   @Patch(':id')
   @ApiOperation({ summary: 'Update job posting' })
   @ApiResponse({

@@ -20,6 +20,8 @@ export class UserAccessTokenClaims {
   email: string;
   @Expose()
   roles: ROLE[];
+  @Expose()
+  companyId?: string | null;
 }
 
 export class UserRefreshTokenClaims {

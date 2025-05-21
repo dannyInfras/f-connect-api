@@ -42,7 +42,7 @@ export class CompanyService {
   async findOne(id: string, actor: Actor) {
     const company = await this.companyRepo.findOne({
       where: { id },
-      relations: ['user', 'benefits', 'coreTeam', 'jobs', 'jobs.category'],
+      relations: ['users', 'benefits', 'coreTeam', 'jobs', 'jobs.category'],
     });
 
     if (!company) throw new NotFoundException('Company not found');
@@ -67,7 +67,7 @@ export class CompanyService {
       where: {},
       take: limit,
       skip: offset,
-      relations: ['user'],
+      relations: ['users'],
       order: {
         createdAt: 'DESC',
       },
@@ -79,7 +79,7 @@ export class CompanyService {
   async update(id: string, dto: UpdateCompanyDto, actor: Actor) {
     const company = await this.companyRepo.findOne({
       where: { id },
-      relations: ['user'],
+      relations: ['users'],
     });
 
     if (!company) throw new NotFoundException('Company not found');
@@ -95,7 +95,7 @@ export class CompanyService {
   async delete(id: string, actor: Actor) {
     const company = await this.companyRepo.findOne({
       where: { id },
-      relations: ['user'],
+      relations: ['users'],
     });
 
     if (!company) throw new NotFoundException('Company not found');

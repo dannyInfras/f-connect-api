@@ -35,4 +35,8 @@ export class UserOutput {
   @Expose()
   @ApiProperty()
   updatedAt: string;
+
+  @Expose()
+  @ApiProperty({ type: String, nullable: true })
+  companyId?: string | null;
 }

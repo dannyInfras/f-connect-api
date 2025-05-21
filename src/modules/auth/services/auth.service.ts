@@ -108,6 +108,7 @@ export class AuthService {
       email: user.email,
       sub: user.id,
       roles: user.roles,
+      companyId: user.companyId || null,
     };
 
     const authToken = {

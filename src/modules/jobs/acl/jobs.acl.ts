@@ -12,11 +12,12 @@ export class JobAclService extends BaseAclService<Job> {
   constructor() {
     super();
     this.canDo(ROLE.ADMIN, [Action.Manage]);
-    this.canDo(
-      ROLE.ADMIN_RECRUITER,
-      [Action.Create, Action.Delete, Action.Read, Action.List],
-      this.isOwner,
-    );
+    this.canDo(ROLE.ADMIN_RECRUITER, [
+      Action.Create,
+      Action.Delete,
+      Action.Read,
+      Action.List,
+    ]);
     this.canDo(
       ROLE.RECRUITER,
       [Action.Create, Action.Delete, Action.Read, Action.List],
