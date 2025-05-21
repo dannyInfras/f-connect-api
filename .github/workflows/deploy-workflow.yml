@@ -48,6 +48,7 @@ jobs:
       - name: Sync project
         run: |
           rsync -avz --delete \
+            --rsync-path="sudo rsync" \
             --exclude='.git' \
             --exclude='node_modules' \
             --exclude='logs' \
@@ -63,8 +64,11 @@ jobs:
             ${{ secrets.DO_DEPLOY_USER }}@${{ secrets.DO_DEPLOY_HOST }} << 'EOF'
             set -e
 
-            cp -r ${{ secrets.SECRET_PATH }}/.env ${{ secrets.DEPLOY_PATH }}/.env
-            chmod 600 ${{ secrets.DEPLOY_PATH }}/.env
+            sudo cp -r ${{ secrets.SECRET_PATH }}/.env ${{ secrets.DEPLOY_PATH }}/.env
+
+            sudo chown ${{ secrets.DO_DEPLOY_USER }}:${{ secrets.DO_DEPLOY_USER }} ${{ secrets.DEPLOY_PATH }}/.env
+            
+            sudo chmod 600 ${{ secrets.DEPLOY_PATH }}/.env
 
             cd ${{ secrets.DEPLOY_PATH }}
 
