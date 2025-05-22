@@ -113,7 +113,7 @@ export class UserService {
       where: {},
       take: limit,
       skip: offset,
-      relations: ['company']
+      relations: ['company'],
     });
 
     const usersOutput = plainToClass(UserOutput, users, {
@@ -130,9 +130,9 @@ export class UserService {
     this.logger.log(ctx, `${this.findById.name} was called`);
 
     this.logger.log(ctx, `calling ${UserRepository.name}.findOne`);
-    const user = await this.repository.findOne({ 
+    const user = await this.repository.findOne({
       where: { id },
-      relations: ['company']
+      relations: ['company'],
     });
     if (!user) throw new NotFoundException('User not found');
 
@@ -164,9 +164,28 @@ export class UserService {
     this.logger.log(ctx, `${this.findByUsername.name} was called`);
 
     this.logger.log(ctx, `calling ${UserRepository.name}.findOne`);
-    const user = await this.repository.findOne({ 
+    const user = await this.repository.findOne({
       where: { username },
-      relations: ['company']
+      relations: ['company'],
+    });
+    if (!user) throw new NotFoundException('User not found');
+
+    const userOutput = plainToClass(UserOutput, user, {
+      excludeExtraneousValues: true,
+    });
+    userOutput.companyId = user.company?.id || null;
+    return userOutput;
+  }
+
+  /**
+   * Retrieve user by email.
+   */
+  async findByEmail(ctx: RequestContext, email: string): Promise<UserOutput> {
+    this.logger.log(ctx, `${this.findByEmail.name} was called`);
+
+    const user = await this.repository.findOne({
+      where: { email },
+      relations: ['company'],
     });
     if (!user) throw new NotFoundException('User not found');
 

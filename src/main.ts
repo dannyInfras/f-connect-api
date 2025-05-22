@@ -19,7 +19,11 @@ async function bootstrap() {
     app.setGlobalPrefix('api/v1');
     app.useGlobalPipes(new ValidationPipe(VALIDATION_PIPE_OPTIONS));
     app.use(RequestIdMiddleware);
-    app.enableCors();
+    app.enableCors({
+      origin: process.env.FRONTEND_URL,
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+      credentials: true,
+    });
 
     /** Swagger configuration*/
     const options = new DocumentBuilder()
