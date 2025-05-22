@@ -17,6 +17,7 @@ import {
   AuthTokenOutput,
   UserAccessTokenClaims,
 } from '@/modules/auth/dtos/auth-token-output.dto';
+import { EmailVerificationService } from '@/modules/auth/services/email-verification.service';
 import { CompanyService } from '@/modules/company/services/company.service';
 import { UserOutput } from '@/modules/user/dtos/user-output.dto';
 import { UserService } from '@/modules/user/services/user.service';
@@ -39,6 +40,7 @@ export class AuthService {
     private readonly mailService: MailService, // Use shared MailService
     private readonly eventEmitter: EventEmitterService,
     private readonly unitOfWork: UnitOfWork,
+    private readonly emailVerificationService: EmailVerificationService,
   ) {
     this.logger.setContext(AuthService.name);
   }
@@ -73,13 +75,16 @@ export class AuthService {
   ): Promise<RegisterOutput> {
     this.logger.log(ctx, `${this.register.name} was called`);
 
-    // TODO : Setting default role as USER here. Will add option to change this later via ADMIN users.
-    input.isAccountDisabled = false;
+    // Newly registered users are disabled until they verify their email.
+    input.isAccountDisabled = true;
 
     const registeredUser = await this.userService.createUser(ctx, input);
 
-    // Emit user registered event to create candidate profile
-    this.eventEmitter.emit(AppEvents.USER_REGISTERED, registeredUser);
+    // Queue verification email
+    await this.emailVerificationService.createAndSendToken({
+      id: registeredUser.id,
+      email: registeredUser.email,
+    });
 
     return plainToClass(RegisterOutput, registeredUser, {
       excludeExtraneousValues: true,
@@ -240,5 +245,57 @@ export class AuthService {
     await this.userService.verifyUser(ctx, user.id, false);
 
     return { message: 'Email verified successfully!' };
+  }
+
+  /**
+   * Activate user account using the verification token.
+   */
+  async verifyEmail(
+    ctx: RequestContext,
+    token: string,
+  ): Promise<{ message: string; success: boolean }> {
+    const userEntity = await this.emailVerificationService.verifyToken(token);
+
+    if (!userEntity.isAccountDisabled) {
+      return { message: 'User already verified.', success: false };
+    }
+
+    await this.userService.verifyUser(ctx, userEntity.id, false);
+
+    // Emit email verified event
+    this.eventEmitter.emit(AppEvents.EMAIL_VERIFIED, userEntity);
+
+    return {
+      message: 'Email verified successfully!',
+      success: true,
+    };
+  }
+
+  /**
+   * Resend verification link to given email address, limited to 3 per hour.
+   */
+  async resendVerificationEmail(
+    ctx: RequestContext,
+    email: string,
+  ): Promise<{ message: string }> {
+    const user = await this.userService.findByEmail(ctx, email);
+
+    if (!user.isAccountDisabled) {
+      throw new BadRequestException('Account is already verified');
+    }
+
+    const canResend = await this.emailVerificationService.canResend(user.id);
+    if (!canResend) {
+      throw new BadRequestException(
+        'Resend limit exceeded. Please try again later.',
+      );
+    }
+
+    await this.emailVerificationService.createAndSendToken({
+      id: user.id,
+      email: user.email,
+    });
+
+    return { message: 'Verification email sent.' };
   }
 }

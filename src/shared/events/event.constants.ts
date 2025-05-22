@@ -1,4 +1,4 @@
 export enum AppEvents {
-  USER_REGISTERED = 'user.registered',
   CANDIDATE_PROFILE_CREATED = 'candidate.profile.created',
+  EMAIL_VERIFIED = 'email.verified',
 }

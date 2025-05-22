@@ -1,9 +1,13 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import { readFileSync } from 'fs';
+import Handlebars from 'handlebars';
 import * as nodemailer from 'nodemailer';
+import * as path from 'path';
 
 @Injectable()
 export class MailService {
   private transporter: nodemailer.Transporter;
+  private readonly logger = new Logger(MailService.name);
 
   constructor() {
     this.transporter = nodemailer.createTransport({
@@ -37,17 +41,49 @@ export class MailService {
     template: string,
     context: Record<string, any>,
   ): string {
-    // Define the email template
-    const emailTemplate = `
-      <p>Dear {{ companyName }},</p>
-      <p>Thank you for registering your company with us. Please verify your registration by clicking the link below:</p>
-      <a href="{{ verificationLink }}">Verify Company</a>
-      <p>If you did not register this company, please ignore this email.</p>
-    `;
+    /*
+     * Render an html string from a Handlebars (*.hbs) file located under
+     * src/shared/mail/templates. The template argument can be provided
+     * with or without extension.
+     */
 
-    // Replace placeholders with actual values from the context
-    return emailTemplate
-      .replace('{{ companyName }}', context.companyName || '')
-      .replace('{{ verificationLink }}', context.verificationLink || '');
+    const filename = template.endsWith('.hbs') ? template : `${template}.hbs`;
+
+    // Try multiple possible paths to find the template
+    const possiblePaths = [
+      path.join(__dirname, 'templates', filename),
+      path.join(process.cwd(), 'src', 'shared', 'mail', 'templates', filename),
+      path.join(
+        process.cwd(),
+        'dist',
+        'src',
+        'shared',
+        'mail',
+        'templates',
+        filename,
+      ),
+    ];
+
+    let fileContent: string | null = null;
+    let templatePath: string | null = null;
+
+    for (const p of possiblePaths) {
+      try {
+        fileContent = readFileSync(p, 'utf-8');
+        templatePath = p;
+        this.logger.log(`Found template at: ${p}`);
+        break;
+      } catch (error: any) {
+        this.logger.debug(`Template not found at: ${p} - ${error.message}`);
+      }
+    }
+
+    if (!fileContent || !templatePath) {
+      this.logger.error(`Template not found: ${filename}`);
+      throw new Error(`Email template not found: ${filename}`);
+    }
+
+    const compile = Handlebars.compile(fileContent);
+    return compile(context);
   }
 }

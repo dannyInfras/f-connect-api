@@ -8,6 +8,10 @@ export default (): any => ({
     user: process.env.DB_USER,
     pass: process.env.DB_PASS,
   },
+  redis: {
+    host: process.env.REDIS_HOST,
+    port: process.env.REDIS_PORT ? parseInt(process.env.REDIS_PORT, 10) : 6379,
+  },
   jwt: {
     publicKey: Buffer.from(
       process.env.JWT_PUBLIC_KEY_BASE64!,

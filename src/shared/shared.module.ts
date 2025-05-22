@@ -8,6 +8,7 @@ import { EventEmitterService } from './events/event-emitter.service';
 import { AllExceptionsFilter } from './filters/all-exceptions.filter';
 import { LoggingInterceptor } from './interceptors/logging.interceptor';
 import { AppLoggerModule } from './logger/logger.module';
+import { EmailQueueService } from './mail/email-queue.service';
 import { MailService } from './mail/mail.service';
 import { UnitOfWork } from './unit-of-work/unit-of-work.service';
 
@@ -39,6 +40,7 @@ import { UnitOfWork } from './unit-of-work/unit-of-work.service';
     ConfigModule,
     EventEmitterService,
     MailService,
+    EmailQueueService,
     UnitOfWork,
   ],
   providers: [
@@ -50,6 +52,7 @@ import { UnitOfWork } from './unit-of-work/unit-of-work.service';
     },
     EventEmitterService,
     MailService,
+    EmailQueueService,
     UnitOfWork,
   ],
 })

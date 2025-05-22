@@ -31,7 +31,7 @@ export class User {
   @Column('simple-array')
   roles: string[];
 
-  @Column({ name: 'is_verified', default: true })
+  @Column({ name: 'is_account_disabled', default: true })
   isAccountDisabled: boolean;
 
   @Unique('email', ['email'])

@@ -41,6 +41,7 @@ services:
       - .env
     depends_on:
       - pgsqldb
+      - redis
     labels:
       - 'traefik.enable=true'
       - 'traefik.http.routers.f-connect-api.rule=Host(`${SERVER_DOMAIN}`)'
@@ -65,6 +66,18 @@ services:
     networks:
       - f-connect-server
 
+  redis:
+    image: redis:7.2-alpine
+    container_name: redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --loglevel warning
+    ports:
+      - '6379:6379'
+    volumes:
+      - redisdata:/data
+    networks:
+      - f-connect-server
+
   pgadmin:
     container_name: space-study-api-pgadmin
     image: dpage/pgadmin4
@@ -84,4 +97,5 @@ networks:
 volumes:
   node_modules:
   pgsqldata:
+  redisdata:
   letsencrypt:

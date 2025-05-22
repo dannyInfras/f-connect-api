@@ -6,6 +6,7 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
+
 import { EmploymentTypeEnum } from '../enums/employee-type';
 
 export class ExperienceInputDto {

@@ -135,4 +135,24 @@ export class AuthController {
   ): Promise<{ message: string }> {
     return this.authService.verifyCompany(ctx, code);
   }
+
+  // -------- Email verification for newly registered users --------
+
+  @Get('verify')
+  @ApiOperation({ summary: 'Verify email by token' })
+  async verifyEmail(
+    @ReqContext() ctx: RequestContext,
+    @Query('token') token: string,
+  ): Promise<{ message: string }> {
+    return this.authService.verifyEmail(ctx, token);
+  }
+
+  @Post('resend-verification')
+  @ApiOperation({ summary: 'Resend email verification link' })
+  async resendVerification(
+    @ReqContext() ctx: RequestContext,
+    @Body('email') email: string,
+  ): Promise<{ message: string }> {
+    return this.authService.resendVerificationEmail(ctx, email);
+  }
 }

@@ -73,9 +73,9 @@ jobs:
             cd ${{ secrets.DEPLOY_PATH }}
 
             docker compose config > /dev/null
-            docker compose down app traefik --remove-orphans || true
+            docker compose down app || true
             docker image prune -f
-            docker compose up -d --build --no-deps app traefik
+            docker compose up -d --build --no-deps app
             docker image prune -f
           EOF
 

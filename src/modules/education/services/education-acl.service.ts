@@ -1,13 +1,14 @@
 import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 
 import { ROLE } from '@/modules/auth/constants/role.constant';
 import { Education } from '@/modules/education/entities/education.entity';
 import { BaseAclService } from '@/shared/acl/acl.service';
 import { Action } from '@/shared/acl/action.constant';
 import { Actor } from '@/shared/acl/actor.constant';
+
 import { CandidateProfile } from '../../candidate-profile/entities/candidate-profile.entity';
-import { Repository } from 'typeorm';
-import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
 export class EducationAclService extends BaseAclService<Education> {
