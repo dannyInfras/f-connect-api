@@ -38,9 +38,23 @@ export class User {
   @Column({ length: 50 })
   email: string;
 
+  @Column({
+    name: 'gender',
+    nullable: true,
+    type: 'enum',
+    enum: ['MALE', 'FEMALE', 'OTHER'],
+  })
+  gender?: 'MALE' | 'FEMALE' | 'OTHER';
+
   @Unique('phone', ['phone'])
   @Column({ length: 30, nullable: true })
   phone?: string;
+
+  @Column({ name: 'avatar', nullable: true })
+  avatar?: string;
+
+  @Column({ name: 'dob', nullable: true })
+  dob?: Date;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

@@ -30,6 +30,26 @@ export class UserOutput {
 
   @Expose()
   @ApiProperty()
+  gender: 'MALE' | 'FEMALE' | 'OTHER';
+
+  @Expose()
+  @ApiProperty()
+  phone: string;
+
+  @Expose()
+  @ApiProperty()
+  avatar: string;
+
+  @Expose()
+  @ApiProperty()
+  address: string;
+
+  @Expose()
+  @ApiProperty()
+  dob: Date;
+
+  @Expose()
+  @ApiProperty()
   createdAt: string;
 
   @Expose()

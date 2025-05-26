@@ -126,6 +126,9 @@ export class UserController {
 
   // TODO: ADD RoleGuard
   // NOTE : This can be made a admin only endpoint. For normal users they can use PATCH /me
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(ROLE.ADMIN, ROLE.USER)
+  @ApiBearerAuth()
   @Patch(':id')
   @ApiOperation({
     summary: 'Update user API',
