@@ -23,6 +23,7 @@ import { plainToInstance } from 'class-transformer';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { CreateCompanyResDto } from '@/modules/company/dtos/res/create-company.res';
 import { Actor } from '@/shared/acl/actor.constant';
+import { Public } from '@/shared/decorators/public.decorator';
 import {
   BaseApiResponse,
   SwaggerBaseApiResponse,
@@ -37,12 +38,13 @@ import { CompanyDetailResponseDto } from '../dtos/res/company-detail.res';
 import { CompanyService } from '../services/company.service';
 
 @ApiTags('Companies')
+@Controller('companies')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
-@Controller('companies')
 export class CompanyController {
   constructor(private readonly companyService: CompanyService) {}
 
+  @Public()
   @Get()
   @ApiOperation({ summary: 'Get all companies with pagination' })
   @ApiResponse({
@@ -101,6 +103,7 @@ export class CompanyController {
     return this.companyService.create(dto);
   }
 
+  @Public()
   @Get(':id')
   @ApiOperation({ summary: 'Get a company by ID' })
   @ApiResponse({
@@ -110,9 +113,6 @@ export class CompanyController {
     example: CompanyDetailResponseDto.example,
   })
   async findOne(@Param('id') id: string, @ReqContext() ctx: RequestContext) {
-    if (!ctx.user) {
-      throw new UnauthorizedException('User must be logged in');
-    }
     const company = await this.companyService.findOne(id, ctx.user as Actor);
     return plainToInstance(CompanyDetailResponseDto, company, {
       excludeExtraneousValues: true,

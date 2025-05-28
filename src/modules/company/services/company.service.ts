@@ -39,7 +39,11 @@ export class CompanyService {
     return repo.save(company);
   }
 
-  async findOne(id: string, actor: Actor) {
+  async findOne(id: string, actor: Actor | null) {
+    if (actor) {
+      await this.aclService.canView();
+    }
+
     const company = await this.companyRepo.findOne({
       where: { id },
       relations: ['users', 'benefits', 'coreTeam', 'jobs', 'jobs.category'],
@@ -47,20 +51,16 @@ export class CompanyService {
 
     if (!company) throw new NotFoundException('Company not found');
 
-    if (!this.aclService.forActor(actor).canDoAction(Action.Read, company)) {
-      throw new UnauthorizedException();
-    }
-
     return CompanyMapper.toDetailResponse(company);
   }
 
   async findAll(
-    actor: Actor,
+    actor: Actor | null,
     limit: number,
     offset: number,
   ): Promise<{ companies: Company[]; count: number }> {
-    if (!this.aclService.forActor(actor).canDoAction(Action.List)) {
-      throw new UnauthorizedException('Only admin can list all companies');
+    if (actor) {
+      await this.aclService.canList();
     }
 
     const [companies, count] = await this.companyRepo.findAndCount({
