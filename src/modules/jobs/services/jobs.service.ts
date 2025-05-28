@@ -31,12 +31,13 @@ export class JobService {
   }
 
   async findAll(
-    actor: Actor,
+    actor: Actor | null,
     limit: number,
     offset: number,
   ): Promise<{ jobs: JobResponseDto[]; count: number }> {
-    if (!this.aclService.forActor(actor).canDoAction(Action.List)) {
-      throw new UnauthorizedException();
+    // For public routes, skip ACL check
+    if (actor) {
+      await this.aclService.canList();
     }
 
     const [jobs, count] = await this.repository.findAndCount({
@@ -106,7 +107,15 @@ export class JobService {
     return JobMapper.toResponse(job);
   }
 
-  async findOne(actor: Actor, id: string): Promise<JobDetailResponseDto> {
+  async findOne(
+    actor: Actor | null,
+    id: string,
+  ): Promise<JobDetailResponseDto> {
+    // For public routes, skip ACL check
+    if (actor) {
+      await this.aclService.canView();
+    }
+
     const job = await this.repository.findOne({
       where: { id },
       relations: ['company', 'category', 'skills'],
@@ -114,10 +123,6 @@ export class JobService {
 
     if (!job) {
       throw new NotFoundException('Job not found');
-    }
-
-    if (!this.aclService.forActor(actor).canDoAction(Action.Read, job)) {
-      throw new UnauthorizedException();
     }
 
     return JobMapper.toResponse(job);

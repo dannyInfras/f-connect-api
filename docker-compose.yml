@@ -79,7 +79,7 @@ services:
       - f-connect-server
 
   pgadmin:
-    container_name: space-study-api-pgadmin
+    container_name: f-connect-pgadmin
     image: dpage/pgadmin4
     env_file:
       - .env
@@ -87,6 +87,8 @@ services:
       - '5050:80'
     depends_on:
       - pgsqldb
+    networks:
+      - f-connect-server
 
 networks:
   f-connect-server:

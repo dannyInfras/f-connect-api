@@ -19,6 +19,7 @@ import {
 
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { JobService } from '@/modules/jobs/services/jobs.service';
+import { Public } from '@/shared/decorators/public.decorator';
 import { BaseApiResponse } from '@/shared/dtos/base-api-response.dto';
 import { PaginationParamsDto } from '@/shared/dtos/pagination-params.dto';
 import { ReqContext } from '@/shared/request-context/req-context.decorator';
@@ -30,9 +31,9 @@ import { JobDetailResponseDto } from '../dtos/res/job.res';
 import { ListJobResponseDto } from '../dtos/res/list-job.res';
 
 @ApiTags('Jobs')
+@Controller('jobs')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
-@Controller('jobs')
 export class JobsController {
   constructor(private readonly jobService: JobService) {}
 
@@ -55,6 +56,7 @@ export class JobsController {
     return this.jobService.create(ctx.user, dto);
   }
 
+  @Public()
   @Get()
   @ApiOperation({ summary: 'Get all jobs with pagination' })
   @ApiResponse({
@@ -66,9 +68,6 @@ export class JobsController {
     @Query() query: PaginationParamsDto,
     @ReqContext() ctx: RequestContext,
   ): Promise<ListJobResponseDto> {
-    if (!ctx.user) {
-      throw new UnauthorizedException('User must be logged in');
-    }
     const { jobs, count } = await this.jobService.findAll(
       ctx.user,
       query.limit,
@@ -84,6 +83,7 @@ export class JobsController {
     };
   }
 
+  @Public()
   @Get('company/:companyId')
   @ApiOperation({ summary: 'Get jobs for a company with pagination' })
   @ApiResponse({
@@ -110,15 +110,7 @@ export class JobsController {
     };
   }
 
-  @Get(':id')
-  @ApiOperation({ summary: 'Get job by ID' })
-  @ApiResponse({
-    status: 200,
-    description: 'Job found successfully',
-    schema: {
-      example: JobDetailResponseDto.example,
-    },
-  })
+  @Public()
   @Get(':id')
   @ApiOperation({ summary: 'Get job by ID' })
   @ApiResponse({
@@ -132,9 +124,6 @@ export class JobsController {
     @Param('id') id: string,
     @ReqContext() ctx: RequestContext,
   ): Promise<BaseApiResponse<JobDetailResponseDto>> {
-    if (!ctx.user) {
-      throw new UnauthorizedException('User must be logged in');
-    }
     const job = await this.jobService.findOne(ctx.user, id);
     return {
       data: job,
