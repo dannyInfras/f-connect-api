@@ -124,14 +124,11 @@ export class UserController {
     return { data: user, meta: {} };
   }
 
-  // TODO: ADD RoleGuard
-  // NOTE : This can be made a admin only endpoint. For normal users they can use PATCH /me
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(ROLE.ADMIN, ROLE.USER)
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @Patch(':id')
+  @Patch()
   @ApiOperation({
-    summary: 'Update user API',
+    summary: 'Update current user API',
   })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -144,12 +141,11 @@ export class UserController {
   @UseInterceptors(ClassSerializerInterceptor)
   async updateUser(
     @ReqContext() ctx: RequestContext,
-    @Param('id') userId: number,
     @Body() input: UpdateUserInput,
   ): Promise<BaseApiResponse<UserOutput>> {
     this.logger.log(ctx, `${this.updateUser.name} was called`);
 
-    const user = await this.userService.updateUser(ctx, userId, input);
+    const user = await this.userService.updateUser(ctx, ctx.user!.id, input);
     return { data: user, meta: {} };
   }
 }
