@@ -11,6 +11,7 @@ import { UserModule } from '@/modules/user/user.module';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { CvModule } from './modules/cv/cv.module';
 import { SkillModule } from './modules/skill/skill.module';
 import { RequestLoggerMiddleware } from './shared/middleware/request-logger.middleware';
 import { SharedModule } from './shared/shared.module';
@@ -27,6 +28,7 @@ import { SharedModule } from './shared/shared.module';
     SkillModule,
     EducationModule,
     ExperienceModule,
+    CvModule
   ],
   controllers: [AppController],
   providers: [AppService],
