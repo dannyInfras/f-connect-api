@@ -65,9 +65,7 @@ jobs:
             set -e
 
             sudo cp -r ${{ secrets.SECRET_PATH }}/.env ${{ secrets.DEPLOY_PATH }}/.env
-
             sudo chown ${{ secrets.DO_DEPLOY_USER }}:${{ secrets.DO_DEPLOY_USER }} ${{ secrets.DEPLOY_PATH }}/.env
-            
             sudo chmod 600 ${{ secrets.DEPLOY_PATH }}/.env
 
             cd ${{ secrets.DEPLOY_PATH }}
@@ -156,19 +154,19 @@ jobs:
                     },
                     {
                       "type": "mrkdwn",
-                      "text": "*Details:* ${{ steps.status.outputs.message }}"
+                      "text": "*Details:* ${{ toJSON(steps.status.outputs.message) }}"
                     },
                     {
                       "type": "mrkdwn",
-                      "text": "*Branch:* ${{ github.ref_name }}"
+                      "text": "*Branch:* ${{ toJSON(github.ref_name) }}"
                     },
                     {
                       "type": "mrkdwn",
-                      "text": "*Commit:* ${{ github.event.head_commit.message }}"
+                      "text": "*Commit:* ${{ toJSON(github.event.head_commit.message || github.sha) }}"
                     },
                     {
                       "type": "mrkdwn",
-                      "text": "*Triggered by:* ${{ github.actor }}"
+                      "text": "*Triggered by:* ${{ toJSON(github.actor) }}"
                     }
                   ]
                 },
