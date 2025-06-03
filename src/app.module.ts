@@ -1,5 +1,6 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 
+import { ApplicationsModule } from '@/modules/applications/applications.module';
 import { ArticleModule } from '@/modules/article/article.module';
 import { AuthModule } from '@/modules/auth/auth.module';
 import { CandidateProfileModule } from '@/modules/candidate-profile/candidate-profile.module';
@@ -28,7 +29,8 @@ import { SharedModule } from './shared/shared.module';
     SkillModule,
     EducationModule,
     ExperienceModule,
-    CvModule
+    CvModule,
+    ApplicationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
