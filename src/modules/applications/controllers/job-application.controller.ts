@@ -1,12 +1,14 @@
 import {
   Body,
+  ClassSerializerInterceptor,
   Controller,
   Get,
   Param,
   Post,
   Put,
-  UnauthorizedException,
+  Query,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -15,15 +17,20 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 
+import { BaseApiResponse } from '../../../shared/dtos/base-api-response.dto';
+import { PaginationParamsDto } from '../../../shared/dtos/pagination-params.dto';
 import { AppLogger } from '../../../shared/logger/logger.service';
 import { ReqContext } from '../../../shared/request-context/req-context.decorator';
 import { RequestContext } from '../../../shared/request-context/request-context.dto';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { CreateJobApplicationDto } from '../dtos/create-job-application.dto';
+import {
+  JobApplicationResponseDto,
+  PaginatedJobApplicationResponseDto,
+} from '../dtos/job-appication-response.dto';
 import { UpdateJobApplicationDto } from '../dtos/update-job-application.dto';
+import { JobApplication } from '../entities/job-application.entity';
 import { JobApplicationService } from '../services/job-application.service';
-
-// Note: Middleware such as RequestIdMiddleware and Logger are applied globally in main.ts as per middleware.md
 
 @ApiTags('Job Applications')
 @Controller('applications')
@@ -47,39 +54,61 @@ export class JobApplicationController {
   async create(
     @Body() createDto: CreateJobApplicationDto,
     @ReqContext() ctx: RequestContext,
-  ): Promise<any> {
+  ): Promise<JobApplication> {
     this.logger.log(ctx, `${this.create.name} was called`);
-    if (!ctx.user) {
-      throw new UnauthorizedException('User not authenticated');
-    }
-    return this.jobApplicationService.createApplication(createDto, ctx.user);
+    return this.jobApplicationService.createApplication(createDto, ctx.user!);
   }
 
   @Get('user')
   @ApiOperation({ summary: 'Get all applications by the authenticated user' })
-  @ApiResponse({ status: 200, description: 'List of user applications.' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of user applications.',
+    type: PaginatedJobApplicationResponseDto,
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
-  async getUserApplications(@ReqContext() ctx: RequestContext): Promise<any> {
+  @UseInterceptors(ClassSerializerInterceptor)
+  async getUserApplications(
+    @ReqContext() ctx: RequestContext,
+    @Query() query: PaginationParamsDto,
+  ): Promise<BaseApiResponse<JobApplicationResponseDto[]>> {
     this.logger.log(ctx, `${this.getUserApplications.name} was called`);
-    if (!ctx.user) {
-      throw new UnauthorizedException('User not authenticated');
-    }
-    return this.jobApplicationService.getUserApplications(ctx.user);
+
+    const { applications, count } =
+      await this.jobApplicationService.getUserApplications(
+        ctx.user!,
+        query.limit,
+        query.offset,
+      );
+
+    return { data: applications, meta: { count } };
   }
 
   @Get('job/:jobId')
   @ApiOperation({ summary: 'Get all applications for a specific job' })
-  @ApiResponse({ status: 200, description: 'List of job applications.' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of job applications.',
+    type: PaginatedJobApplicationResponseDto,
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @UseInterceptors(ClassSerializerInterceptor)
   async getJobApplications(
-    @Param('jobId') jobId: number,
     @ReqContext() ctx: RequestContext,
-  ): Promise<any> {
+    @Param('jobId') jobId: number,
+    @Query() query: PaginationParamsDto,
+  ): Promise<BaseApiResponse<JobApplicationResponseDto[]>> {
     this.logger.log(ctx, `${this.getJobApplications.name} was called`);
-    if (!ctx.user) {
-      throw new UnauthorizedException('User not authenticated');
-    }
-    return this.jobApplicationService.getJobApplications(jobId, ctx.user);
+
+    const { applications, count } =
+      await this.jobApplicationService.getJobApplications(
+        jobId,
+        ctx.user!,
+        query.limit,
+        query.offset,
+      );
+
+    return { data: applications, meta: { count } };
   }
 
   @Put(':id')
@@ -93,15 +122,13 @@ export class JobApplicationController {
     @Param('id') id: number,
     @Body() updateDto: UpdateJobApplicationDto,
     @ReqContext() ctx: RequestContext,
-  ): Promise<any> {
+  ): Promise<JobApplication> {
     this.logger.log(ctx, `${this.update.name} was called`);
-    if (!ctx.user) {
-      throw new UnauthorizedException('User not authenticated');
-    }
+
     return this.jobApplicationService.updateApplication(
       id,
       updateDto,
-      ctx.user,
+      ctx.user!,
     );
   }
 }

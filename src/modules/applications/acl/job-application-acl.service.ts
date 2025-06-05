@@ -14,7 +14,7 @@ export class JobApplicationAclService extends BaseAclService<JobApplication> {
     this.canDo(ROLE.USER, [Action.Create]);
     this.canDo(
       ROLE.USER,
-      [Action.Read, Action.Update, Action.Delete, Action.List],
+      [Action.List, Action.Update, Action.Delete],
       this.isOwner,
     );
   }
