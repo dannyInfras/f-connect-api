@@ -124,7 +124,7 @@ export class CandidateProfileRepository {
   private toResponseDto(entity: CandidateProfile): CandidateProfileResponseDto {
     return plainToInstance(CandidateProfileResponseDto, {
       id: entity.id,
-      name: entity.user?.username || '',
+      name: entity.user?.name || '',
       title: entity.title,
       company: entity.company,
       location: entity.location,
@@ -132,7 +132,10 @@ export class CandidateProfileRepository {
       coverImage: entity.coverImage,
       isOpenToOpportunities: entity.isOpenToOpportunities,
       about: entity.about,
-      contact: entity.contact || {},
+      contact: {
+        email: entity.user.email || '',
+        phone: entity.user.phone || '',
+      },
       social: entity.social || {},
       experiences: entity.experiences || [],
       education: entity.educations || [],
