@@ -5,9 +5,13 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 
+import { Action } from '../../../shared/acl/action.constant';
 import { UserAccessTokenClaims } from '../../auth/dtos/auth-token-output.dto';
+import { Job } from '../../jobs/entities/jobs.entity';
+import { User } from '../../user/entities/user.entity';
 import { JobApplicationAclService } from '../acl/job-application-acl.service';
 import { CreateJobApplicationDto } from '../dtos/create-job-application.dto';
+import { JobApplicationResponseDto } from '../dtos/job-appication-response.dto';
 import { UpdateJobApplicationDto } from '../dtos/update-job-application.dto';
 import { JobApplication } from '../entities/job-application.entity';
 import { ApplicationStatus } from '../enums/application-status.enum';
@@ -28,7 +32,7 @@ export class JobApplicationService {
       // Check if user has already applied for this job
       const existingApplication = await this.jobApplicationRepository.findOne({
         where: {
-          job: { id: dto.jobId },
+          job: { id: String(dto.jobId) },
           user: { id: user.id },
         },
       });
@@ -38,8 +42,8 @@ export class JobApplicationService {
       }
 
       const application = new JobApplication();
-      application.job = { id: dto.jobId } as any;
-      application.user = { id: user.id } as any;
+      application.job = { id: String(dto.jobId) } as Job;
+      application.user = { id: user.id } as User;
       application.status = ApplicationStatus.APPLIED; // Set initial status
 
       if (dto.cvId) {
@@ -71,14 +75,23 @@ export class JobApplicationService {
 
   async getUserApplications(
     user: UserAccessTokenClaims,
-  ): Promise<JobApplication[]> {
+    limit?: number,
+    offset?: number,
+  ): Promise<{ applications: JobApplicationResponseDto[]; count: number }> {
     try {
-      const applications = await this.jobApplicationRepository.findByUserId(
-        user.id,
-      );
-      return applications.filter((app) =>
-        this.aclService.forActor(user).canDoAction('read', app),
-      );
+      const { applications, count } =
+        await this.jobApplicationRepository.findByUserId(
+          user.id,
+          limit,
+          offset,
+        );
+
+      return {
+        applications: applications.filter((app) =>
+          this.aclService.forActor(user).canDoAction(Action.List, app),
+        ),
+        count,
+      };
     } catch (error) {
       throw new BadRequestException('Failed to fetch user applications');
     }
@@ -87,13 +100,19 @@ export class JobApplicationService {
   async getJobApplications(
     jobId: number,
     user: UserAccessTokenClaims,
-  ): Promise<JobApplication[]> {
+    limit?: number,
+    offset?: number,
+  ): Promise<{ applications: JobApplicationResponseDto[]; count: number }> {
     try {
-      const applications =
-        await this.jobApplicationRepository.findByJobId(jobId);
-      return applications.filter((app) =>
-        this.aclService.forActor(user).canDoAction('read', app),
-      );
+      const { applications, count } =
+        await this.jobApplicationRepository.findByJobId(jobId, limit, offset);
+
+      return {
+        applications: applications.filter((app) =>
+          this.aclService.forActor(user).canDoAction('read', app),
+        ),
+        count,
+      };
     } catch (error) {
       throw new BadRequestException('Failed to fetch job applications');
     }
