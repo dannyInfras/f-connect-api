@@ -10,6 +10,7 @@ import { LoggingInterceptor } from './interceptors/logging.interceptor';
 import { AppLoggerModule } from './logger/logger.module';
 import { EmailQueueService } from './mail/email-queue.service';
 import { MailService } from './mail/mail.service';
+import { SupabaseService } from './storage/supabase.service';
 import { UnitOfWork } from './unit-of-work/unit-of-work.service';
 
 @Module({
@@ -41,6 +42,7 @@ import { UnitOfWork } from './unit-of-work/unit-of-work.service';
     EventEmitterService,
     MailService,
     EmailQueueService,
+    SupabaseService,
     UnitOfWork,
   ],
   providers: [
@@ -53,6 +55,7 @@ import { UnitOfWork } from './unit-of-work/unit-of-work.service';
     EventEmitterService,
     MailService,
     EmailQueueService,
+    SupabaseService,
     UnitOfWork,
   ],
 })

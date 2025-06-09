@@ -17,20 +17,20 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 
-import { BaseApiResponse } from '../../../shared/dtos/base-api-response.dto';
 import { PaginationParamsDto } from '../../../shared/dtos/pagination-params.dto';
 import { AppLogger } from '../../../shared/logger/logger.service';
 import { ReqContext } from '../../../shared/request-context/req-context.decorator';
 import { RequestContext } from '../../../shared/request-context/request-context.dto';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { CreateJobApplicationDto } from '../dtos/create-job-application.dto';
-import {
-  JobApplicationResponseDto,
-  PaginatedJobApplicationResponseDto,
-} from '../dtos/job-appication-response.dto';
+import { PaginatedJobApplicationResponseDto } from '../dtos/job-appication-response.dto';
 import { UpdateJobApplicationDto } from '../dtos/update-job-application.dto';
-import { JobApplication } from '../entities/job-application.entity';
 import { JobApplicationService } from '../services/job-application.service';
+import {
+  CreateApplicationResponse,
+  GetApplicationsResponse,
+  UpdateApplicationResponse,
+} from '../types';
 
 @ApiTags('Job Applications')
 @Controller('applications')
@@ -54,9 +54,13 @@ export class JobApplicationController {
   async create(
     @Body() createDto: CreateJobApplicationDto,
     @ReqContext() ctx: RequestContext,
-  ): Promise<JobApplication> {
+  ): Promise<CreateApplicationResponse> {
     this.logger.log(ctx, `${this.create.name} was called`);
-    return this.jobApplicationService.createApplication(createDto, ctx.user!);
+
+    return this.jobApplicationService.createApplication({
+      dto: createDto,
+      user: ctx.user!,
+    });
   }
 
   @Get('user')
@@ -71,15 +75,15 @@ export class JobApplicationController {
   async getUserApplications(
     @ReqContext() ctx: RequestContext,
     @Query() query: PaginationParamsDto,
-  ): Promise<BaseApiResponse<JobApplicationResponseDto[]>> {
+  ): Promise<GetApplicationsResponse> {
     this.logger.log(ctx, `${this.getUserApplications.name} was called`);
 
     const { applications, count } =
-      await this.jobApplicationService.getUserApplications(
-        ctx.user!,
-        query.limit,
-        query.offset,
-      );
+      await this.jobApplicationService.getUserApplications({
+        user: ctx.user!,
+        limit: query.limit,
+        offset: query.offset,
+      });
 
     return { data: applications, meta: { count } };
   }
@@ -97,16 +101,16 @@ export class JobApplicationController {
     @ReqContext() ctx: RequestContext,
     @Param('jobId') jobId: number,
     @Query() query: PaginationParamsDto,
-  ): Promise<BaseApiResponse<JobApplicationResponseDto[]>> {
+  ): Promise<GetApplicationsResponse> {
     this.logger.log(ctx, `${this.getJobApplications.name} was called`);
 
     const { applications, count } =
-      await this.jobApplicationService.getJobApplications(
+      await this.jobApplicationService.getJobApplications({
         jobId,
-        ctx.user!,
-        query.limit,
-        query.offset,
-      );
+        user: ctx.user!,
+        limit: query.limit,
+        offset: query.offset,
+      });
 
     return { data: applications, meta: { count } };
   }
@@ -122,13 +126,13 @@ export class JobApplicationController {
     @Param('id') id: number,
     @Body() updateDto: UpdateJobApplicationDto,
     @ReqContext() ctx: RequestContext,
-  ): Promise<JobApplication> {
+  ): Promise<UpdateApplicationResponse> {
     this.logger.log(ctx, `${this.update.name} was called`);
 
-    return this.jobApplicationService.updateApplication(
+    return this.jobApplicationService.updateApplication({
       id,
-      updateDto,
-      ctx.user!,
-    );
+      dto: updateDto,
+      user: ctx.user!,
+    });
   }
 }

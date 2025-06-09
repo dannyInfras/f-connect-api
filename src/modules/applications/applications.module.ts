@@ -12,6 +12,7 @@ import { JobApplicationController } from './controllers/job-application.controll
 import { JobApplication } from './entities/job-application.entity';
 import { JobApplicationRepository } from './repositories/job-application.repository';
 import { JobApplicationService } from './services/job-application.service';
+import { JobApplicationNotificationService } from './services/job-application-notification.service';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { JobApplicationService } from './services/job-application.service';
   providers: [
     // Services
     JobApplicationService,
+    JobApplicationNotificationService,
     // ACL Services
     JobApplicationAclService,
     // Repositories

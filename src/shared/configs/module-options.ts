@@ -29,5 +29,8 @@ export const configModuleOptions: ConfigModuleOptions = {
     MAIL_PASSWORD: Joi.string().required(),
     MAIL_FROM: Joi.string().required(),
     FRONTEND_URL: Joi.string().required(),
+    SUPABASE_URL: Joi.string().required(),
+    SUPABASE_KEY: Joi.string().required(),
+    SUPABASE_BUCKET_NAME: Joi.string().optional(),
   }),
 };

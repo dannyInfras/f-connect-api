@@ -1,0 +1,15 @@
+<p>Hello {{applicantName}},</p>
+<p>Thank you for applying to the position
+  <strong>{{jobTitle}}</strong>
+  at
+  <strong>{{companyName}}</strong>.</p>
+<p>Your application has been successfully submitted and is now under review. We
+  will contact you soon with updates on your application status.</p>
+<p>Application Details:</p>
+<ul>
+  <li>Position: {{jobTitle}}</li>
+  <li>Company: {{companyName}}</li>
+  <li>Applied on: {{appliedDate}}</li>
+  {{#if cvSubmitted}}<li>CV: Submitted (attached to this email)</li>{{/if}}
+</ul>
+<p>Best regards,<br />The FConnect Team</p>

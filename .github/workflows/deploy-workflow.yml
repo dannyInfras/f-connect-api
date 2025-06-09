@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       force_deploy:
-        description: "Force deployment even if no changes detected"
+        description: 'Force deployment even if no changes detected'
         required: false
         default: false
         type: boolean
@@ -150,23 +150,23 @@ jobs:
                   "fields": [
                     {
                       "type": "mrkdwn",
-                      "text": "*Status:* ${{ steps.status.outputs.result == 'success' && ':white_check_mark: Success' || ':x: Failed' }}"
+                      "text": "*Status:* ${{ fromJSON('["❌ Failed", "✅ Success"]')[steps.status.outputs.result == 'success'] }}"
                     },
                     {
                       "type": "mrkdwn",
-                      "text": "*Details:* ${{ toJSON(steps.status.outputs.message) }}"
+                      "text": "*Details:* ${{ steps.status.outputs.message }}"
                     },
                     {
                       "type": "mrkdwn",
-                      "text": "*Branch:* ${{ toJSON(github.ref_name) }}"
+                      "text": "*Branch:* ${{ github.ref_name }}"
                     },
                     {
                       "type": "mrkdwn",
-                      "text": "*Commit:* ${{ toJSON(github.event.head_commit.message || github.sha) }}"
+                      "text": "*Commit:* ${{ github.event.head_commit.message || github.sha }}"
                     },
                     {
                       "type": "mrkdwn",
-                      "text": "*Triggered by:* ${{ toJSON(github.actor) }}"
+                      "text": "*Triggered by:* ${{ github.actor }}"
                     }
                   ]
                 },

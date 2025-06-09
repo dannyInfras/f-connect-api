@@ -4,6 +4,12 @@ import Handlebars from 'handlebars';
 import * as nodemailer from 'nodemailer';
 import * as path from 'path';
 
+export interface EmailAttachment {
+  filename: string;
+  content: Buffer;
+  contentType?: string;
+}
+
 @Injectable()
 export class MailService {
   private transporter: nodemailer.Transporter;
@@ -26,15 +32,31 @@ export class MailService {
     subject: string,
     template: string,
     context: Record<string, any>,
+    attachments?: EmailAttachment[],
   ): Promise<void> {
     const html = this.generateHtmlFromTemplate(template, context);
 
-    await this.transporter.sendMail({
+    const mailOptions: nodemailer.SendMailOptions = {
       from: process.env.MAIL_FROM || '"No Reply" <no-reply@example.com>', // Sender address
       to,
       subject,
       html,
-    });
+    };
+
+    // Add attachments if provided
+    if (attachments && attachments.length > 0) {
+      mailOptions.attachments = attachments.map((attachment) => ({
+        filename: attachment.filename,
+        content: attachment.content,
+        contentType: attachment.contentType,
+      }));
+
+      this.logger.log(
+        `Sending email with ${attachments.length} attachment(s) to ${to}`,
+      );
+    }
+
+    await this.transporter.sendMail(mailOptions);
   }
 
   private generateHtmlFromTemplate(

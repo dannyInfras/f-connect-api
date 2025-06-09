@@ -6,6 +6,11 @@ import { Job } from '../../jobs/entities/jobs.entity';
 import { User } from '../../user/entities/user.entity';
 import { JobApplicationResponseDto } from '../dtos/job-appication-response.dto';
 import { JobApplication } from '../entities/job-application.entity';
+import {
+  ApplicationsWithCount,
+  FindByJobIdParams,
+  FindByUserIdParams,
+} from '../types';
 
 @Injectable()
 export class JobApplicationRepository {
@@ -25,10 +30,10 @@ export class JobApplicationRepository {
   }
 
   async findByUserId(
-    userId: number,
-    limit?: number,
-    offset?: number,
-  ): Promise<{ applications: JobApplicationResponseDto[]; count: number }> {
+    params: FindByUserIdParams,
+  ): Promise<ApplicationsWithCount> {
+    const { userId, limit, offset } = params;
+
     const query = this.repo
       .createQueryBuilder('application')
       .leftJoinAndSelect('application.user', 'user')
@@ -48,11 +53,9 @@ export class JobApplicationRepository {
     };
   }
 
-  async findByJobId(
-    jobId: number,
-    limit?: number,
-    offset?: number,
-  ): Promise<{ applications: JobApplicationResponseDto[]; count: number }> {
+  async findByJobId(params: FindByJobIdParams): Promise<ApplicationsWithCount> {
+    const { jobId, limit, offset } = params;
+
     const query = this.repo
       .createQueryBuilder('application')
       .leftJoinAndSelect('application.user', 'user')

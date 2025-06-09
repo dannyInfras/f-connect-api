@@ -5,29 +5,41 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 
+import { UnitOfWork } from '@/shared/unit-of-work/unit-of-work.service';
+
 import { Action } from '../../../shared/acl/action.constant';
-import { UserAccessTokenClaims } from '../../auth/dtos/auth-token-output.dto';
 import { Job } from '../../jobs/entities/jobs.entity';
 import { User } from '../../user/entities/user.entity';
 import { JobApplicationAclService } from '../acl/job-application-acl.service';
-import { CreateJobApplicationDto } from '../dtos/create-job-application.dto';
-import { JobApplicationResponseDto } from '../dtos/job-appication-response.dto';
-import { UpdateJobApplicationDto } from '../dtos/update-job-application.dto';
 import { JobApplication } from '../entities/job-application.entity';
 import { ApplicationStatus } from '../enums/application-status.enum';
 import { JobApplicationRepository } from '../repositories/job-application.repository';
+import {
+  ApplicationsWithCount,
+  ApplicationWithRelations,
+  CreateApplicationParams,
+  EmailNotificationData,
+  GetJobApplicationsParams,
+  GetUserApplicationsParams,
+  StatusTransitionParams,
+  UpdateApplicationParams,
+} from '../types';
+import { JobApplicationNotificationService } from './job-application-notification.service';
 
 @Injectable()
 export class JobApplicationService {
   constructor(
     private readonly jobApplicationRepository: JobApplicationRepository,
     private readonly aclService: JobApplicationAclService,
+    private readonly notificationService: JobApplicationNotificationService,
+    private readonly unitOfWork: UnitOfWork,
   ) {}
 
   async createApplication(
-    dto: CreateJobApplicationDto,
-    user: UserAccessTokenClaims,
+    params: CreateApplicationParams,
   ): Promise<JobApplication> {
+    const { dto, user } = params;
+
     try {
       // Check if user has already applied for this job
       const existingApplication = await this.jobApplicationRepository.findOne({
@@ -41,17 +53,12 @@ export class JobApplicationService {
         throw new BadRequestException('You have already applied for this job');
       }
 
-      const application = new JobApplication();
-      application.job = { id: String(dto.jobId) } as Job;
-      application.user = { id: user.id } as User;
-      application.status = ApplicationStatus.APPLIED; // Set initial status
-
-      if (dto.cvId) {
-        application.cv_id = dto.cvId;
-      }
-      if (dto.coverLetter) {
-        application.cover_letter = dto.coverLetter;
-      }
+      const application = this.createApplicationEntity({
+        jobId: dto.jobId,
+        userId: user.id,
+        cvId: dto.cvId,
+        coverLetter: dto.coverLetter,
+      });
 
       if (!this.aclService.forActor(user).canDoAction('create', application)) {
         throw new UnauthorizedException(
@@ -59,7 +66,26 @@ export class JobApplicationService {
         );
       }
 
-      return await this.jobApplicationRepository.save(application);
+      const savedApplication = await this.unitOfWork.doTransactional(
+        async (manager) => {
+          const jobApplicationRepo = manager.getRepository(JobApplication);
+          return await jobApplicationRepo.save(application);
+        },
+      );
+
+      // Load the full application with relations for email notification
+      const applicationWithRelations = await this.getApplicationWithRelations(
+        savedApplication.id,
+      );
+
+      if (applicationWithRelations) {
+        const emailData = this.prepareEmailNotificationData(
+          applicationWithRelations,
+        );
+        await this.notificationService.sendApplicationSuccessEmail(emailData);
+      }
+
+      return savedApplication;
     } catch (error) {
       if (
         error instanceof UnauthorizedException ||
@@ -74,17 +100,17 @@ export class JobApplicationService {
   }
 
   async getUserApplications(
-    user: UserAccessTokenClaims,
-    limit?: number,
-    offset?: number,
-  ): Promise<{ applications: JobApplicationResponseDto[]; count: number }> {
+    params: GetUserApplicationsParams,
+  ): Promise<ApplicationsWithCount> {
+    const { user, limit, offset } = params;
+
     try {
       const { applications, count } =
-        await this.jobApplicationRepository.findByUserId(
-          user.id,
+        await this.jobApplicationRepository.findByUserId({
+          userId: user.id,
           limit,
           offset,
-        );
+        });
 
       return {
         applications: applications.filter((app) =>
@@ -98,14 +124,17 @@ export class JobApplicationService {
   }
 
   async getJobApplications(
-    jobId: number,
-    user: UserAccessTokenClaims,
-    limit?: number,
-    offset?: number,
-  ): Promise<{ applications: JobApplicationResponseDto[]; count: number }> {
+    params: GetJobApplicationsParams,
+  ): Promise<ApplicationsWithCount> {
+    const { jobId, user, limit, offset } = params;
+
     try {
       const { applications, count } =
-        await this.jobApplicationRepository.findByJobId(jobId, limit, offset);
+        await this.jobApplicationRepository.findByJobId({
+          jobId,
+          limit,
+          offset,
+        });
 
       return {
         applications: applications.filter((app) =>
@@ -119,10 +148,10 @@ export class JobApplicationService {
   }
 
   async updateApplication(
-    id: number,
-    dto: UpdateJobApplicationDto,
-    user: UserAccessTokenClaims,
+    params: UpdateApplicationParams,
   ): Promise<JobApplication> {
+    const { id, dto, user } = params;
+
     try {
       const application = await this.jobApplicationRepository.findOne({
         where: { id },
@@ -140,7 +169,10 @@ export class JobApplicationService {
 
       // Validate status transition
       if (dto.status) {
-        this.validateStatusTransition(application.status, dto.status);
+        this.validateStatusTransition({
+          currentStatus: application.status,
+          newStatus: dto.status,
+        });
         application.status = dto.status;
       }
 
@@ -157,10 +189,57 @@ export class JobApplicationService {
     }
   }
 
-  private validateStatusTransition(
-    currentStatus: ApplicationStatus,
-    newStatus: ApplicationStatus,
-  ): void {
+  private createApplicationEntity(params: {
+    jobId: number;
+    userId: number;
+    cvId?: string;
+    coverLetter?: string;
+  }): JobApplication {
+    const { jobId, userId, cvId, coverLetter } = params;
+
+    const application = new JobApplication();
+    application.job = { id: String(jobId) } as Job;
+    application.user = { id: userId } as User;
+    application.status = ApplicationStatus.APPLIED;
+
+    if (cvId) {
+      application.cv_id = cvId;
+    }
+    if (coverLetter) {
+      application.cover_letter = coverLetter;
+    }
+
+    return application;
+  }
+
+  private async getApplicationWithRelations(
+    applicationId: number,
+  ): Promise<ApplicationWithRelations | null> {
+    const application = await this.jobApplicationRepository.findOne({
+      where: { id: applicationId },
+      relations: ['user', 'job', 'job.company'],
+    });
+
+    return application as ApplicationWithRelations | null;
+  }
+
+  private prepareEmailNotificationData(
+    application: ApplicationWithRelations,
+  ): EmailNotificationData {
+    return {
+      to: application.user.email,
+      applicantName: application.user.name,
+      jobTitle: application.job.title,
+      companyName: application.job.company.companyName,
+      appliedDate: application.applied_at.toISOString(),
+      cvSubmitted: !!application.cv_id,
+      cvFileUrl: application.cv_id,
+    };
+  }
+
+  private validateStatusTransition(params: StatusTransitionParams): void {
+    const { currentStatus, newStatus } = params;
+
     const validTransitions: Record<ApplicationStatus, ApplicationStatus[]> = {
       [ApplicationStatus.APPLIED]: [
         ApplicationStatus.INTERVIEW,
