@@ -1,6 +1,21 @@
 import { Type } from 'class-transformer';
-import { IsArray, IsNotEmpty, IsNumber, IsOptional, IsString, ValidateNested } from 'class-validator';
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import {
+  IsArray,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  ValidateNested,
+} from 'class-validator';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
 import { User } from '../../user/entities/user.entity';
 import { Certification } from '../interfaces/certification.interface';
@@ -18,13 +33,13 @@ export class CvEducation {
   @IsNotEmpty()
   field: string;
 
-  @IsNumber()
+  @IsString()
   @IsNotEmpty()
-  startYear: number;
+  startYear: string;
 
-  @IsNumber()
+  @IsString()
   @IsOptional()
-  endYear?: number;
+  endYear?: string;
 
   @IsString()
   @IsOptional()
@@ -76,6 +91,36 @@ export class CV {
   @IsOptional()
   summary: string;
 
+  @Column({ length: 255 })
+  @IsString()
+  @IsNotEmpty()
+  name: string;
+
+  @Column({ type: 'text', nullable: true })
+  @IsString()
+  @IsOptional()
+  image: string;
+
+  @Column({ type: 'text', nullable: true })
+  @IsString()
+  @IsNotEmpty()
+  email: string;
+
+  @Column({ type: 'bigint' })
+  @IsNumber()
+  @IsNotEmpty()
+  phone: number;
+
+  @Column({ type: 'text', nullable: true })
+  @IsString()
+  @IsOptional()
+  linkedin: string;
+
+  @Column({ type: 'text', nullable: true })
+  @IsString()
+  @IsOptional()
+  github: string;
+
   @Column({ type: 'jsonb', nullable: true, default: [] })
   @IsArray()
   @ValidateNested({ each: true })
@@ -91,7 +136,7 @@ export class CV {
   @Column({ type: 'text', nullable: true })
   @IsString()
   @IsOptional()
-  skills: string;
+  skills: string[];
 
   @Column({ type: 'jsonb', nullable: true, default: [] })
   @IsArray()
@@ -102,7 +147,7 @@ export class CV {
   @Column({ type: 'text', nullable: true })
   @IsString()
   @IsOptional()
-  languages: string;
+  languages: string[];
 
   @Column({ nullable: true })
   @IsNumber()
@@ -123,4 +168,4 @@ export class CV {
 
   @UpdateDateColumn()
   updatedAt: Date;
-} 
+}
