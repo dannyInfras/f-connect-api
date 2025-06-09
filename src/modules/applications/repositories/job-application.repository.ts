@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindOneOptions, Repository } from 'typeorm';
 
-import { Job } from '../../jobs/entities/jobs.entity';
 import { User } from '../../user/entities/user.entity';
 import { JobApplicationResponseDto } from '../dtos/job-appication-response.dto';
 import { JobApplication } from '../entities/job-application.entity';
@@ -38,6 +37,7 @@ export class JobApplicationRepository {
       .createQueryBuilder('application')
       .leftJoinAndSelect('application.user', 'user')
       .leftJoinAndSelect('application.job', 'job')
+      .leftJoinAndSelect('job.company', 'company')
       .where('application.user_id = :userId', { userId });
 
     const [applications, count] = await Promise.all([
@@ -82,9 +82,8 @@ export class JobApplicationRepository {
       user: {
         id: application.user.id,
       } as User,
-      job: {
-        id: application.job.id,
-      } as Job,
+      job: application.job,
+      company: application.job.company,
       status: application.status,
       cv_id: application.cv_id,
       cover_letter: application.cover_letter,

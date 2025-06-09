@@ -12,8 +12,12 @@ export class AddNewCvFields1749442012159 implements MigrationInterface {
         await queryRunner.query(`ALTER TABLE "cv" ADD "phone" bigint`);
         await queryRunner.query(`ALTER TABLE "cv" ADD "linkedin" text`);
         await queryRunner.query(`ALTER TABLE "cv" ADD "github" text`);
-        await queryRunner.query(`ALTER TABLE "cv" ADD "skills" text array`);
-        await queryRunner.query(`ALTER TABLE "cv" ADD "languages" text array`);
+        await queryRunner.query(
+            `ALTER TABLE "cv" ALTER COLUMN "skills" TYPE text[] USING skills::text[]`,
+        );
+        await queryRunner.query(
+            `ALTER TABLE "cv" ALTER COLUMN "languages" TYPE text[] USING languages::text[]`,
+        );
     }
 
     public async down(queryRunner: QueryRunner): Promise<void> {
