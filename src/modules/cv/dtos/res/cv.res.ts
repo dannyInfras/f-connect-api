@@ -15,6 +15,24 @@ export class CvResDto {
   @ApiProperty({ example: 'A brief summary of my professional experience...' })
   summary?: string;
 
+  @ApiProperty({ example: 'Pham Nam Phuong' })
+  name: string;
+
+  @ApiProperty({ example: 'https://example.com/image.jpg' })
+  image?: string;
+
+  @ApiProperty({ example: ' https://example.com/cv.pdf' })
+  email: string;
+
+  @ApiProperty({ example: '+1234567890' })
+  phone: number;
+
+  @ApiProperty({ example: 'https://www.linkedin.com/in/phamnampuong' })
+  linkedin?: string;
+
+  @ApiProperty({ example: 'https://github.com/phamnampuong' })
+  github?: string;
+
   @ApiProperty({
     example: [
       {
@@ -36,16 +54,16 @@ export class CvResDto {
         institution: 'University of Tech',
         degree: 'Bachelor',
         field: 'Computer Science',
-        startYear: 2016,
-        endYear: 2020,
+        startYear: '2016',
+        endYear: '2020',
         description: 'Major in Software Engineering',
       },
     ],
   })
   education: CvEducation[];
 
-  @ApiProperty({ example: 'JavaScript, TypeScript, Node.js...' })
-  skills?: string;
+  @ApiProperty({ example: ['JavaScript', 'TypeScript', 'Node.js'] })
+  skills?: string[];
 
   @ApiProperty({
     example: [
@@ -61,8 +79,8 @@ export class CvResDto {
   })
   certifications: Certification[];
 
-  @ApiProperty({ example: 'English (Native), Spanish (Intermediate)...' })
-  languages?: string;
+  @ApiProperty({ example: ['English (Native)', 'Spanish (Intermediate)'] })
+  languages?: string[];
 
   @ApiProperty({ example: 1 })
   templateId?: number;
@@ -80,6 +98,12 @@ export class CvResDto {
     id: '123e4567-e89b-12d3-a456-426614174000',
     title: 'Senior Software Engineer CV',
     summary: 'A brief summary of my professional experience...',
+    name: 'John Doe',
+    image: 'https://example.com/image.jpg',
+    email: 'johndoe@example.com',
+    phone: 1234567890,
+    linkedin: 'https://www.linkedin.com/in/johndoe',
+    github: 'https://github.com/johndoe',
     experience: [
       {
         company: 'Tech Corp',
@@ -101,7 +125,7 @@ export class CvResDto {
         description: 'Major in Software Engineering',
       },
     ],
-    skills: 'JavaScript, TypeScript, Node.js...',
+    skills: ['JavaScript', 'TypeScript', 'Node.js'],
     certifications: [
       {
         title: 'AWS Certified Developer',
@@ -112,7 +136,7 @@ export class CvResDto {
         credentialUrl: 'https://aws.amazon.com/verification/123456',
       },
     ],
-    languages: 'English (Native), Spanish (Intermediate)...',
+    languages: ['English (Native)', 'Spanish (Intermediate)'],
     templateId: 1,
     userId: 1,
   };

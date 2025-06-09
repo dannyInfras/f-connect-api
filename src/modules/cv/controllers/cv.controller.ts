@@ -18,6 +18,7 @@ import {
 } from '@nestjs/swagger';
 
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
+import { BaseApiResponse } from '@/shared/dtos/base-api-response.dto';
 import { PaginationParamsDto } from '@/shared/dtos/pagination-params.dto';
 import { ReqContext } from '@/shared/request-context/req-context.decorator';
 import { RequestContext } from '@/shared/request-context/request-context.dto';
@@ -49,7 +50,7 @@ export class CvController {
   async create(
     @Body() createCvDto: CreateCvReqDto,
     @ReqContext() ctx: RequestContext,
-  ): Promise<CvResDto> {
+  ): Promise<BaseApiResponse<CvResDto>> {
     if (!ctx.user) {
       throw new UnauthorizedException('User must be logged in');
     }
@@ -57,7 +58,11 @@ export class CvController {
       ...createCvDto,
       userId: ctx.user.id,
     } as any);
-    return this.cvService.create(createCvDto);
+    const createdCv = await this.cvService.create(createCvDto);
+    return {
+      data: createdCv,
+      meta: {},
+    };
   }
 
   @Get()
@@ -101,13 +106,16 @@ export class CvController {
   async findOne(
     @Param('id') id: string,
     @ReqContext() ctx: RequestContext,
-  ): Promise<CvResDto> {
+  ): Promise<BaseApiResponse<CvResDto>> {
     if (!ctx.user) {
       throw new UnauthorizedException('User must be logged in');
     }
     const cv = await this.cvService.findOne(id);
     await this.cvAclService.canView(ctx.user, cv);
-    return this.cvService.findOneDto(id);
+    return {
+      data: cv,
+      meta: {},
+    };
   }
 
   @Patch(':id')
@@ -117,13 +125,17 @@ export class CvController {
     @Param('id') id: string,
     @Body() updateCvDto: UpdateCvReqDto,
     @ReqContext() ctx: RequestContext,
-  ): Promise<CvResDto> {
+  ): Promise<BaseApiResponse<CvResDto>> {
     if (!ctx.user) {
       throw new UnauthorizedException('User must be logged in');
     }
     const cv = await this.cvService.findOne(id);
     await this.cvAclService.canUpdate(ctx.user, cv);
-    return this.cvService.update(id, updateCvDto);
+    const updatedCv = await this.cvService.update(id, updateCvDto);
+    return {
+      data: updatedCv,
+      meta: {},
+    };
   }
 
   @Delete(':id')

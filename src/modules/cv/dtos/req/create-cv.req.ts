@@ -13,6 +13,35 @@ import { CvEducation, CvExperience } from '../../entities/cv.entity';
 import { Certification } from '../../interfaces/certification.interface';
 
 export class CreateCvReqDto {
+  @ApiProperty({ example: 'Pham Nam Phuong' })
+  @IsNotEmpty()
+  @IsString()
+  name: string;
+
+  @ApiProperty({ example: 'https://example.com/image.jpg' })
+  @IsOptional()
+  @IsString()
+  image?: string;
+
+  @ApiProperty({ example: 'https://example.com/cv.pdf' })
+  @IsNotEmpty()
+  @IsString()
+  email: string;
+
+  @ApiProperty({ example: '+1234567890' })
+  @IsNotEmpty()
+  phone: number;
+
+  @ApiProperty({ example: 'https://www.linkedin.com/in/phamnampuong' })
+  @IsOptional()
+  @IsString()
+  linkedin?: string;
+
+  @ApiProperty({ example: 'https://github.com/phamnamphuong' })
+  @IsOptional()
+  @IsString()
+  github?: string;
+
   @ApiProperty({ example: 'Senior Software Engineer CV' })
   @IsNotEmpty()
   @IsString()
@@ -48,8 +77,8 @@ export class CreateCvReqDto {
         institution: 'University of Tech',
         degree: 'Bachelor',
         field: 'Computer Science',
-        startYear: 2016,
-        endYear: 2020,
+        startYear: '2016',
+        endYear: '2020',
         description: 'Major in Software Engineering',
       },
     ],
@@ -60,10 +89,11 @@ export class CreateCvReqDto {
   @Type(() => CvEducation) // Changed from Object to CvEducation
   education?: CvEducation[];
 
-  @ApiProperty({ example: 'JavaScript, TypeScript, Node.js...' })
+  @ApiProperty({ example: ['JavaScript', 'TypeScript', 'Node.js'] })
   @IsOptional()
-  @IsString()
-  skills?: string;
+  @IsArray()
+  @IsString({ each: true })
+  skills?: string[];
 
   @ApiProperty({
     example: [
@@ -83,10 +113,11 @@ export class CreateCvReqDto {
   @Type(() => Certification) // Changed from Object to Certification
   certifications?: Certification[];
 
-  @ApiProperty({ example: 'English (Native), Spanish (Intermediate)...' })
+  @ApiProperty({ example: ['English (Native)', 'Spanish (Intermediate)'] })
   @IsOptional()
-  @IsString()
-  languages?: string;
+  @IsArray()
+  @IsString({ each: true })
+  languages?: string[];
 
   @ApiProperty({ example: 1 })
   @IsOptional()

@@ -41,8 +41,8 @@ export class CvService {
             institution: edu.institution || '',
             degree: edu.degree || '',
             field: edu.field || '',
-            startYear: edu.startYear || 0,
-            endYear: edu.endYear,
+            startYear: edu.startYear || '',
+            endYear: edu.endYear || '',
             description: edu.description,
           }))
         : [],
@@ -76,8 +76,8 @@ export class CvService {
       meta: {
         total,
         page: page || 1,
-        limit: take
-      }
+        limit: take,
+      },
     };
   }
 
@@ -100,21 +100,23 @@ export class CvService {
     }
 
     // Check permissions for each CV
-    cvs.forEach(cv => {
+    cvs.forEach((cv) => {
       if (!this.aclService.forActor(actor).canDoAction(Action.Read, cv)) {
-        throw new UnauthorizedException('You do not have permission to view these CVs');
+        throw new UnauthorizedException(
+          'You do not have permission to view these CVs',
+        );
       }
     });
 
     const page = Math.floor(offset / limit) + 1;
-    
+
     return {
       items: cvs.map((cv) => this.mapToDto(cv)),
       meta: {
         total,
         page,
-        limit
-      }
+        limit,
+      },
     };
   }
 
@@ -129,16 +131,18 @@ export class CvService {
     return cv;
   }
 
-  async findOneDto(id: string): Promise<CvResDto> {
-    const cv = await this.findOne(id);
-    return this.mapToDto(cv);
-  }
-
   async update(id: string, updateCvDto: UpdateCvReqDto): Promise<CvResDto> {
-    const existingCv = await this.findOne(id);
-    Object.assign(existingCv, updateCvDto);
-    const updatedCv = await this.cvRepository.save(existingCv);
-    return this.mapToDto(updatedCv);
+    // Find existing CV
+    const cv = await this.findOne(id);
+
+    // Merge updates into the existing CV
+    const updatedCv = this.cvRepository.merge(cv, updateCvDto);
+
+    // Save the updated CV
+    const savedCv = await this.cvRepository.save(updatedCv);
+
+    // Map CV entity to CvResDto
+    return this.mapToDto(savedCv);
   }
 
   async remove(id: string): Promise<void> {
@@ -151,6 +155,12 @@ export class CvService {
       id: cv.id,
       title: cv.title,
       summary: cv.summary,
+      name: cv.name,
+      image: cv.image,
+      email: cv.email,
+      phone: cv.phone,
+      linkedin: cv.linkedin,
+      github: cv.github,
       experience: cv.experience || [],
       education: cv.education || [],
       skills: cv.skills,
@@ -159,7 +169,7 @@ export class CvService {
       templateId: cv.templateId,
       userId: cv.userId,
       createdAt: cv.createdAt,
-      updatedAt: cv.updatedAt
+      updatedAt: cv.updatedAt,
     };
   }
 }
