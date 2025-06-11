@@ -150,7 +150,7 @@ export class CvService {
     await this.cvRepository.remove(cv);
   }
 
-  private mapToDto(cv: CV): CvResDto {
+  public mapToDto(cv: CV): CvResDto {
     return {
       id: cv.id,
       title: cv.title,
