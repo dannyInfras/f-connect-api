@@ -25,10 +25,13 @@ import { RequestContext } from '@/shared/request-context/request-context.dto';
 
 import { CvAclService } from '../acl/cv.acl';
 import { CreateCvReqDto } from '../dtos/req/create-cv.req';
+import { OptimizeCvReqDto } from '../dtos/req/optimize-cv.req';
 import { UpdateCvReqDto } from '../dtos/req/update-cv.req';
 import { CvResDto } from '../dtos/res/cv.res';
 import { ListCvResDto } from '../dtos/res/list-cv.res';
+import { OptimizeCvResDto } from '../dtos/res/optimize-cv.res';
 import { CvService } from '../services/cv.service';
+import { CvOptimizerService } from '../services/cv-optimizer.service';
 
 @ApiTags('CVs')
 @Controller('cvs')
@@ -38,6 +41,7 @@ export class CvController {
   constructor(
     private readonly cvService: CvService,
     private readonly cvAclService: CvAclService,
+    private readonly cvOptimizerService: CvOptimizerService,
   ) {}
 
   @Post()
@@ -134,6 +138,45 @@ export class CvController {
     const updatedCv = await this.cvService.update(id, updateCvDto);
     return {
       data: updatedCv,
+      meta: {},
+    };
+  }
+
+  @Post(':id/optimize')
+  @ApiOperation({ summary: 'Optimize a CV using AI based on job description' })
+  @ApiResponse({
+    status: 200,
+    description: 'CV optimized successfully with AI suggestions',
+    type: OptimizeCvResDto,
+  })
+  async optimize(
+    @Param('id') id: string,
+    @Body() optimizeCvDto: OptimizeCvReqDto,
+    @ReqContext() ctx: RequestContext,
+  ): Promise<BaseApiResponse<OptimizeCvResDto>> {
+    if (!ctx.user) {
+      throw new UnauthorizedException('User must be logged in');
+    }
+    
+    // Find the CV and check permissions
+    const cv = await this.cvService.findOne(id);
+    await this.cvAclService.canUpdate(ctx.user, cv);
+    
+    // Optimize the CV using AI
+    const result = await this.cvOptimizerService.optimizeCv({
+      cv,
+      jobTitle: optimizeCvDto.jobTitle,
+      jobDescription: optimizeCvDto.jobDescription,
+    });
+    
+    // Map the result to the response DTO
+    const response: OptimizeCvResDto = {
+      optimizedCv: this.cvService.mapToDto(result.optimizedCv),
+      suggestions: result.suggestions,
+    };
+    
+    return {
+      data: response,
       meta: {},
     };
   }
