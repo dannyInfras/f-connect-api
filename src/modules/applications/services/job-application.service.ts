@@ -5,24 +5,25 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 
+import { Action } from '@/shared/acl/action.constant';
+import { AppLogger } from '@/shared/logger/logger.service';
 import { UnitOfWork } from '@/shared/unit-of-work/unit-of-work.service';
 
-import { Action } from '../../../shared/acl/action.constant';
-import { Job } from '../../jobs/entities/jobs.entity';
-import { User } from '../../user/entities/user.entity';
 import { JobApplicationAclService } from '../acl/job-application-acl.service';
+import { JobApplicationResponseDto } from '../dtos/job-appication-response.dto';
 import { JobApplication } from '../entities/job-application.entity';
 import { ApplicationStatus } from '../enums/application-status.enum';
 import { JobApplicationRepository } from '../repositories/job-application.repository';
 import {
-  ApplicationsWithCount,
-  ApplicationWithRelations,
-  CreateApplicationParams,
-  EmailNotificationData,
-  GetJobApplicationsParams,
-  GetUserApplicationsParams,
+  ApplicationDetailResponse,
+  CreateApplicationServiceParams,
+  GetJobApplicationsServiceParams,
+  GetUserApplicationsServiceParams,
+  ServiceApplicationsWithCount as ApplicationsWithCount,
+  ServiceCreateApplicationResponse,
   StatusTransitionParams,
-  UpdateApplicationParams,
+  UpdateApplicationServiceParams,
+  UpdateApplicationServiceResponse,
 } from '../types';
 import { JobApplicationNotificationService } from './job-application-notification.service';
 
@@ -33,59 +34,83 @@ export class JobApplicationService {
     private readonly aclService: JobApplicationAclService,
     private readonly notificationService: JobApplicationNotificationService,
     private readonly unitOfWork: UnitOfWork,
-  ) {}
+    private readonly logger: AppLogger,
+  ) {
+    this.logger.setContext(JobApplicationService.name);
+  }
 
   async createApplication(
-    params: CreateApplicationParams,
-  ): Promise<JobApplication> {
+    params: CreateApplicationServiceParams,
+  ): Promise<ServiceCreateApplicationResponse> {
     const { dto, user } = params;
 
     try {
-      // Check if user has already applied for this job
-      const existingApplication = await this.jobApplicationRepository.findOne({
-        where: {
-          job: { id: String(dto.jobId) },
-          user: { id: user.id },
-        },
-      });
+      const result = await this.unitOfWork.doTransactional(
+        async (entityManager) => {
+          // Check if user has already applied for this job using transactional entity manager
+          const applicationRepo = entityManager.getRepository(JobApplication);
+          const existingApplication = await applicationRepo.findOne({
+            where: {
+              job: { id: String(dto.jobId) },
+              user: { id: user.id },
+            },
+          });
 
-      if (existingApplication) {
-        throw new BadRequestException('You have already applied for this job');
-      }
+          if (existingApplication) {
+            throw new BadRequestException(
+              'You have already applied for this job',
+            );
+          }
 
-      const application = this.createApplicationEntity({
-        jobId: dto.jobId,
-        userId: user.id,
-        cvId: dto.cvId,
-        coverLetter: dto.coverLetter,
-      });
+          // Create application entity using repository
+          const applicationEntity =
+            await this.jobApplicationRepository.createApplicationEntity({
+              jobId: dto.jobId,
+              userId: user.id,
+              cvId: dto.cvId,
+              coverLetter: dto.coverLetter,
+            });
 
-      if (!this.aclService.forActor(user).canDoAction('create', application)) {
-        throw new UnauthorizedException(
-          'You are not authorized to apply for this job',
-        );
-      }
+          if (
+            !this.aclService
+              .forActor(user)
+              .canDoAction('create', applicationEntity)
+          ) {
+            throw new UnauthorizedException(
+              'You are not authorized to apply for this job',
+            );
+          }
 
-      const savedApplication = await this.unitOfWork.doTransactional(
-        async (manager) => {
-          const jobApplicationRepo = manager.getRepository(JobApplication);
-          return await jobApplicationRepo.save(application);
+          // Save using transactional entity manager
+          const savedApplication = await entityManager.save(applicationEntity);
+
+          return {
+            id: savedApplication.id,
+            status: savedApplication.status,
+            applied_at: savedApplication.applied_at,
+          };
         },
       );
 
-      // Load the full application with relations for email notification
-      const applicationWithRelations = await this.getApplicationWithRelations(
-        savedApplication.id,
-      );
+      // Send email notification outside the transaction to prevent rollback on email failure
+      try {
+        const applicationWithRelations =
+          await this.jobApplicationRepository.findApplicationWithRelations(
+            result.id,
+          );
 
-      if (applicationWithRelations) {
-        const emailData = this.prepareEmailNotificationData(
-          applicationWithRelations,
-        );
-        await this.notificationService.sendApplicationSuccessEmail(emailData);
+        if (applicationWithRelations) {
+          const emailData =
+            this.jobApplicationRepository.mapToEmailNotificationData(
+              applicationWithRelations,
+            );
+          await this.notificationService.sendApplicationSuccessEmail(emailData);
+        }
+      } catch (error: any) {
+        this.logger.error(error, 'Failed to send email');
       }
 
-      return savedApplication;
+      return result;
     } catch (error) {
       if (
         error instanceof UnauthorizedException ||
@@ -100,7 +125,7 @@ export class JobApplicationService {
   }
 
   async getUserApplications(
-    params: GetUserApplicationsParams,
+    params: GetUserApplicationsServiceParams,
   ): Promise<ApplicationsWithCount> {
     const { user, limit, offset } = params;
 
@@ -113,7 +138,7 @@ export class JobApplicationService {
         });
 
       return {
-        applications: applications.filter((app) =>
+        applications: applications.filter((app: JobApplicationResponseDto) =>
           this.aclService.forActor(user).canDoAction(Action.List, app),
         ),
         count,
@@ -124,7 +149,7 @@ export class JobApplicationService {
   }
 
   async getJobApplications(
-    params: GetJobApplicationsParams,
+    params: GetJobApplicationsServiceParams,
   ): Promise<ApplicationsWithCount> {
     const { jobId, user, limit, offset } = params;
 
@@ -137,7 +162,7 @@ export class JobApplicationService {
         });
 
       return {
-        applications: applications.filter((app) =>
+        applications: applications.filter((app: JobApplicationResponseDto) =>
           this.aclService.forActor(user).canDoAction('read', app),
         ),
         count,
@@ -148,13 +173,14 @@ export class JobApplicationService {
   }
 
   async updateApplication(
-    params: UpdateApplicationParams,
-  ): Promise<JobApplication> {
+    params: UpdateApplicationServiceParams,
+  ): Promise<UpdateApplicationServiceResponse> {
     const { id, dto, user } = params;
 
     try {
       const application = await this.jobApplicationRepository.findOne({
         where: { id },
+        relations: ['user', 'job', 'job.company', 'job.company.users'],
       });
 
       if (!application) {
@@ -173,10 +199,16 @@ export class JobApplicationService {
           currentStatus: application.status,
           newStatus: dto.status,
         });
-        application.status = dto.status;
       }
 
-      return await this.jobApplicationRepository.save(application);
+      await this.jobApplicationRepository.updateApplication(id, {
+        status: dto.status,
+      });
+
+      return {
+        message: 'Application status updated successfully',
+        success: true,
+      };
     } catch (error) {
       if (
         error instanceof UnauthorizedException ||
@@ -189,52 +221,53 @@ export class JobApplicationService {
     }
   }
 
-  private createApplicationEntity(params: {
-    jobId: number;
-    userId: number;
-    cvId?: string;
-    coverLetter?: string;
-  }): JobApplication {
-    const { jobId, userId, cvId, coverLetter } = params;
-
-    const application = new JobApplication();
-    application.job = { id: String(jobId) } as Job;
-    application.user = { id: userId } as User;
-    application.status = ApplicationStatus.APPLIED;
-
-    if (cvId) {
-      application.cv_id = cvId;
-    }
-    if (coverLetter) {
-      application.cover_letter = coverLetter;
-    }
-
-    return application;
-  }
-
-  private async getApplicationWithRelations(
+  async getApplicationById(
     applicationId: number,
-  ): Promise<ApplicationWithRelations | null> {
-    const application = await this.jobApplicationRepository.findOne({
-      where: { id: applicationId },
-      relations: ['user', 'job', 'job.company'],
-    });
+    user: any,
+  ): Promise<ApplicationDetailResponse> {
+    // Fetch application with all required relations using repository
+    const application =
+      await this.jobApplicationRepository.findApplicationWithFullDetails({
+        applicationId,
+      });
 
-    return application as ApplicationWithRelations | null;
-  }
+    if (!application) {
+      throw new NotFoundException('Application not found');
+    }
 
-  private prepareEmailNotificationData(
-    application: ApplicationWithRelations,
-  ): EmailNotificationData {
-    return {
-      to: application.user.email,
-      applicantName: application.user.name,
-      jobTitle: application.job.title,
-      companyName: application.job.company.companyName,
-      appliedDate: application.applied_at.toISOString(),
-      cvSubmitted: !!application.cv_id,
-      cvFileUrl: application.cv_id,
-    };
+    // Check ACL permissions - convert to JobApplication-like object for ACL check
+    const aclCheckObject = {
+      id: application.id,
+      user: { id: application.user.id },
+      job: {
+        id: application.job.id,
+        company: {
+          id: application.job.company.id,
+          users:
+            application.job.company.users?.map((u) => ({ id: u.id })) || [],
+        },
+      },
+    } as any;
+
+    if (
+      !this.aclService.forActor(user).canDoAction(Action.Read, aclCheckObject)
+    ) {
+      throw new UnauthorizedException(
+        'You do not have permission to view this application',
+      );
+    }
+
+    // Fetch candidate profile separately
+    const candidateProfile =
+      await this.jobApplicationRepository.findCandidateProfile({
+        userId: application.user.id,
+      });
+
+    // Use repository mapping method to build response
+    return this.jobApplicationRepository.mapToApplicationDetailResponse(
+      application,
+      candidateProfile,
+    );
   }
 
   private validateStatusTransition(params: StatusTransitionParams): void {

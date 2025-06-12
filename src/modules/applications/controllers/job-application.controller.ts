@@ -1,138 +1,183 @@
 import {
+  BadRequestException,
   Body,
-  ClassSerializerInterceptor,
   Controller,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
+  Patch,
   Post,
-  Put,
   Query,
   UseGuards,
-  UseInterceptors,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
+  ApiOkResponse,
   ApiOperation,
-  ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
 
-import { PaginationParamsDto } from '../../../shared/dtos/pagination-params.dto';
-import { AppLogger } from '../../../shared/logger/logger.service';
-import { ReqContext } from '../../../shared/request-context/req-context.decorator';
-import { RequestContext } from '../../../shared/request-context/request-context.dto';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
-import { CreateJobApplicationDto } from '../dtos/create-job-application.dto';
-import { PaginatedJobApplicationResponseDto } from '../dtos/job-appication-response.dto';
-import { UpdateJobApplicationDto } from '../dtos/update-job-application.dto';
-import { JobApplicationService } from '../services/job-application.service';
-import {
-  CreateApplicationResponse,
-  GetApplicationsResponse,
-  UpdateApplicationResponse,
-} from '../types';
+import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
+import { ReqContext } from '@/shared/request-context/req-context.decorator';
+import { RequestContext } from '@/shared/request-context/request-context.dto';
 
-@ApiTags('Job Applications')
+import { ApplicationDetailResponseDto } from '../dtos/application-detail-response.dto';
+import { CreateJobApplicationDto } from '../dtos/create-job-application.dto';
+import { JobApplicationResponseDto } from '../dtos/job-appication-response.dto';
+import { UpdateJobApplicationDto } from '../dtos/update-job-application.dto';
+import { UpdateJobApplicationResponseDto } from '../dtos/update-job-application-response.dto';
+import { JobApplicationService } from '../services/job-application.service';
+import { GetApplicationsResponse, UpdateApplicationResponse } from '../types';
+
+@ApiTags('job-applications')
 @Controller('applications')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class JobApplicationController {
-  constructor(
-    private readonly jobApplicationService: JobApplicationService,
-    private readonly logger: AppLogger,
-  ) {
-    this.logger.setContext(JobApplicationController.name);
-  }
+  constructor(private readonly jobApplicationService: JobApplicationService) {}
 
   @Post()
-  @ApiOperation({ summary: 'Apply to a job' })
-  @ApiResponse({
-    status: 201,
-    description: 'Application created successfully.',
-  })
-  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Apply for a job' })
+  @ApiOkResponse({ type: JobApplicationResponseDto })
   async create(
-    @Body() createDto: CreateJobApplicationDto,
+    @Body() createJobApplicationDto: CreateJobApplicationDto,
     @ReqContext() ctx: RequestContext,
-  ): Promise<CreateApplicationResponse> {
-    this.logger.log(ctx, `${this.create.name} was called`);
-
-    return this.jobApplicationService.createApplication({
-      dto: createDto,
+  ) {
+    const result = await this.jobApplicationService.createApplication({
+      dto: createJobApplicationDto,
       user: ctx.user!,
     });
+
+    return {
+      data: {
+        id: result.id.toString(),
+        status: result.status,
+        applied_at: result.applied_at,
+      },
+      meta: {
+        message: 'Application created successfully',
+      },
+    };
   }
 
   @Get('user')
-  @ApiOperation({ summary: 'Get all applications by the authenticated user' })
-  @ApiResponse({
-    status: 200,
-    description: 'List of user applications.',
-    type: PaginatedJobApplicationResponseDto,
-  })
-  @ApiResponse({ status: 401, description: 'Unauthorized.' })
-  @UseInterceptors(ClassSerializerInterceptor)
+  @ApiOperation({ summary: 'Get current user applications' })
+  @ApiOkResponse({ type: JobApplicationResponseDto, isArray: true })
   async getUserApplications(
+    @Query('limit') limit: string | undefined,
+    @Query('offset') offset: string | undefined,
     @ReqContext() ctx: RequestContext,
-    @Query() query: PaginationParamsDto,
   ): Promise<GetApplicationsResponse> {
-    this.logger.log(ctx, `${this.getUserApplications.name} was called`);
+    const parsedLimit = limit ? Number(limit) : 10;
+    const parsedOffset = offset ? Number(offset) : 0;
 
-    const { applications, count } =
-      await this.jobApplicationService.getUserApplications({
-        user: ctx.user!,
-        limit: query.limit,
-        offset: query.offset,
-      });
+    // Validate that parsed values are valid numbers
+    const validLimit = isNaN(parsedLimit) ? 10 : Math.max(1, parsedLimit);
+    const validOffset = isNaN(parsedOffset) ? 0 : Math.max(0, parsedOffset);
 
-    return { data: applications, meta: { count } };
+    const result = await this.jobApplicationService.getUserApplications({
+      user: ctx.user!,
+      limit: validLimit,
+      offset: validOffset,
+    });
+
+    return {
+      data: result.applications,
+      meta: {
+        count: result.count,
+      },
+    };
   }
 
   @Get('job/:jobId')
-  @ApiOperation({ summary: 'Get all applications for a specific job' })
-  @ApiResponse({
-    status: 200,
-    description: 'List of job applications.',
-    type: PaginatedJobApplicationResponseDto,
-  })
-  @ApiResponse({ status: 401, description: 'Unauthorized.' })
-  @UseInterceptors(ClassSerializerInterceptor)
+  @ApiOperation({ summary: 'Get applications for a specific job' })
+  @ApiOkResponse({ type: JobApplicationResponseDto, isArray: true })
   async getJobApplications(
+    @Param('jobId') jobId: string,
+    @Query('limit') limit: string | undefined,
+    @Query('offset') offset: string | undefined,
     @ReqContext() ctx: RequestContext,
-    @Param('jobId') jobId: number,
-    @Query() query: PaginationParamsDto,
   ): Promise<GetApplicationsResponse> {
-    this.logger.log(ctx, `${this.getJobApplications.name} was called`);
+    const parsedJobId = Number(jobId);
+    const parsedLimit = limit ? Number(limit) : 10;
+    const parsedOffset = offset ? Number(offset) : 0;
 
-    const { applications, count } =
-      await this.jobApplicationService.getJobApplications({
-        jobId,
-        user: ctx.user!,
-        limit: query.limit,
-        offset: query.offset,
-      });
+    // Validate jobId - must be a valid positive integer
+    if (
+      isNaN(parsedJobId) ||
+      parsedJobId <= 0 ||
+      !Number.isInteger(parsedJobId)
+    ) {
+      throw new BadRequestException(
+        'Invalid jobId parameter. Must be a positive integer.',
+      );
+    }
 
-    return { data: applications, meta: { count } };
+    // Validate that parsed values are valid numbers
+    const validLimit = isNaN(parsedLimit) ? 10 : Math.max(1, parsedLimit);
+    const validOffset = isNaN(parsedOffset) ? 0 : Math.max(0, parsedOffset);
+
+    const result = await this.jobApplicationService.getJobApplications({
+      jobId: parsedJobId,
+      user: ctx.user!,
+      limit: validLimit,
+      offset: validOffset,
+    });
+
+    return {
+      data: result.applications,
+      meta: {
+        count: result.count,
+      },
+    };
   }
 
-  @Put(':id')
-  @ApiOperation({ summary: 'Update a job application' })
-  @ApiResponse({
-    status: 200,
-    description: 'Application updated successfully.',
-  })
-  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @Patch(':id')
+  @ApiOperation({ summary: 'Update job application status' })
+  @ApiOkResponse({ type: UpdateJobApplicationResponseDto })
   async update(
-    @Param('id') id: number,
-    @Body() updateDto: UpdateJobApplicationDto,
+    @Param('id') id: string,
+    @Body() updateJobApplicationDto: UpdateJobApplicationDto,
     @ReqContext() ctx: RequestContext,
   ): Promise<UpdateApplicationResponse> {
-    this.logger.log(ctx, `${this.update.name} was called`);
-
-    return this.jobApplicationService.updateApplication({
-      id,
-      dto: updateDto,
+    const result = await this.jobApplicationService.updateApplication({
+      id: Number(id),
+      dto: updateJobApplicationDto,
       user: ctx.user!,
     });
+
+    return result;
+  }
+
+  @Get(':applicationId/detail')
+  @ApiOperation({
+    summary: 'Get detailed application information for company dashboard',
+    description:
+      'Retrieve comprehensive candidate and application details for company view',
+  })
+  @ApiOkResponse({ type: ApplicationDetailResponseDto })
+  async getApplicationDetail(
+    @Param('applicationId') applicationId: string,
+    @ReqContext() ctx: RequestContext,
+  ): Promise<ApplicationDetailResponseDto> {
+    const applicationDetail =
+      await this.jobApplicationService.getApplicationById(
+        Number(applicationId),
+        ctx.user!,
+      );
+
+    return {
+      id: applicationDetail.id,
+      status: applicationDetail.status,
+      cv_id: applicationDetail.cv_id,
+      cover_letter: applicationDetail.cover_letter,
+      applied_at: applicationDetail.applied_at,
+      updated_at: applicationDetail.updated_at,
+      candidate: applicationDetail.candidate,
+      candidateProfile: applicationDetail.candidateProfile || undefined,
+      job: applicationDetail.job,
+    };
   }
 }

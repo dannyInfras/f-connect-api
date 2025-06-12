@@ -6,8 +6,9 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
-import { Job } from '../../jobs/entities/jobs.entity';
-import { User } from '../../user/entities/user.entity';
+import { Job } from '@/modules/jobs/entities/jobs.entity';
+import { User } from '@/modules/user/entities/user.entity';
+
 import { ApplicationStatus } from '../enums/application-status.enum';
 
 @Entity()
