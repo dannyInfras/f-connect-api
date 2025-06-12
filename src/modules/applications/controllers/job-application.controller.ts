@@ -15,6 +15,7 @@ import {
   ApiBearerAuth,
   ApiOkResponse,
   ApiOperation,
+  ApiParam,
   ApiTags,
 } from '@nestjs/swagger';
 
@@ -149,6 +150,35 @@ export class JobApplicationController {
     });
 
     return result;
+  }
+
+  @Get(':id')
+  @ApiOperation({
+    summary: 'Get job application by ID',
+    description:
+      'Retrieve a job application by its ID with proper user permissions',
+  })
+  @ApiParam({ name: 'id', type: 'number', description: 'Job application ID' })
+  @ApiOkResponse({ type: ApplicationDetailResponseDto })
+  async getApplicationById(
+    @Param('id') id: string,
+    @ReqContext() ctx: RequestContext,
+  ) {
+    const result = await this.jobApplicationService.getApplicationById(
+      Number(id),
+      ctx.user!,
+    );
+
+    return {
+      data: {
+        id: result.id.toString(),
+        status: result.status,
+        cv_id: result.cv_id,
+        cover_letter: result.cover_letter,
+        applied_at: result.applied_at,
+        updated_at: result.updated_at,
+      },
+    };
   }
 
   @Get(':applicationId/detail')
