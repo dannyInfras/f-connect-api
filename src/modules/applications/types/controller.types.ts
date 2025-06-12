@@ -1,37 +1,12 @@
-import { BaseApiResponse } from '../../../shared/dtos/base-api-response.dto';
-import { PaginationParamsDto } from '../../../shared/dtos/pagination-params.dto';
-import { RequestContext } from '../../../shared/request-context/request-context.dto';
-import { CreateJobApplicationDto } from '../dtos/create-job-application.dto';
+import { BaseApiResponse } from '@/shared/dtos/base-api-response.dto';
+
+import { ApplicationDetailResponseDto } from '../dtos/application-detail-response.dto';
 import { JobApplicationResponseDto } from '../dtos/job-appication-response.dto';
-import { UpdateJobApplicationDto } from '../dtos/update-job-application.dto';
-import { JobApplication } from '../entities/job-application.entity';
-
-// Controller method parameter interfaces
-export interface CreateApplicationControllerParams {
-  createDto: CreateJobApplicationDto;
-  ctx: RequestContext;
-}
-
-export interface GetUserApplicationsControllerParams {
-  ctx: RequestContext;
-  query: PaginationParamsDto;
-}
-
-export interface GetJobApplicationsControllerParams {
-  ctx: RequestContext;
-  jobId: number;
-  query: PaginationParamsDto;
-}
-
-export interface UpdateApplicationControllerParams {
-  id: number;
-  updateDto: UpdateJobApplicationDto;
-  ctx: RequestContext;
-}
+import { UpdateJobApplicationResponseDto } from '../dtos/update-job-application-response.dto';
 
 // Controller return types
-export type CreateApplicationResponse = JobApplication;
-export type UpdateApplicationResponse = JobApplication;
+export type UpdateApplicationResponse = UpdateJobApplicationResponseDto;
 export type GetApplicationsResponse = BaseApiResponse<
   JobApplicationResponseDto[]
 >;
+export type GetApplicationDetailResponse = ApplicationDetailResponseDto;

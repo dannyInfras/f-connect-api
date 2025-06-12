@@ -33,6 +33,6 @@ import { JobApplicationNotificationService } from './services/job-application-no
     // Auth
     JwtAuthStrategy,
   ],
-  exports: [JobApplicationService],
+  exports: [JobApplicationService, JobApplicationRepository],
 })
 export class ApplicationsModule {}

@@ -1,10 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
 
-import { BaseApiResponse } from '../../../shared/dtos/base-api-response.dto';
+import { Job } from '@/modules/jobs/entities/jobs.entity';
+import { User } from '@/modules/user/entities/user.entity';
+
 import { Company } from '../../company/entities/company.entity';
-import { Job } from '../../jobs/entities/jobs.entity';
-import { User } from '../../user/entities/user.entity';
 import { ApplicationStatus } from '../enums/application-status.enum';
 
 export class JobApplicationResponseDto {
@@ -43,11 +43,4 @@ export class JobApplicationResponseDto {
   @Expose()
   @ApiProperty()
   updated_at: Date;
-}
-
-export class PaginatedJobApplicationResponseDto extends BaseApiResponse<
-  JobApplicationResponseDto[]
-> {
-  @ApiProperty({ type: [JobApplicationResponseDto] })
-  declare data: JobApplicationResponseDto[];
 }
