@@ -1,12 +1,28 @@
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
+import { IoAdapter } from '@nestjs/platform-socket.io';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 import { AppModule } from './app.module';
 import { VALIDATION_PIPE_OPTIONS } from './shared/constants';
 import { logger } from './shared/logger/pino-logger.config';
 import { RequestIdMiddleware } from './shared/middlewares/request-id/request-id.middleware';
+
+// Custom WebSocket adapter with CORS support
+class CustomIoAdapter extends IoAdapter {
+  createIOServer(port: number, options?: any): any {
+    const server = super.createIOServer(port, {
+      ...options,
+      cors: {
+        origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+        methods: ['GET', 'POST'],
+        credentials: true,
+      },
+    });
+    return server;
+  }
+}
 
 async function bootstrap() {
   try {
@@ -24,6 +40,9 @@ async function bootstrap() {
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
       credentials: true,
     });
+
+    // Use custom WebSocket adapter
+    app.useWebSocketAdapter(new CustomIoAdapter(app));
 
     /** Swagger configuration*/
     const options = new DocumentBuilder()
