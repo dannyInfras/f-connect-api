@@ -111,7 +111,7 @@ jobs:
             ${{ secrets.DO_DEPLOY_USER }}@${{ secrets.DO_DEPLOY_HOST }} << 'EOF'
             cd ${{ secrets.DEPLOY_PATH }}
             docker compose down app
-            docker compose up -d app
+            docker compose up -d --no-deps app
           EOF
 
   notify:
@@ -126,23 +126,31 @@ jobs:
           if [[ "${{ needs.deploy.result }}" == "success" ]]; then
             echo "result=success" >> $GITHUB_OUTPUT
             echo "message=Deployment completed successfully" >> $GITHUB_OUTPUT
+            echo "emoji=✅" >> $GITHUB_OUTPUT
           else
             echo "result=failed" >> $GITHUB_OUTPUT
             echo "message=Deployment failed, see logs for details" >> $GITHUB_OUTPUT
+            echo "emoji=❌" >> $GITHUB_OUTPUT
           fi
+          
+          # Extract and sanitize commit message
+          COMMIT_MESSAGE="${{ github.event.head_commit.message || github.sha }}"
+          COMMIT_MESSAGE=$(echo "$COMMIT_MESSAGE" | head -n 1 | sed 's/"/\\"/g')
+          echo "commit_message=$COMMIT_MESSAGE" >> $GITHUB_OUTPUT
 
       - name: Send deployment report to Slack
         uses: slackapi/slack-github-action@v1.24.0
         with:
           payload: |
             {
-              "text": "Deployment Report",
+              "text": "Deployment Report: ${{ steps.status.outputs.emoji }} ${{ steps.status.outputs.result }}",
               "blocks": [
                 {
                   "type": "header",
                   "text": {
                     "type": "plain_text",
-                    "text": "Deployment Report"
+                    "text": "Deployment Report: ${{ steps.status.outputs.emoji }} ${{ steps.status.outputs.result }}",
+                    "emoji": true
                   }
                 },
                 {
@@ -150,7 +158,7 @@ jobs:
                   "fields": [
                     {
                       "type": "mrkdwn",
-                      "text": "*Status:* ${{ fromJSON('["❌ Failed", "✅ Success"]')[steps.status.outputs.result == 'success'] }}"
+                      "text": "*Status:* ${{ steps.status.outputs.emoji }} ${{ steps.status.outputs.result }}"
                     },
                     {
                       "type": "mrkdwn",
@@ -162,7 +170,7 @@ jobs:
                     },
                     {
                       "type": "mrkdwn",
-                      "text": "*Commit:* ${{ github.event.head_commit.message || github.sha }}"
+                      "text": "*Commit:* ${{ steps.status.outputs.commit_message }}"
                     },
                     {
                       "type": "mrkdwn",
@@ -174,7 +182,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "*<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Workflow Run>*"
+                    "text": "<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Workflow Run>"
                   }
                 }
               ]

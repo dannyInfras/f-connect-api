@@ -49,6 +49,7 @@ services:
       - 'traefik.http.routers.f-connect-api.tls=true'
       - 'traefik.http.routers.f-connect-api.tls.certresolver=letsencrypt'
       - 'traefik.http.services.f-connect-api.loadbalancer.server.port=${APP_PORT}'
+      - 'traefik.docker.network=api_web'
     networks:
       - web
       - f-connect-server
