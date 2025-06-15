@@ -9,6 +9,7 @@ import {
   Patch,
   Post,
   Query,
+  UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -16,6 +17,7 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiParam,
+  ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
 
@@ -25,11 +27,16 @@ import { RequestContext } from '@/shared/request-context/request-context.dto';
 
 import { ApplicationDetailResponseDto } from '../dtos/application-detail-response.dto';
 import { CreateJobApplicationDto } from '../dtos/create-job-application.dto';
+import { HrApplicationsResponseDto } from '../dtos/hr-applications-response.dto';
 import { JobApplicationResponseDto } from '../dtos/job-appication-response.dto';
 import { UpdateJobApplicationDto } from '../dtos/update-job-application.dto';
 import { UpdateJobApplicationResponseDto } from '../dtos/update-job-application-response.dto';
 import { JobApplicationService } from '../services/job-application.service';
-import { GetApplicationsResponse, UpdateApplicationResponse } from '../types';
+import {
+  GetApplicationsResponse,
+  GetHrApplicationsResponse,
+  UpdateApplicationResponse,
+} from '../types';
 
 @ApiTags('job-applications')
 @Controller('applications')
@@ -132,6 +139,61 @@ export class JobApplicationController {
       meta: {
         count: result.count,
       },
+    };
+  }
+
+  @Get('hr')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({
+    summary: 'Get all applications for HR view',
+    description:
+      'Retrieves a paginated list of all applications for HR tracking',
+  })
+  @ApiOkResponse({ type: HrApplicationsResponseDto })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Pagination limit',
+  })
+  @ApiQuery({
+    name: 'offset',
+    required: false,
+    type: Number,
+    description: 'Pagination offset',
+  })
+  async getHrApplications(
+    @Query('limit') limit: string | undefined,
+    @Query('offset') offset: string | undefined,
+    @ReqContext() ctx: RequestContext,
+  ): Promise<GetHrApplicationsResponse> {
+    // Parse and validate pagination parameters
+    const parsedLimit = limit ? Number(limit) : 10;
+    const parsedOffset = offset ? Number(offset) : 0;
+
+    // Ensure limit is positive and offset is non-negative
+    const validLimit =
+      !isNaN(parsedLimit) && parsedLimit > 0 ? parsedLimit : 10;
+    const validOffset =
+      !isNaN(parsedOffset) && parsedOffset >= 0 ? parsedOffset : 0;
+
+    // Verify user is authenticated
+    if (!ctx.user) {
+      throw new UnauthorizedException('User is required');
+    }
+
+    // Get applications from service
+    const { applications, count } =
+      await this.jobApplicationService.getHrApplications({
+        user: ctx.user,
+        limit: validLimit,
+        offset: validOffset,
+      });
+
+    // Return paginated response
+    return {
+      data: applications,
+      meta: { count },
     };
   }
 

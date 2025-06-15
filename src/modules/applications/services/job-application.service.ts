@@ -5,6 +5,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 
+import { ROLE } from '@/modules/auth/constants/role.constant';
 import { Action } from '@/shared/acl/action.constant';
 import { AppLogger } from '@/shared/logger/logger.service';
 import { UnitOfWork } from '@/shared/unit-of-work/unit-of-work.service';
@@ -17,8 +18,10 @@ import { JobApplicationRepository } from '../repositories/job-application.reposi
 import {
   ApplicationDetailResponse,
   CreateApplicationServiceParams,
+  GetHrApplicationsServiceParams,
   GetJobApplicationsServiceParams,
   GetUserApplicationsServiceParams,
+  HrApplicationsWithCount,
   ServiceApplicationsWithCount as ApplicationsWithCount,
   ServiceCreateApplicationResponse,
   StatusTransitionParams,
@@ -273,9 +276,15 @@ export class JobApplicationService {
   private validateStatusTransition(params: StatusTransitionParams): void {
     const { currentStatus, newStatus } = params;
 
-    const validTransitions: Record<ApplicationStatus, ApplicationStatus[]> = {
+    if (currentStatus === newStatus) {
+      return; // No transition needed, already at the target status
+    }
+
+    // Define allowed transitions for each status
+    const allowedTransitions: Record<ApplicationStatus, ApplicationStatus[]> = {
       [ApplicationStatus.APPLIED]: [
         ApplicationStatus.INTERVIEW,
+        ApplicationStatus.HIRED,
         ApplicationStatus.REJECTED,
       ],
       [ApplicationStatus.INTERVIEW]: [
@@ -286,10 +295,74 @@ export class JobApplicationService {
       [ApplicationStatus.REJECTED]: [],
     };
 
-    if (!validTransitions[currentStatus]?.includes(newStatus)) {
+    if (
+      !allowedTransitions[currentStatus] ||
+      !allowedTransitions[currentStatus].includes(newStatus)
+    ) {
       throw new BadRequestException(
-        `Invalid status transition from ${currentStatus} to ${newStatus}`,
+        `Cannot transition from ${currentStatus} to ${newStatus}`,
       );
+    }
+  }
+
+  /**
+   * Get all applications for HR view with pagination
+   */
+  async getHrApplications(
+    params: GetHrApplicationsServiceParams,
+  ): Promise<HrApplicationsWithCount> {
+    const { user, limit, offset } = params;
+
+    try {
+      // Verify user has HR or admin access
+      const isHrPersonnel =
+        user.roles &&
+        (user.roles.includes(ROLE.ADMIN) ||
+          user.roles.includes(ROLE.ADMIN_RECRUITER) ||
+          user.roles.includes(ROLE.RECRUITER));
+
+      if (!isHrPersonnel) {
+        throw new UnauthorizedException(
+          'Only HR personnel can access this resource',
+        );
+      }
+
+      // Get applications using repository with company filtering if applicable
+      const companyId =
+        typeof user.companyId === 'string' ? Number(user.companyId) : undefined;
+      const { applications: rawApplications, count } =
+        await this.jobApplicationRepository.findAllApplications({
+          companyId,
+          limit,
+          offset,
+        });
+
+      // Map raw applications to DTO format
+      const applications = rawApplications.map((app) => ({
+        id: app.id.toString(),
+        status: app.status,
+        applied_at: app.applied_at,
+        candidate: {
+          id: app.user.id.toString(),
+          name: app.user.name,
+          avatar_url: app.user.avatar || undefined,
+        },
+        job: {
+          id: app.job.id.toString(),
+          title: app.job.title,
+        },
+      }));
+
+      return { applications, count };
+    } catch (error: unknown) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+
+      console.error(
+        `Failed to fetch HR applications: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+      throw new BadRequestException('Failed to fetch applications');
     }
   }
 }
