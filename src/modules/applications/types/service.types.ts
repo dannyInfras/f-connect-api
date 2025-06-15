@@ -1,5 +1,6 @@
 import { UserAccessTokenClaims } from '../../auth/dtos/auth-token-output.dto';
 import { CreateJobApplicationDto } from '../dtos/create-job-application.dto';
+import { HrApplicationResponseDto } from '../dtos/hr-applications-response.dto';
 import { JobApplicationResponseDto } from '../dtos/job-appication-response.dto';
 import { UpdateJobApplicationDto } from '../dtos/update-job-application.dto';
 import { ApplicationStatus } from '../enums/application-status.enum';
@@ -27,6 +28,12 @@ export interface UpdateApplicationServiceParams {
   id: number;
   dto: UpdateJobApplicationDto;
   user: UserAccessTokenClaims;
+}
+
+export interface GetHrApplicationsServiceParams {
+  user: UserAccessTokenClaims;
+  limit: number;
+  offset: number;
 }
 
 // Service return types
@@ -159,4 +166,9 @@ export interface ApplicationWithRelations {
   };
   cv_id?: string;
   applied_at: Date;
+}
+
+export interface HrApplicationsWithCount {
+  applications: HrApplicationResponseDto[];
+  count: number;
 }

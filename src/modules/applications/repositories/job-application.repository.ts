@@ -24,6 +24,12 @@ import {
   ServiceApplicationsWithCount,
 } from '../types';
 
+export interface FindAllApplicationsParams {
+  companyId?: number;
+  limit: number;
+  offset: number;
+}
+
 @Injectable()
 export class JobApplicationRepository {
   private readonly logger = new Logger(JobApplicationRepository.name);
@@ -329,5 +335,57 @@ export class JobApplicationRepository {
       experiences: candidateProfile.experiences || [],
       educations: candidateProfile.educations || [],
     };
+  }
+
+  /**
+   * Find all applications for HR view
+   */
+  async findAllApplications(
+    params: FindAllApplicationsParams,
+  ): Promise<{ applications: any[]; count: number }> {
+    const { companyId, limit, offset } = params;
+
+    // Ensure limit and offset are safe values
+    const safeLimit = Math.max(1, limit);
+    const safeOffset = Math.max(0, offset);
+
+    // Create query builder with necessary relations and fields
+    const queryBuilder = this.repo
+      .createQueryBuilder('application')
+      .leftJoinAndSelect('application.user', 'user')
+      .leftJoinAndSelect('application.job', 'job')
+      .leftJoinAndSelect('job.company', 'company')
+      .select([
+        'application.id',
+        'application.status',
+        'application.applied_at',
+        'user.id',
+        'user.name',
+        'user.avatar',
+        'job.id',
+        'job.title',
+        'company.id',
+        'company.companyName',
+        'company.logoUrl',
+      ]);
+
+    // Filter by company if provided
+    if (companyId) {
+      queryBuilder.andWhere('company.id = :companyId', { companyId });
+    }
+
+    // Sort by most recent applications first
+    queryBuilder.orderBy('application.applied_at', 'DESC');
+
+    // Get total count before pagination
+    const count = await queryBuilder.getCount();
+
+    // Apply pagination
+    queryBuilder.skip(safeOffset).take(safeLimit);
+
+    // Execute query
+    const applications = await queryBuilder.getMany();
+
+    return { applications, count };
   }
 }
