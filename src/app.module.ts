@@ -9,6 +9,7 @@ import { EducationModule } from '@/modules/education/education.module';
 import { ExperienceModule } from '@/modules/experience/experience.module';
 import { JobsModule } from '@/modules/jobs/jobs.module';
 import { UserModule } from '@/modules/user/user.module';
+import { VideoCallModule } from '@/modules/video-call/video-call.module';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -31,6 +32,7 @@ import { SharedModule } from './shared/shared.module';
     ExperienceModule,
     CvModule,
     ApplicationsModule,
+    VideoCallModule,
   ],
   controllers: [AppController],
   providers: [AppService],
