@@ -5,6 +5,7 @@ export type {
   UpdateApplicationResponse,
   GetApplicationsResponse,
   GetApplicationDetailResponse,
+  GetHrApplicationsResponse,
 } from './controller.types';
 
 // Export repository types
@@ -24,8 +25,10 @@ export type {
   CreateApplicationServiceParams,
   GetUserApplicationsServiceParams,
   GetJobApplicationsServiceParams,
+  GetHrApplicationsServiceParams,
   UpdateApplicationServiceParams,
   ApplicationsWithCount as ServiceApplicationsWithCount,
+  HrApplicationsWithCount,
   CreateApplicationResponse as ServiceCreateApplicationResponse,
   UpdateApplicationServiceResponse,
   ApplicationDetailResponse,

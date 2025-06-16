@@ -31,6 +31,11 @@ export class JobApplicationAclService extends BaseAclService<JobApplication> {
       [Action.Read, Action.Update, Action.List],
       this.isRecruiterFromSameCompany,
     );
+
+    // HR roles can view all applications from their company
+    this.canDo(ROLE.RECRUITER, [Action.List], this.isFromSameCompany);
+
+    this.canDo(ROLE.ADMIN_RECRUITER, [Action.List], this.isFromSameCompany);
   }
 
   isOwner(resource: JobApplication, actor: Actor): boolean {
@@ -46,6 +51,25 @@ export class JobApplicationAclService extends BaseAclService<JobApplication> {
       return false;
     }
 
+    // Check if the actor is one of the users associated with this company
+    return resource.job.company.users.some((user) => user.id === actor.id);
+  }
+
+  isFromSameCompany(resource: JobApplication, actor: Actor): boolean {
+    // Check if the job belongs to the same company
+    if (!resource.job?.company) {
+      return false;
+    }
+
+    // Check if the actor is one of the users associated with this company
+    if (
+      !resource.job.company.users ||
+      !Array.isArray(resource.job.company.users)
+    ) {
+      return false;
+    }
+
+    // If the actor is a user of the company, they're from the same company
     return resource.job.company.users.some((user) => user.id === actor.id);
   }
 }
