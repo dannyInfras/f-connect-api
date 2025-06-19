@@ -50,7 +50,7 @@ export interface ChatMessageEventData {
 export interface DisconnectEventData {
   userId: string;
   meetId?: string;
-}
+} 
 
 export interface JoinRequestEventData {
   meetId: string;

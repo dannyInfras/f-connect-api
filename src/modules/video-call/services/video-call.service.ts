@@ -1,21 +1,26 @@
+// src/video-call.service.ts
 import { Injectable, Logger } from '@nestjs/common';
-
-import { JoinRequest,Meeting } from '../interfaces/meeting.interface';
-import { User } from '../interfaces/user.interface';
+import { JoinRequest, Meeting, User } from '../interfaces/meeting.interface';
 
 @Injectable()
 export class VideoCallService {
   private users = new Map<string, User>();
   private meetings = new Map<string, Meeting>();
   private joinRequests = new Map<string, JoinRequest>();
-  private readonly JOIN_REQUEST_TIMEOUT = 60000; // 1 minute timeout for join requests
+  private readonly JOIN_REQUEST_TIMEOUT = 60000;
   private readonly logger = new Logger(VideoCallService.name);
 
   saveUser(user: User) {
     if (!user.id || !user.name || !user.email) {
       throw new Error('Invalid user data');
     }
-    this.users.set(user.id, user);
+    const existingUser = this.users.get(user.id) || {};
+    this.users.set(user.id, {
+      ...existingUser,
+      ...user,
+      video: user.video ?? true,
+      audio: user.audio ?? true,
+    });
     this.logger.debug(`User saved: ${user.id} (${user.name})`);
   }
 
@@ -28,22 +33,43 @@ export class VideoCallService {
     this.logger.debug(`User removed: ${userId}`);
   }
 
+  updateUserMedia(
+    userId: string,
+    mediaType: 'video' | 'audio',
+    status: boolean,
+  ): User | null {
+    const user = this.users.get(userId);
+    if (!user) {
+      return null;
+    }
+    user[mediaType] = status;
+    this.users.set(userId, user);
+    this.logger.debug(`User ${userId} ${mediaType} updated to ${status}`);
+    return user;
+  }
+
   createMeeting(meetId: string, meetName: string, creatorId: string) {
-    if (!meetId || !meetName || !creatorId) {
-      throw new Error('Invalid meeting data');
+    // Check if meeting already exists
+    if (this.meetings.has(meetId)) {
+      this.logger.debug(`Meeting already exists: ${meetId}`);
+      return this.meetings.get(meetId);
     }
-    if (!this.users.has(creatorId)) {
-      throw new Error('Creator not found');
-    }
+    
+    // Create new meeting
     this.meetings.set(meetId, {
       id: meetId,
       name: meetName,
       createdAt: new Date(),
       createdBy: creatorId,
-      participants: new Set([creatorId]),
+      participants: new Set<string>(),
       pendingJoinRequests: new Map(),
     });
-    this.logger.debug(`Meeting created: ${meetId} (${meetName}) by ${creatorId}`);
+    
+    this.logger.debug(
+      `Meeting created: ${meetId} (${meetName}) by ${creatorId}`,
+    );
+    
+    return this.meetings.get(meetId);
   }
 
   getMeeting(meetId: string): Meeting | undefined {
@@ -53,7 +79,6 @@ export class VideoCallService {
   removeMeeting(meetId: string) {
     const meeting = this.meetings.get(meetId);
     if (meeting && meeting.pendingJoinRequests) {
-      // Clear all timeouts for pending requests
       for (const request of meeting.pendingJoinRequests.values()) {
         if (request.timeoutRef) {
           clearTimeout(request.timeoutRef);
@@ -68,13 +93,24 @@ export class VideoCallService {
   addParticipantToMeeting(meetId: string, userId: string): Meeting | null {
     const meeting = this.meetings.get(meetId);
     if (!meeting) {
+      this.logger.warn(`Attempted to add participant to non-existent meeting: ${meetId}`);
       return null;
     }
+    
+    // Create user record if it doesn't exist
     if (!this.users.has(userId)) {
-      throw new Error('User not found');
+      this.logger.warn(`Adding participant ${userId} to meeting ${meetId} but creating minimal user record`);
+      this.saveUser({
+        id: userId,
+        name: `User-${userId.substring(0, 5)}`,
+        email: `user-${userId.substring(0, 5)}@example.com`,
+      });
     }
+    
+    // Add to participants set
     meeting.participants.add(userId);
-    this.logger.debug(`Participant added: ${userId} to meeting ${meetId}`);
+    this.logger.debug(`Added participant ${userId} to meeting ${meetId}`);
+    
     return meeting;
   }
 
@@ -87,7 +123,9 @@ export class VideoCallService {
     this.logger.debug(`Participant removed: ${userId} from meeting ${meetId}`);
     if (meeting.participants.size === 0) {
       this.meetings.delete(meetId);
-      this.logger.debug(`Meeting auto-removed as no participants left: ${meetId}`);
+      this.logger.debug(
+        `Meeting auto-removed as no participants left: ${meetId}`,
+      );
       return null;
     }
     return meeting;
@@ -125,9 +163,8 @@ export class VideoCallService {
     if (!meeting) {
       return [];
     }
-    
-    return Array.from(meeting.participants.values())
-      .map(id => this.users.get(id))
+    return Array.from(meeting.participants)
+      .map((id) => this.users.get(id))
       .filter((user): user is User => !!user);
   }
 
@@ -136,17 +173,20 @@ export class VideoCallService {
     return !!meeting && meeting.createdBy === userId;
   }
 
-  createJoinRequest(requestId: string, meetingId: string, userId: string, user: User, timeoutCallback: (request: JoinRequest) => void): JoinRequest | null {
+  createJoinRequest(
+    requestId: string,
+    meetingId: string,
+    userId: string,
+    user: User,
+    timeoutCallback: (request: JoinRequest) => void,
+  ): JoinRequest | null {
     const meeting = this.meetings.get(meetingId);
     if (!meeting) {
       return null;
     }
-
     if (!meeting.pendingJoinRequests) {
       meeting.pendingJoinRequests = new Map();
     }
-
-    // Create join request
     const joinRequest: JoinRequest = {
       id: requestId,
       userId,
@@ -154,20 +194,16 @@ export class VideoCallService {
       meetingId,
       requestTime: new Date(),
     };
-
-    // Set timeout to automatically reject the request after a certain time
     const timeoutRef = setTimeout(() => {
       this.removeJoinRequest(requestId);
       timeoutCallback(joinRequest);
     }, this.JOIN_REQUEST_TIMEOUT);
-
     joinRequest.timeoutRef = timeoutRef;
-
-    // Store the request in both maps
     this.joinRequests.set(requestId, joinRequest);
     meeting.pendingJoinRequests.set(requestId, joinRequest);
-    
-    this.logger.debug(`Join request created: ${requestId} from ${userId} for meeting ${meetingId}`);
+    this.logger.debug(
+      `Join request created: ${requestId} from ${userId} for meeting ${meetingId}`,
+    );
     return joinRequest;
   }
 
@@ -180,19 +216,13 @@ export class VideoCallService {
     if (!request) {
       return false;
     }
-
-    // Clear timeout if it exists
     if (request.timeoutRef) {
       clearTimeout(request.timeoutRef);
     }
-
-    // Remove from meeting's pending requests
     const meeting = this.meetings.get(request.meetingId);
     if (meeting && meeting.pendingJoinRequests) {
       meeting.pendingJoinRequests.delete(requestId);
     }
-
-    // Remove from main requests map
     this.joinRequests.delete(requestId);
     this.logger.debug(`Join request removed: ${requestId}`);
     return true;
@@ -203,13 +233,13 @@ export class VideoCallService {
     if (!meeting || !meeting.pendingJoinRequests) {
       return [];
     }
-
     return Array.from(meeting.pendingJoinRequests.values());
   }
 
   getUserJoinRequests(userId: string): JoinRequest[] {
-    return Array.from(this.joinRequests.values())
-      .filter(request => request.userId === userId);
+    return Array.from(this.joinRequests.values()).filter(
+      (request) => request.userId === userId,
+    );
   }
 
   hasPendingJoinRequest(userId: string, meetingId: string): boolean {
@@ -217,33 +247,44 @@ export class VideoCallService {
     if (!meeting || !meeting.pendingJoinRequests) {
       return false;
     }
-
     for (const request of meeting.pendingJoinRequests.values()) {
       if (request.userId === userId) {
         return true;
       }
     }
-
     return false;
   }
 
-  setJoinRequestTimeout(requestId: string, timeoutMs: number, timeoutCallback: (request: JoinRequest) => void): boolean {
+  setJoinRequestTimeout(
+    requestId: string,
+    timeoutMs: number,
+    timeoutCallback: (request: JoinRequest) => void,
+  ): boolean {
     const request = this.joinRequests.get(requestId);
     if (!request) {
       return false;
     }
-
-    // Clear existing timeout if any
     if (request.timeoutRef) {
       clearTimeout(request.timeoutRef);
     }
-
-    // Set a new timeout
     request.timeoutRef = setTimeout(() => {
       this.removeJoinRequest(requestId);
       timeoutCallback(request);
     }, timeoutMs);
-
     return true;
+  }
+
+  // Check if user is in any meeting
+  isUserInAnyMeeting(userId: string): boolean {
+    if (!userId) return false;
+    
+    // Check all meetings to see if user is a participant in any
+    for (const meeting of this.meetings.values()) {
+      if (meeting.participants.has(userId)) {
+        return true;
+      }
+    }
+    
+    return false;
   }
 }

@@ -3,13 +3,14 @@ import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { IoAdapter } from '@nestjs/platform-socket.io';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { ServerOptions } from 'socket.io';
 
 import { AppModule } from './app.module';
 import { VALIDATION_PIPE_OPTIONS } from './shared/constants';
 import { logger } from './shared/logger/pino-logger.config';
 import { RequestIdMiddleware } from './shared/middlewares/request-id/request-id.middleware';
 
-// Custom WebSocket adapter with CORS support
+// Custom WebSocket adapter with CORS and legacy support
 class CustomIoAdapter extends IoAdapter {
   createIOServer(port: number, options?: any): any {
     const server = super.createIOServer(port, {
@@ -18,6 +19,7 @@ class CustomIoAdapter extends IoAdapter {
         origin: process.env.FRONTEND_URL || 'http://localhost:3000',
         methods: ['GET', 'POST'],
         credentials: true,
+        transports: ['websocket', 'polling'],
       },
     });
     return server;

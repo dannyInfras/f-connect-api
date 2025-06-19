@@ -6,7 +6,7 @@ import { VideoCallService } from './services/video-call.service';
 
 @Module({
   controllers: [VideoCallController],
-  providers: [VideoCallGateway, VideoCallService],
+  providers: [VideoCallService, VideoCallGateway],
   exports: [VideoCallService],
 })
 export class VideoCallModule {} 

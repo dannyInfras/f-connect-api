@@ -35,7 +35,6 @@ export class VideoCallController {
   constructor(private readonly videoCallService: VideoCallService) {}
 
   @Get('meetings')
-  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get all active meetings' })
   @ApiResponse({
     status: 200,
@@ -66,7 +65,6 @@ export class VideoCallController {
   }
 
   @Get('meetings/:id')
-  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get meeting by ID' })
   @ApiResponse({
     status: 200,
@@ -116,7 +114,6 @@ export class VideoCallController {
   }
 
   @Get('meetings/:id/join-requests')
-  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get all pending join requests for a meeting' })
   @ApiResponse({
     status: 200,
@@ -148,7 +145,6 @@ export class VideoCallController {
   }
 
   @Get('user/:userId/join-requests')
-  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get all pending join requests for a user' })
   @ApiResponse({
     status: 200,
@@ -180,7 +176,6 @@ export class VideoCallController {
   }
 
   @Get('host/:hostId/pending-requests')
-  @UseGuards(JwtAuthGuard)
   @ApiOperation({
     summary: 'Get all pending requests for meetings where user is host',
   })

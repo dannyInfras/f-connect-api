@@ -1,4 +1,11 @@
-import { User } from './user.interface';
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  isHost?: boolean;
+  video?: boolean; // Added for Express compatibility
+  audio?: boolean; // Added for Express compatibility
+}
 
 export interface Meeting {
   id: string;
@@ -16,4 +23,4 @@ export interface JoinRequest {
   meetingId: string;
   requestTime: Date;
   timeoutRef?: NodeJS.Timeout;
-} 
+}
