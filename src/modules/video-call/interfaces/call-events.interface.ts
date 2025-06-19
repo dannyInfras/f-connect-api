@@ -50,4 +50,30 @@ export interface ChatMessageEventData {
 export interface DisconnectEventData {
   userId: string;
   meetId?: string;
+}
+
+export interface JoinRequestEventData {
+  meetId: string;
+  user: User;
+  requestId: string;
+}
+
+export interface ApproveJoinRequestEventData {
+  requestId: string;
+  meetId: string;
+  userId: string;
+  hostId: string;
+}
+
+export interface RejectJoinRequestEventData {
+  requestId: string;
+  meetId: string;
+  userId: string;
+  hostId: string;
+}
+
+export interface CancelJoinRequestEventData {
+  requestId: string;
+  meetId: string;
+  userId: string;
 } 
