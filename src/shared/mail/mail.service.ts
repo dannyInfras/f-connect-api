@@ -1,8 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { readFileSync } from 'fs';
 import Handlebars from 'handlebars';
-import * as nodemailer from 'nodemailer';
 import * as path from 'path';
+import { Resend } from 'resend';
 
 export interface EmailAttachment {
   filename: string;
@@ -12,19 +12,17 @@ export interface EmailAttachment {
 
 @Injectable()
 export class MailService {
-  private transporter: nodemailer.Transporter;
   private readonly logger = new Logger(MailService.name);
+  private readonly resend: Resend;
 
   constructor() {
-    this.transporter = nodemailer.createTransport({
-      host: process.env.MAIL_HOST,
-      port: parseInt(process.env.MAIL_PORT || '587', 10),
-      secure: false,
-      auth: {
-        user: process.env.MAIL_USER,
-        pass: process.env.MAIL_PASSWORD,
-      },
-    });
+    const apiKey = process.env.RESEND_API_KEY;
+    if (!apiKey) {
+      this.logger.error('RESEND_API_KEY not found in environment variables');
+      throw new Error('Missing RESEND_API_KEY');
+    }
+
+    this.resend = new Resend(apiKey);
   }
 
   async sendMail(
@@ -36,42 +34,38 @@ export class MailService {
   ): Promise<void> {
     const html = this.generateHtmlFromTemplate(template, context);
 
-    const mailOptions: nodemailer.SendMailOptions = {
-      from: process.env.MAIL_FROM || '"No Reply" <no-reply@example.com>', // Sender address
-      to,
-      subject,
-      html,
-    };
+    try {
+      const result = await this.resend.emails.send({
+        from:
+          process.env.MAIL_FROM || 'F Career Connect <no-reply@f-career.me>',
+        to,
+        subject,
+        html,
+        attachments: attachments?.map((attachment) => ({
+          filename: attachment.filename,
+          content: attachment.content.toString('base64'),
+          type: attachment.contentType || 'application/octet-stream',
+        })),
+      });
 
-    // Add attachments if provided
-    if (attachments && attachments.length > 0) {
-      mailOptions.attachments = attachments.map((attachment) => ({
-        filename: attachment.filename,
-        content: attachment.content,
-        contentType: attachment.contentType,
-      }));
+      if (result.error) {
+        this.logger.error(`Resend error: ${result.error.message}`);
+        throw new Error(result.error.message);
+      }
 
-      this.logger.log(
-        `Sending email with ${attachments.length} attachment(s) to ${to}`,
-      );
+      this.logger.log(`Email sent successfully to ${to}`);
+    } catch (error: any) {
+      this.logger.error(`Failed to send email to ${to}: ${error.message}`);
+      throw error;
     }
-
-    await this.transporter.sendMail(mailOptions);
   }
 
   private generateHtmlFromTemplate(
     template: string,
     context: Record<string, any>,
   ): string {
-    /*
-     * Render an html string from a Handlebars (*.hbs) file located under
-     * src/shared/mail/templates. The template argument can be provided
-     * with or without extension.
-     */
-
     const filename = template.endsWith('.hbs') ? template : `${template}.hbs`;
 
-    // Try multiple possible paths to find the template
     const possiblePaths = [
       path.join(__dirname, 'templates', filename),
       path.join(process.cwd(), 'src', 'shared', 'mail', 'templates', filename),
