@@ -1,26 +1,25 @@
 import { User } from './user.interface';
 
-export interface CallUserEventData {
+export interface SignalEventData {
   to: string;
-  from: User;
+  from: string;
   signal: any;
+  meetId: string;
 }
 
-export interface AcceptCallEventData {
-  to: string;
-  from: User;
-  signal: any;
+export interface CreateMeetEventData {
+  meetId: string;
   meetName: string;
 }
 
-export interface RejectCallEventData {
-  to: string;
-  from: User;
+export interface JoinMeetEventData {
+  meetId: string;
+  user: User;
 }
 
-export interface CancelCallEventData {
-  to: string;
-  from: User;
+export interface MeetRenameEventData {
+  meetId: string;
+  newMeetName: string;
 }
 
 export interface MediaToggleEventData {
@@ -35,45 +34,50 @@ export interface ScreenSharingEventData {
   status: boolean;
 }
 
-export interface MeetRenameEventData {
-  meetId: string;
-  name: string;
-}
-
 export interface ChatMessageEventData {
   meetId: string;
   from: User;
   message: string;
-  timestamp: Date;
+  timestamp: string;
 }
 
-export interface DisconnectEventData {
+export interface RemoveFromMeetEventData {
   userId: string;
-  meetId?: string;
-} 
+  meetId: string;
+}
 
-export interface JoinRequestEventData {
+export interface LeftMeetEventData {
+  userId: string;
+  meetId: string;
+}
+
+export interface RejectCallEventData {
+  to: string;
+  from: User;
+}
+
+export interface CancelMeetRequestEventData {
+  meetId: string;
+}
+
+export interface RequestJoinMeetEventData {
   meetId: string;
   user: User;
-  requestId: string;
 }
 
 export interface ApproveJoinRequestEventData {
   requestId: string;
   meetId: string;
   userId: string;
-  hostId: string;
 }
 
 export interface RejectJoinRequestEventData {
   requestId: string;
   meetId: string;
   userId: string;
-  hostId: string;
 }
 
 export interface CancelJoinRequestEventData {
   requestId: string;
   meetId: string;
-  userId: string;
-} 
+}

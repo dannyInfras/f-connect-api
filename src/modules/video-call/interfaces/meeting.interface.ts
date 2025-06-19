@@ -3,8 +3,8 @@ export interface User {
   name: string;
   email: string;
   isHost?: boolean;
-  video?: boolean; // Added for Express compatibility
-  audio?: boolean; // Added for Express compatibility
+  video?: boolean;
+  audio?: boolean;
 }
 
 export interface Meeting {

@@ -1,4 +1,3 @@
-// src/video-call.service.ts
 import { Injectable, Logger } from '@nestjs/common';
 import { JoinRequest, Meeting, User } from '../interfaces/meeting.interface';
 
@@ -12,14 +11,12 @@ export class VideoCallService {
 
   saveUser(user: User) {
     if (!user.id || !user.name || !user.email) {
-      throw new Error('Invalid user data');
+      throw new Error('Invalid user data: id, name, and email are required');
     }
     const existingUser = this.users.get(user.id) || {};
     this.users.set(user.id, {
       ...existingUser,
       ...user,
-      video: user.video ?? true,
-      audio: user.audio ?? true,
     });
     this.logger.debug(`User saved: ${user.id} (${user.name})`);
   }
@@ -49,13 +46,14 @@ export class VideoCallService {
   }
 
   createMeeting(meetId: string, meetName: string, creatorId: string) {
-    // Check if meeting already exists
-    if (this.meetings.has(meetId)) {
-      this.logger.debug(`Meeting already exists: ${meetId}`);
-      return this.meetings.get(meetId);
+    if (!meetId || !meetName || !creatorId) {
+      throw new Error(
+        'Invalid meeting data: meetId, meetName, and creatorId are required',
+      );
     }
-    
-    // Create new meeting
+    if (this.meetings.has(meetId)) {
+      throw new Error(`Meeting already exists: ${meetId}`);
+    }
     this.meetings.set(meetId, {
       id: meetId,
       name: meetName,
@@ -64,11 +62,13 @@ export class VideoCallService {
       participants: new Set<string>(),
       pendingJoinRequests: new Map(),
     });
-    
     this.logger.debug(
       `Meeting created: ${meetId} (${meetName}) by ${creatorId}`,
     );
-    
+    return this.meetings.get(meetId);
+  }
+
+  getMeet(meetId: string): Meeting | undefined {
     return this.meetings.get(meetId);
   }
 
@@ -93,24 +93,23 @@ export class VideoCallService {
   addParticipantToMeeting(meetId: string, userId: string): Meeting | null {
     const meeting = this.meetings.get(meetId);
     if (!meeting) {
-      this.logger.warn(`Attempted to add participant to non-existent meeting: ${meetId}`);
+      this.logger.warn(
+        `Attempted to add participant to non-existent meeting: ${meetId}`,
+      );
       return null;
     }
-    
-    // Create user record if it doesn't exist
     if (!this.users.has(userId)) {
-      this.logger.warn(`Adding participant ${userId} to meeting ${meetId} but creating minimal user record`);
+      this.logger.warn(
+        `Adding participant ${userId} to meeting ${meetId} but creating minimal user record`,
+      );
       this.saveUser({
         id: userId,
         name: `User-${userId.substring(0, 5)}`,
         email: `user-${userId.substring(0, 5)}@example.com`,
       });
     }
-    
-    // Add to participants set
     meeting.participants.add(userId);
     this.logger.debug(`Added participant ${userId} to meeting ${meetId}`);
-    
     return meeting;
   }
 
@@ -154,7 +153,7 @@ export class VideoCallService {
     return !!this.getUserMeeting(userId);
   }
 
-  getAllMeetings(): Meeting[] {
+  getAllMeets(): Meeting[] {
     return Array.from(this.meetings.values());
   }
 
@@ -228,7 +227,7 @@ export class VideoCallService {
     return true;
   }
 
-  getMeetingJoinRequests(meetingId: string): JoinRequest[] {
+  getMeetJoinRequests(meetingId: string): JoinRequest[] {
     const meeting = this.meetings.get(meetingId);
     if (!meeting || !meeting.pendingJoinRequests) {
       return [];
@@ -274,17 +273,13 @@ export class VideoCallService {
     return true;
   }
 
-  // Check if user is in any meeting
   isUserInAnyMeeting(userId: string): boolean {
     if (!userId) return false;
-    
-    // Check all meetings to see if user is a participant in any
     for (const meeting of this.meetings.values()) {
       if (meeting.participants.has(userId)) {
         return true;
       }
     }
-    
     return false;
   }
 }

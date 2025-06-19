@@ -1,16 +1,14 @@
-import { Controller, Get, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiOperation,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
-import { User } from '../interfaces/user.interface';
 import { VideoCallService } from '../services/video-call.service';
+import { User } from '../interfaces/user.interface';
 
-class MeetingResponse {
+class MeetResponse {
   meetId: string;
   meetName: string;
   createdAt: Date;
@@ -23,8 +21,8 @@ class MeetingResponse {
 class JoinRequestResponse {
   id: string;
   userId: string;
-  user: User;
-  meetingId: string;
+  user: { id: string; name: string; email: string };
+  meetId: string;
   requestTime: Date;
 }
 
@@ -34,121 +32,115 @@ class JoinRequestResponse {
 export class VideoCallController {
   constructor(private readonly videoCallService: VideoCallService) {}
 
-  @Get('meetings')
-  @ApiOperation({ summary: 'Get all active meetings' })
+  @Get('meets')
+  @ApiOperation({ summary: 'Lấy danh sách các cuộc họp đang hoạt động' })
   @ApiResponse({
     status: 200,
-    description: 'List of active meetings',
-    type: [MeetingResponse],
+    description: 'Danh sách cuộc họp',
+    type: [MeetResponse],
   })
-  getAllMeetings() {
+  getAllMeets() {
     try {
-      const meetings = this.videoCallService
-        .getAllMeetings()
-        .map((meeting) => ({
-          meetId: meeting.id,
-          meetName: meeting.name,
-          createdAt: meeting.createdAt,
-          createdBy: meeting.createdBy,
-          participantCount: meeting.participants.size,
-        }));
-      return {
-        success: true,
-        data: meetings,
-      };
+      const meets = this.videoCallService.getAllMeets().map((meet) => ({
+        meetId: meet.id,
+        meetName: meet.name,
+        createdAt: meet.createdAt,
+        createdBy: meet.createdBy,
+        participantCount: meet.participants.size,
+      }));
+      return { success: true, data: meets };
     } catch (error) {
       return {
         success: false,
-        error: error || 'Failed to retrieve meetings',
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Không thể lấy danh sách cuộc họp',
       };
     }
   }
 
-  @Get('meetings/:id')
-  @ApiOperation({ summary: 'Get meeting by ID' })
+  @Get('meets/:id')
+  @ApiOperation({ summary: 'Lấy thông tin cuộc họp theo ID' })
   @ApiResponse({
     status: 200,
-    description: 'Meeting details',
-    type: MeetingResponse,
+    description: 'Chi tiết cuộc họp',
+    type: MeetResponse,
   })
-  @ApiResponse({
-    status: 404,
-    description: 'Meeting not found',
-  })
-  getMeetingById(@Param('id') id: string) {
+  @ApiResponse({ status: 404, description: 'Không tìm thấy cuộc họp' })
+  getMeetById(@Param('id') id: string) {
     try {
-      const meeting = this.videoCallService.getMeeting(id);
-      if (!meeting) {
-        return {
-          success: false,
-          error: 'Meeting not found',
-        };
+      const meet = this.videoCallService.getMeet(id);
+      if (!meet) {
+        return { success: false, error: 'Không tìm thấy cuộc họp' };
       }
-
-      const participants = Array.from(meeting.participants.values())
+      const participants = Array.from(meet.participants)
         .map((userId) => this.videoCallService.getUser(userId))
-        .filter((user) => !!user)
+        .filter((user): user is User => !!user)
         .map((user) => ({
-          id: user!.id,
-          name: user!.name,
-          email: user!.email,
+          id: user.id,
+          name: user.name,
+          email: user.email,
         }));
-
       return {
         success: true,
         data: {
-          meetId: meeting.id,
-          meetName: meeting.name,
-          createdAt: meeting.createdAt,
-          createdBy: meeting.createdBy,
-          participantCount: meeting.participants.size,
+          meetId: meet.id,
+          meetName: meet.name,
+          createdAt: meet.createdAt,
+          createdBy: meet.createdBy,
+          participantCount: meet.participants.size,
           participants,
         },
       };
     } catch (error) {
       return {
         success: false,
-        error: error || 'Failed to retrieve meeting',
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Không thể lấy thông tin cuộc họp',
       };
     }
   }
 
-  @Get('meetings/:id/join-requests')
-  @ApiOperation({ summary: 'Get all pending join requests for a meeting' })
+  @Get('meets/:id/join-requests')
+  @ApiOperation({ summary: 'Lấy danh sách yêu cầu tham gia cuộc họp' })
   @ApiResponse({
     status: 200,
-    description: 'List of pending join requests',
+    description: 'Danh sách yêu cầu tham gia',
     type: [JoinRequestResponse],
   })
-  getJoinRequests(@Param('id') meetingId: string) {
+  getJoinRequests(@Param('id') meetId: string) {
     try {
       const requests = this.videoCallService
-        .getMeetingJoinRequests(meetingId)
+        .getMeetJoinRequests(meetId)
         .map((request) => ({
           id: request.id,
           userId: request.userId,
           user: request.user,
-          meetingId: request.meetingId,
+          meetId: request.meetingId,
           requestTime: request.requestTime,
         }));
-
-      return {
-        success: true,
-        data: requests,
-      };
+      return { success: true, data: requests };
     } catch (error) {
       return {
         success: false,
-        error: error || 'Failed to retrieve join requests',
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Không thể lấy danh sách yêu cầu tham gia',
       };
     }
   }
 
   @Get('user/:userId/join-requests')
-  @ApiOperation({ summary: 'Get all pending join requests for a user' })
+  @ApiOperation({
+    summary: 'Lấy danh sách yêu cầu tham gia của một người dùng',
+  })
   @ApiResponse({
     status: 200,
-    description: 'List of pending join requests',
+    description: 'Danh sách yêu cầu tham gia',
     type: [JoinRequestResponse],
   })
   getUserJoinRequests(@Param('userId') userId: string) {
@@ -159,68 +151,58 @@ export class VideoCallController {
           id: request.id,
           userId: request.userId,
           user: request.user,
-          meetingId: request.meetingId,
+          meetId: request.meetingId,
           requestTime: request.requestTime,
         }));
-
-      return {
-        success: true,
-        data: requests,
-      };
+      return { success: true, data: requests };
     } catch (error) {
       return {
         success: false,
-        error: error || 'Failed to retrieve user join requests',
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Không thể lấy danh sách yêu cầu tham gia',
       };
     }
   }
 
   @Get('host/:hostId/pending-requests')
-  @ApiOperation({
-    summary: 'Get all pending requests for meetings where user is host',
-  })
+  @ApiOperation({ summary: 'Lấy danh sách yêu cầu đang chờ xử lý của host' })
   @ApiResponse({
     status: 200,
-    description: 'List of pending requests for host',
+    description: 'Danh sách yêu cầu đang chờ',
     type: [JoinRequestResponse],
   })
   getHostPendingRequests(@Param('hostId') hostId: string) {
     try {
-      // Get all meetings where this user is the host
-      const hostedMeetings = this.videoCallService
-        .getAllMeetings()
-        .filter((meeting) => meeting.createdBy === hostId);
-
-      if (hostedMeetings.length === 0) {
+      const hostedMeets = this.videoCallService
+        .getAllMeets()
+        .filter((meet) => meet.createdBy === hostId);
+      if (hostedMeets.length === 0) {
         return { success: true, data: [] };
       }
-
-      // Collect all pending requests from these meetings
       const pendingRequests: JoinRequestResponse[] = [];
-
-      for (const meeting of hostedMeetings) {
-        const meetingRequests = this.videoCallService
-          .getMeetingJoinRequests(meeting.id)
+      for (const meet of hostedMeets) {
+        const meetRequests = this.videoCallService
+          .getMeetJoinRequests(meet.id)
           .map((request) => ({
             id: request.id,
             userId: request.userId,
             user: request.user,
-            meetingId: request.meetingId,
+            meetId: request.meetingId,
             requestTime: request.requestTime,
-            meetingName: meeting.name, // Add meeting name for context
+            meetName: meet.name,
           }));
-
-        pendingRequests.push(...meetingRequests);
+        pendingRequests.push(...meetRequests);
       }
-
-      return {
-        success: true,
-        data: pendingRequests,
-      };
+      return { success: true, data: pendingRequests };
     } catch (error) {
       return {
         success: false,
-        error: error?.toString() || 'Failed to retrieve pending requests',
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Không thể lấy danh sách yêu cầu đang chờ',
       };
     }
   }
