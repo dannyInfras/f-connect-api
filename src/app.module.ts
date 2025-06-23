@@ -7,6 +7,7 @@ import { CandidateProfileModule } from '@/modules/candidate-profile/candidate-pr
 import { CompanyModule } from '@/modules/company/company.module';
 import { EducationModule } from '@/modules/education/education.module';
 import { ExperienceModule } from '@/modules/experience/experience.module';
+import { JobSearchModule } from '@/modules/job-search/job-search.module';
 import { JobsModule } from '@/modules/jobs/jobs.module';
 import { UserModule } from '@/modules/user/user.module';
 import { VideoCallModule } from '@/modules/video-call/video-call.module';
@@ -27,6 +28,7 @@ import { SharedModule } from './shared/shared.module';
     CandidateProfileModule,
     CompanyModule,
     JobsModule,
+    JobSearchModule,
     SkillModule,
     EducationModule,
     ExperienceModule,
