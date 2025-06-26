@@ -257,6 +257,11 @@ export class JobApplicationRepository {
   ): JobApplicationResponseDto {
     return {
       id: application.id.toString(),
+      status: application.status,
+      cv_id: application.cv_id,
+      cover_letter: application.cover_letter,
+      applied_at: application.applied_at,
+      updated_at: application.updated_at,
       user: {
         id: application.user.id,
         name: application.user.name,
@@ -269,14 +274,15 @@ export class JobApplicationRepository {
         id: application.job.id,
         title: application.job.title,
         location: application.job.location,
-        company: application.job.company,
+        typeOfEmployment: application.job.typeOfEmployment,
+        salaryMin: application.job.salaryMin,
+        salaryMax: application.job.salaryMax,
+        description: application.job.description,
+        responsibility: application.job.responsibility,
+        category: application.job.category,
+        createdAt: application.job.createdAt,
+        updatedAt: application.job.updatedAt,
       } as Job,
-      company: application.job.company,
-      status: application.status,
-      cv_id: application.cv_id,
-      cover_letter: application.cover_letter,
-      applied_at: application.applied_at,
-      updated_at: application.updated_at,
     };
   }
 

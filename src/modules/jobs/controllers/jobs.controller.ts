@@ -27,6 +27,7 @@ import { RequestContext } from '@/shared/request-context/request-context.dto';
 
 import { CreateJobReqDto } from '../dtos/req/create-job.req';
 import { UpdateJobDto } from '../dtos/req/update-job.req';
+import { HrJobsListResponseDto } from '../dtos/res/hr-jobs-response.dto';
 import { JobDetailResponseDto } from '../dtos/res/job.res';
 import { ListJobResponseDto } from '../dtos/res/list-job.res';
 
@@ -96,6 +97,38 @@ export class JobsController {
     @Query() query: PaginationParamsDto,
   ): Promise<ListJobResponseDto> {
     const { jobs, count } = await this.jobService.findJobsByCompany(
+      companyId,
+      query.limit,
+      query.offset,
+    );
+
+    return {
+      data: jobs,
+      meta: {
+        count,
+        page: Math.floor(query.offset / query.limit) + 1,
+      },
+    };
+  }
+
+  @Get('company/:companyId/hr')
+  @ApiOperation({ summary: 'Get jobs for a company (HR view) with pagination' })
+  @ApiResponse({
+    status: 200,
+    type: HrJobsListResponseDto,
+    description:
+      'List of jobs for a company with application counts and pagination',
+  })
+  async findJobsByCompanyForHr(
+    @Param('companyId') companyId: string,
+    @Query() query: PaginationParamsDto,
+    @ReqContext() ctx: RequestContext,
+  ): Promise<HrJobsListResponseDto> {
+    if (!ctx.user) {
+      throw new UnauthorizedException('User must be logged in');
+    }
+    const { jobs, count } = await this.jobService.findJobsByCompanyForHr(
+      ctx.user,
       companyId,
       query.limit,
       query.offset,

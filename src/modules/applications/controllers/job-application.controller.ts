@@ -21,6 +21,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 
+import { ROLE } from '@/modules/auth/constants/role.constant';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { ReqContext } from '@/shared/request-context/req-context.decorator';
 import { RequestContext } from '@/shared/request-context/request-context.dto';
@@ -29,6 +30,7 @@ import { ApplicationDetailResponseDto } from '../dtos/application-detail-respons
 import { CreateJobApplicationDto } from '../dtos/create-job-application.dto';
 import { HrApplicationsResponseDto } from '../dtos/hr-applications-response.dto';
 import { JobApplicationResponseDto } from '../dtos/job-appication-response.dto';
+import { JobApplicationsSimplifiedResponseDto } from '../dtos/job-applications-simplified-response.dto';
 import { UpdateJobApplicationDto } from '../dtos/update-job-application.dto';
 import { UpdateJobApplicationResponseDto } from '../dtos/update-job-application-response.dto';
 import { JobApplicationService } from '../services/job-application.service';
@@ -101,13 +103,36 @@ export class JobApplicationController {
 
   @Get('job/:jobId')
   @ApiOperation({ summary: 'Get applications for a specific job' })
-  @ApiOkResponse({ type: JobApplicationResponseDto, isArray: true })
+  @ApiOkResponse({
+    type: JobApplicationsSimplifiedResponseDto,
+    description:
+      'Returns simplified format for recruiters, detailed format for others',
+  })
+  @ApiParam({
+    name: 'jobId',
+    type: 'number',
+    description: 'ID of the job to get applications for',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Number of applications to return (default: 10)',
+    example: 10,
+  })
+  @ApiQuery({
+    name: 'offset',
+    required: false,
+    type: Number,
+    description: 'Number of applications to skip (default: 0)',
+    example: 0,
+  })
   async getJobApplications(
     @Param('jobId') jobId: string,
     @Query('limit') limit: string | undefined,
     @Query('offset') offset: string | undefined,
     @ReqContext() ctx: RequestContext,
-  ): Promise<GetApplicationsResponse> {
+  ): Promise<GetApplicationsResponse | JobApplicationsSimplifiedResponseDto> {
     const parsedJobId = Number(jobId);
     const parsedLimit = limit ? Number(limit) : 10;
     const parsedOffset = offset ? Number(offset) : 0;
@@ -127,6 +152,24 @@ export class JobApplicationController {
     const validLimit = isNaN(parsedLimit) ? 10 : Math.max(1, parsedLimit);
     const validOffset = isNaN(parsedOffset) ? 0 : Math.max(0, parsedOffset);
 
+    // Check if user is a recruiter and return simplified format
+    const isRecruiter =
+      ctx.user?.roles?.includes(ROLE.RECRUITER) ||
+      ctx.user?.roles?.includes(ROLE.ADMIN_RECRUITER);
+
+    if (isRecruiter) {
+      const result =
+        await this.jobApplicationService.getJobApplicationsSimplified({
+          jobId: parsedJobId,
+          user: ctx.user!,
+          limit: validLimit,
+          offset: validOffset,
+        });
+
+      return result;
+    }
+
+    // Default behavior for other roles
     const result = await this.jobApplicationService.getJobApplications({
       jobId: parsedJobId,
       user: ctx.user!,
