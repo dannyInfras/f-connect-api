@@ -38,9 +38,6 @@ export class JobSearchResultDto {
   @ApiProperty()
   description: string;
 
-  @ApiProperty()
-  responsibility: string;
-
   @ApiProperty({ required: false })
   location?: string;
 
@@ -67,6 +64,11 @@ export class JobSearchResultDto {
 
   @ApiProperty()
   updatedAt: Date;
+
+  @ApiProperty({
+    description: 'Priority position (1-3, where 1 is highest priority)',
+  })
+  priorityPosition: number;
 
   @ApiProperty()
   company: JobSearchCompanyDto;

@@ -26,9 +26,6 @@ export class JobMapper {
         name: skill.name,
       })) || [],
       typeOfEmployment: job.typeOfEmployment,
-      responsibility: job.responsibility,
-      jobFitAttributes: job.jobFitAttributes,
-      niceToHave: job.niceToHave,
       benefit: job.benefit,
       deadline: job.deadline,
       description: job.description,
@@ -38,6 +35,7 @@ export class JobMapper {
       experienceYears: job.experienceYears,
       status: job.status,
       isVip: job.isVip,
+      priorityPosition: job.priorityPosition,
       createdAt: job.createdAt,
       updatedAt: job.updatedAt,
     };
@@ -64,6 +62,7 @@ export class JobMapper {
       status: job.status,
       typeOfEmployment: job.typeOfEmployment,
       isVip: job.isVip,
+      priorityPosition: job.priorityPosition,
       createdAt: job.createdAt,
       updatedAt: job.updatedAt,
     };

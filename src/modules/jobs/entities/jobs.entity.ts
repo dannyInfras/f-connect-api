@@ -67,19 +67,13 @@ export class Job {
   deadline: Date;
 
   @Column('text', { array: true })
-  responsibility: string[];
-
-  @Column('text', { array: true })
-  jobFitAttributes: string[];
-
-  @Column('text', { array: true })
-  niceToHave: string[];
-
-  @Column('text', { array: true })
   benefit: string[];
 
   @Column({ name: 'is_vip', type: 'boolean', default: false })
   isVip: boolean;
+
+  @Column({ name: 'priority_position', type: 'int', default: 3 })
+  priorityPosition: number;
 
   @ManyToOne(() => Company)
   @JoinColumn({ name: 'company_id' })

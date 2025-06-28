@@ -34,5 +34,6 @@ export const configModuleOptions: ConfigModuleOptions = {
     SUPABASE_URL: Joi.string().required(),
     SUPABASE_KEY: Joi.string().required(),
     SUPABASE_BUCKET_NAME: Joi.string().optional(),
+    OPENAI_API_KEY: Joi.string().required(),
   }),
 };

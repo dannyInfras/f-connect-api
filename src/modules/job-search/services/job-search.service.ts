@@ -70,7 +70,6 @@ export class JobSearchService {
         activeOnly,
         sortBy: sortBy || 'relevance',
         limit,
-        page,
         cursor: undefined,
       });
 
@@ -234,7 +233,6 @@ export class JobSearchService {
         activeOnly: searchDto.activeOnly,
         sortBy: searchDto.sortBy || 'relevance',
         limit: searchDto.limit || 10,
-        page: searchDto.page,
         cursor: undefined,
       });
 

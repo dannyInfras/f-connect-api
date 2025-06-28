@@ -278,7 +278,6 @@ export class JobApplicationRepository {
         salaryMin: application.job.salaryMin,
         salaryMax: application.job.salaryMax,
         description: application.job.description,
-        responsibility: application.job.responsibility,
         category: application.job.category,
         createdAt: application.job.createdAt,
         updatedAt: application.job.updatedAt,

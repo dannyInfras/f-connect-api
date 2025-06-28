@@ -82,7 +82,6 @@ export interface JobWithApplicationStats {
   id: string;
   title: string;
   description: string;
-  responsibility: string;
   location?: string;
   typeOfEmployment: string;
   jobLevel?: string;
@@ -93,6 +92,7 @@ export interface JobWithApplicationStats {
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
+  priorityPosition: number;
   company: {
     id: string;
     companyName: string;

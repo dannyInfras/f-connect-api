@@ -12,7 +12,6 @@ export interface JobSearchQueryParams {
   activeOnly?: boolean;
   sortBy: string;
   cursor?: string;
-  page?: number;
   limit: number;
 }
 
@@ -33,7 +32,6 @@ export interface JobSearchJobResult {
   id: string;
   title: string;
   description: string;
-  responsibility: string;
   location?: string;
   typeOfEmployment: string;
   jobLevel?: string;
@@ -44,6 +42,7 @@ export interface JobSearchJobResult {
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
+  priorityPosition: number;
   company: {
     id: string;
     companyName: string;
