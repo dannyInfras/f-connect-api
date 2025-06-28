@@ -45,7 +45,7 @@ export class JobService {
       take: limit,
       skip: offset,
       relations: ['company', 'category', 'skills'],
-      order: { createdAt: 'DESC' },
+      order: { priorityPosition: 'ASC', createdAt: 'DESC' },
     });
 
     return {
@@ -64,7 +64,7 @@ export class JobService {
       take: limit,
       skip: offset,
       relations: ['company', 'category', 'skills'],
-      order: { createdAt: 'DESC' },
+      order: { priorityPosition: 'ASC', createdAt: 'DESC' },
     });
 
     if (!jobs.length) {
@@ -218,10 +218,43 @@ export class JobService {
       job.skills = skills;
     }
 
+    // Extract fields from DTO
+    const {
+      title,
+      description,
+      location,
+      salaryMin,
+      salaryMax,
+      experienceYears,
+      deadline,
+      benefit,
+      isVip,
+      typeOfEmployment,
+      priorityPosition,
+    } = dto;
+
+    // Create update object with only the fields that exist in the entity
+    const updateData: any = {};
+
+    if (title !== undefined) updateData.title = title;
+    if (description !== undefined) updateData.description = description;
+    if (location !== undefined) updateData.location = location;
+    if (salaryMin !== undefined) updateData.salaryMin = salaryMin;
+    if (salaryMax !== undefined) updateData.salaryMax = salaryMax;
+    if (experienceYears !== undefined)
+      updateData.experienceYears = experienceYears;
+    if (deadline !== undefined) updateData.deadline = deadline;
+    if (benefit !== undefined) updateData.benefit = benefit;
+    if (isVip !== undefined) updateData.isVip = isVip;
+    if (typeOfEmployment !== undefined)
+      updateData.typeOfEmployment = typeOfEmployment;
+    if (priorityPosition !== undefined)
+      updateData.priorityPosition = priorityPosition;
+
     // Update job with proper typing
     const updated = await this.repository.save({
       ...job,
-      ...dto,
+      ...updateData,
     });
 
     const result = await this.repository.findOne({

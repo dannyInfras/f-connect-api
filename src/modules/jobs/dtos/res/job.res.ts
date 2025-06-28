@@ -78,23 +78,6 @@ export class JobDetailResponseDto {
   deadline: Date;
 
   @Expose()
-  @ApiProperty({ example: ['Develop web applications', 'Write clean code'] })
-  responsibility: string[];
-
-  @Expose()
-  @ApiProperty({
-    example: [
-      'You get energy from people and building the ideal work environment',
-      'You have a sense for beautiful spaces and office experiences',
-    ],
-  })
-  jobFitAttributes: string[];
-
-  @Expose()
-  @ApiProperty({ example: ['Fluent in English', 'Project management skills'] })
-  niceToHave: string[];
-
-  @Expose()
   @ApiProperty({
     example: ['Health insurance', 'Gym membership'],
   })
@@ -103,6 +86,10 @@ export class JobDetailResponseDto {
   @Expose()
   @ApiProperty({ example: true })
   isVip: boolean;
+
+  @Expose()
+  @ApiProperty({ example: 1, description: 'Priority position (1-3)' })
+  priorityPosition: number;
 
   @Expose()
   @ApiProperty()
@@ -126,12 +113,6 @@ export class JobDetailResponseDto {
       { id: '1', name: 'JavaScript' },
       { id: '2', name: 'TypeScript' },
     ],
-    responsibility: ['Develop web applications', 'Write clean code'],
-    jobFitAttributes: [
-      'You get energy from people and building the ideal work environment',
-      'You have a sense for beautiful spaces and office experiences',
-    ],
-    niceToHave: ['Fluent in English', 'Project management skills'],
     description: 'We are looking for a senior software engineer...',
     location: 'New York',
     salaryMin: 80000,
@@ -142,6 +123,7 @@ export class JobDetailResponseDto {
     deadline: '2024-01-01T00:00:00.000Z',
     typeOfEmployment: 'FullTime',
     benefit: ['Health insurance', 'Gym membership'],
+    priorityPosition: 1,
     createdAt: '2024-01-01T00:00:00.000Z',
     updatedAt: '2024-01-01T00:00:00.000Z',
   };

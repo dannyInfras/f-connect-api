@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsArray, IsNotEmpty, IsString } from 'class-validator';
+import { IsArray, IsInt, IsNotEmpty, IsOptional, IsString, Max, Min } from 'class-validator';
 
 export class CreateJobReqDto {
   @ApiProperty({ example: 'Senior Software Engineer' })
@@ -30,36 +30,6 @@ export class CreateJobReqDto {
   @IsArray()
   @IsString({ each: true })
   skillIds: string[];
-
-  @ApiProperty({
-    example: ['Develop web applications', 'Write clean code'],
-    description: 'Job responsibilities',
-    type: [String],
-  })
-  @IsNotEmpty()
-  @IsString({ each: true })
-  responsibility: string[];
-
-  @ApiProperty({
-    example: [
-      'You get energy from people and building the ideal work environment',
-      'You have a sense for beautiful spaces and office experiences',
-    ],
-    description: 'Job fit attributes',
-    type: [String],
-  })
-  @IsNotEmpty()
-  @IsString({ each: true })
-  jobFitAttributes: string[];
-
-  @ApiProperty({
-    example: ['Fluent in English', 'Project management skills'],
-    description: 'niceToHave',
-    type: [String],
-  })
-  @IsNotEmpty()
-  @IsString({ each: true })
-  niceToHave: string[];
 
   @ApiProperty({
     example: ['Health insurance', 'Gym membership'],
@@ -96,4 +66,16 @@ export class CreateJobReqDto {
   @ApiProperty({ example: 'FullTime', required: true })
   @IsNotEmpty()
   typeOfEmployment: string;
+
+  @ApiProperty({ 
+    example: 1, 
+    description: 'Priority position (1-3, where 1 is highest priority)', 
+    required: false,
+    default: 3
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(3)
+  priorityPosition?: number;
 }

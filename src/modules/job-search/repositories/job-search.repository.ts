@@ -43,7 +43,6 @@ export class JobSearchRepository {
       activeOnly,
       sortBy,
       cursor,
-      page,
       limit,
     } = params;
 
@@ -72,47 +71,17 @@ export class JobSearchRepository {
     // Apply sorting
     queryBuilder = this.applySorting(queryBuilder, sortBy, query);
 
-    // Apply pagination - prioritize cursor over page-based pagination
+    // Apply cursor pagination
     if (cursor) {
-      // Apply cursor pagination
       queryBuilder = this.applyCursor(queryBuilder, cursor, sortBy);
-      // Apply limit with +1 to check for next page
-      queryBuilder = queryBuilder.limit(limit + 1);
-    } else if (page && page > 1) {
-      // Apply page-based pagination with OFFSET/LIMIT
-      const offset = (page - 1) * limit;
-      queryBuilder = queryBuilder.offset(offset).limit(limit);
-    } else {
-      // First page or no pagination specified
-      queryBuilder = queryBuilder.limit(limit);
     }
+
+    // Apply limit with +1 to check for next page
+    queryBuilder = queryBuilder.limit(limit + 1);
 
     const results = await queryBuilder.getRawAndEntities();
-
-    // Handle pagination results
-    let jobs: Job[];
-    let hasNextPage: boolean;
-
-    if (cursor) {
-      // Cursor-based pagination logic
-      jobs = results.entities.slice(0, limit);
-      hasNextPage = results.entities.length > limit;
-    } else {
-      // Page-based pagination logic
-      jobs = results.entities;
-      // For page-based pagination, we need to check if there are more results
-      // by counting total results or checking if we got a full page
-      hasNextPage = jobs.length === limit;
-
-      // More accurate hasNextPage check: query one more record
-      if (hasNextPage && page) {
-        const nextPageCheck = await this.createBaseQuery(params)
-          .offset(page * limit)
-          .limit(1)
-          .getCount();
-        hasNextPage = nextPageCheck > 0;
-      }
-    }
+    const jobs = results.entities.slice(0, limit);
+    const hasNextPage = results.entities.length > limit;
 
     // Map results
     const mappedJobs: JobSearchJobResult[] = jobs.map((job, index) => {
@@ -120,9 +89,9 @@ export class JobSearchRepository {
       return this.mapToJobSearchJobResult(job, raw);
     });
 
-    // Generate next cursor (only for cursor-based pagination)
+    // Generate next cursor
     const nextCursor =
-      cursor && hasNextPage && jobs.length > 0
+      hasNextPage && jobs.length > 0
         ? this.generateCursor(jobs[jobs.length - 1], sortBy)
         : undefined;
 
@@ -135,49 +104,6 @@ export class JobSearchRepository {
       nextCursor,
       totalCount,
     };
-  }
-
-  /**
-   * Create base query builder with filters and sorting for reuse
-   */
-  private createBaseQuery(params: JobSearchQueryParams): any {
-    const {
-      query,
-      categoryIds,
-      companyIds,
-      employmentTypes,
-      jobLevels,
-      salaryMin,
-      salaryMax,
-      minExperienceYears,
-      location,
-      activeOnly,
-      sortBy,
-    } = params;
-
-    let queryBuilder = this.jobRepo
-      .createQueryBuilder('job')
-      .leftJoinAndSelect('job.company', 'company')
-      .leftJoinAndSelect('job.category', 'category');
-
-    // Apply filters
-    queryBuilder = this.applyFilters(queryBuilder, {
-      query,
-      categoryIds,
-      companyIds,
-      employmentTypes,
-      jobLevels,
-      salaryMin,
-      salaryMax,
-      minExperienceYears,
-      location,
-      activeOnly,
-    });
-
-    // Apply sorting
-    queryBuilder = this.applySorting(queryBuilder, sortBy, query);
-
-    return queryBuilder;
   }
 
   /**
@@ -300,6 +226,9 @@ export class JobSearchRepository {
     sortBy: string,
     query?: string,
   ): SelectQueryBuilder<Job> {
+    // Always sort by priority position first
+    queryBuilder.orderBy('job.priority_position', 'ASC');
+
     switch (sortBy) {
       case JobSearchSortBy.RELEVANCE:
         if (query) {
@@ -307,40 +236,38 @@ export class JobSearchRepository {
             'ts_rank_cd(job.tsv, plainto_tsquery(:language, :query))',
             'relevance_rank',
           );
-          queryBuilder.orderBy('relevance_rank', 'DESC');
+          queryBuilder.addOrderBy('relevance_rank', 'DESC');
         } else {
-          queryBuilder.orderBy('job.created_at', 'DESC');
+          queryBuilder.addOrderBy('job.created_at', 'DESC');
         }
         break;
 
       case JobSearchSortBy.DATE_POSTED:
-        queryBuilder.orderBy('job.created_at', 'DESC');
+        queryBuilder.addOrderBy('job.created_at', 'DESC');
         break;
 
       case JobSearchSortBy.SALARY_HIGH_TO_LOW:
-        queryBuilder.orderBy(
+        queryBuilder.addOrderBy(
           'COALESCE(job.salary_max, job.salary_min, 0)',
           'DESC',
         );
         break;
 
       case JobSearchSortBy.SALARY_LOW_TO_HIGH:
-        queryBuilder.orderBy(
+        queryBuilder.addOrderBy(
           'COALESCE(job.salary_min, job.salary_max, 0)',
           'ASC',
         );
         break;
 
       case JobSearchSortBy.EXPERIENCE_REQUIRED:
-        queryBuilder.orderBy('COALESCE(job.experience_years, 0)', 'ASC');
+        queryBuilder.addOrderBy('COALESCE(job.experience_years, 0)', 'ASC');
         break;
 
       default:
-        queryBuilder.orderBy('job.created_at', 'DESC');
+        queryBuilder.addOrderBy('job.created_at', 'DESC');
+        break;
     }
-
-    // Add secondary sort by ID for consistency
-    queryBuilder.addOrderBy('job.id', 'DESC');
 
     return queryBuilder;
   }
@@ -439,7 +366,6 @@ export class JobSearchRepository {
       id: job.id,
       title: job.title,
       description: job.description,
-      responsibility: job.responsibility.join(' '), // Convert array to string
       location: job.location,
       typeOfEmployment: job.typeOfEmployment,
       jobLevel: undefined, // Not available in current entity
@@ -450,6 +376,7 @@ export class JobSearchRepository {
       isActive: job.status === 'OPEN',
       createdAt: job.createdAt,
       updatedAt: job.updatedAt,
+      priorityPosition: job.priorityPosition || 3,
       company: {
         id: job.company.id,
         companyName: job.company.companyName,

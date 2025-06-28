@@ -63,6 +63,10 @@ export class JobResponseDto {
   isVip: boolean;
 
   @Expose()
+  @ApiProperty({ example: 1, description: 'Priority position (1-3)' })
+  priorityPosition: number;
+
+  @Expose()
   @ApiProperty()
   createdAt: Date;
 
@@ -87,6 +91,7 @@ export class JobResponseDto {
     typeOfEmployment: 'FullTime',
     status: 'OPEN',
     isVip: true,
+    priorityPosition: 1,
     createdAt: '2024-01-01T00:00:00.000Z',
     updatedAt: '2024-01-01T00:00:00.000Z',
   };
