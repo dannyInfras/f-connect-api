@@ -12,6 +12,7 @@ export interface JobSearchQueryParams {
   activeOnly?: boolean;
   sortBy: string;
   cursor?: string;
+  page?: number;
   limit: number;
 }
 

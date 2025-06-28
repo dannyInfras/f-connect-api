@@ -43,6 +43,7 @@ export class JobSearchRepository {
       activeOnly,
       sortBy,
       cursor,
+      page,
       limit,
     } = params;
 
@@ -71,17 +72,47 @@ export class JobSearchRepository {
     // Apply sorting
     queryBuilder = this.applySorting(queryBuilder, sortBy, query);
 
-    // Apply cursor pagination
+    // Apply pagination - prioritize cursor over page-based pagination
     if (cursor) {
+      // Apply cursor pagination
       queryBuilder = this.applyCursor(queryBuilder, cursor, sortBy);
+      // Apply limit with +1 to check for next page
+      queryBuilder = queryBuilder.limit(limit + 1);
+    } else if (page && page > 1) {
+      // Apply page-based pagination with OFFSET/LIMIT
+      const offset = (page - 1) * limit;
+      queryBuilder = queryBuilder.offset(offset).limit(limit);
+    } else {
+      // First page or no pagination specified
+      queryBuilder = queryBuilder.limit(limit);
     }
 
-    // Apply limit with +1 to check for next page
-    queryBuilder = queryBuilder.limit(limit + 1);
-
     const results = await queryBuilder.getRawAndEntities();
-    const jobs = results.entities.slice(0, limit);
-    const hasNextPage = results.entities.length > limit;
+
+    // Handle pagination results
+    let jobs: Job[];
+    let hasNextPage: boolean;
+
+    if (cursor) {
+      // Cursor-based pagination logic
+      jobs = results.entities.slice(0, limit);
+      hasNextPage = results.entities.length > limit;
+    } else {
+      // Page-based pagination logic
+      jobs = results.entities;
+      // For page-based pagination, we need to check if there are more results
+      // by counting total results or checking if we got a full page
+      hasNextPage = jobs.length === limit;
+
+      // More accurate hasNextPage check: query one more record
+      if (hasNextPage && page) {
+        const nextPageCheck = await this.createBaseQuery(params)
+          .offset(page * limit)
+          .limit(1)
+          .getCount();
+        hasNextPage = nextPageCheck > 0;
+      }
+    }
 
     // Map results
     const mappedJobs: JobSearchJobResult[] = jobs.map((job, index) => {
@@ -89,9 +120,9 @@ export class JobSearchRepository {
       return this.mapToJobSearchJobResult(job, raw);
     });
 
-    // Generate next cursor
+    // Generate next cursor (only for cursor-based pagination)
     const nextCursor =
-      hasNextPage && jobs.length > 0
+      cursor && hasNextPage && jobs.length > 0
         ? this.generateCursor(jobs[jobs.length - 1], sortBy)
         : undefined;
 
@@ -104,6 +135,49 @@ export class JobSearchRepository {
       nextCursor,
       totalCount,
     };
+  }
+
+  /**
+   * Create base query builder with filters and sorting for reuse
+   */
+  private createBaseQuery(params: JobSearchQueryParams): any {
+    const {
+      query,
+      categoryIds,
+      companyIds,
+      employmentTypes,
+      jobLevels,
+      salaryMin,
+      salaryMax,
+      minExperienceYears,
+      location,
+      activeOnly,
+      sortBy,
+    } = params;
+
+    let queryBuilder = this.jobRepo
+      .createQueryBuilder('job')
+      .leftJoinAndSelect('job.company', 'company')
+      .leftJoinAndSelect('job.category', 'category');
+
+    // Apply filters
+    queryBuilder = this.applyFilters(queryBuilder, {
+      query,
+      categoryIds,
+      companyIds,
+      employmentTypes,
+      jobLevels,
+      salaryMin,
+      salaryMax,
+      minExperienceYears,
+      location,
+      activeOnly,
+    });
+
+    // Apply sorting
+    queryBuilder = this.applySorting(queryBuilder, sortBy, query);
+
+    return queryBuilder;
   }
 
   /**

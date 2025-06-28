@@ -175,6 +175,50 @@ export class JobApplicationService {
     }
   }
 
+  async getJobApplicationsSimplified(params: GetJobApplicationsServiceParams) {
+    const { jobId, user, limit, offset } = params;
+
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { applications, count } =
+        await this.jobApplicationRepository.findByJobId({
+          jobId,
+          limit,
+          offset,
+        });
+
+      // Filter applications based on ACL permissions
+      const filteredApplications = applications.filter(
+        (app: JobApplicationResponseDto) =>
+          this.aclService.forActor(user).canDoAction('read', app),
+      );
+
+      // Map to simplified format
+      const simplifiedApplications = filteredApplications.map((app) => {
+        // Format the date as YYYY-MM-DD
+        const formattedDate = new Date(app.applied_at)
+          .toISOString()
+          .split('T')[0];
+
+        return {
+          id: app.id,
+          applicantName: app.user.name,
+          applicationStatus: app.status.toString(),
+          appliedDate: formattedDate,
+        };
+      });
+
+      return {
+        applications: simplifiedApplications,
+        meta: {
+          count: filteredApplications.length,
+        },
+      };
+    } catch (error) {
+      throw new BadRequestException('Failed to fetch job applications');
+    }
+  }
+
   async updateApplication(
     params: UpdateApplicationServiceParams,
   ): Promise<UpdateApplicationServiceResponse> {

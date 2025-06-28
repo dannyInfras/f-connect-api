@@ -14,6 +14,7 @@ import { Actor } from '@/shared/acl/actor.constant';
 import { AppLogger } from '@/shared/logger/logger.service';
 
 import { CreateJobReqDto } from '../dtos/req/create-job.req';
+import { HrJobResponseDto } from '../dtos/res/hr-jobs-response.dto';
 import { JobDetailResponseDto } from '../dtos/res/job.res';
 import { JobResponseDto } from '../dtos/res/list-job.res';
 import { JobMapper } from '../mapper/job.mapper';
@@ -74,6 +75,68 @@ export class JobService {
       jobs: jobs.map((job) => JobMapper.toListJobResponse(job)),
       count,
     };
+  }
+
+  async findJobsByCompanyForHr(
+    actor: Actor,
+    companyId: string,
+    limit: number,
+    offset: number,
+  ): Promise<{ jobs: HrJobResponseDto[]; count: number }> {
+    // Check if user has permission to view company jobs
+    await this.aclService.canList();
+
+    const queryBuilder = this.repository
+      .createQueryBuilder('job')
+      .leftJoinAndSelect('job.company', 'company')
+      .leftJoin('job_application', 'application', 'application.job_id = job.id')
+      .addSelect('COUNT(application.id)', 'totalApplications')
+      .where('company.id = :companyId', { companyId })
+      .groupBy('job.id')
+      .addGroupBy('company.id')
+      .orderBy('job.createdAt', 'DESC');
+
+    // Get total count without pagination
+    const totalCount = await queryBuilder.getCount();
+
+    // Apply pagination
+    const jobs = await queryBuilder
+      .skip(offset)
+      .take(limit)
+      .getRawAndEntities();
+
+    if (!jobs.entities.length && offset === 0) {
+      throw new NotFoundException('No jobs found for this company');
+    }
+
+    const jobData = jobs.entities.map((job, index) => ({
+      jobId: job.id,
+      jobTitle: job.title,
+      status: job.status === 'OPEN' ? 'Open' : 'Closed',
+      postedDate: job.createdAt.toISOString().split('T')[0],
+      endDate: job.deadline.toISOString().split('T')[0],
+      jobType: this.formatJobType(job.typeOfEmployment),
+      totalApplications: parseInt(
+        jobs.raw[index]?.totalApplications || '0',
+        10,
+      ),
+    }));
+
+    return {
+      jobs: jobData,
+      count: totalCount,
+    };
+  }
+
+  private formatJobType(typeOfEmployment: string): string {
+    const typeMapping: Record<string, string> = {
+      FullTime: 'Full-time',
+      PartTime: 'Part-time',
+      Contract: 'Contract',
+      Internship: 'Internship',
+      Remote: 'Remote',
+    };
+    return typeMapping[typeOfEmployment] || typeOfEmployment;
   }
 
   async create(

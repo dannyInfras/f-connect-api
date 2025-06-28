@@ -18,16 +18,16 @@ export class JobApplicationAclService extends BaseAclService<JobApplication> {
     this.canDo(ROLE.USER, [Action.Create]);
     this.canDo(ROLE.USER, [Action.List, Action.Read], this.isOwner);
 
-    // Recruiters can manage applications for jobs from their company
-    this.canDo(
-      ROLE.RECRUITER,
-      [Action.Read, Action.Update, Action.List],
-      this.isRecruiterFromSameCompany,
-    );
-
-    // Admin Recruiters can manage applications for jobs from their company
+    // Admin Recruiters can manage all applications (no company restriction)
     this.canDo(
       ROLE.ADMIN_RECRUITER,
+      [Action.Read, Action.Update, Action.List],
+      this.isAdminRecruiterOrFromSameCompany,
+    );
+
+    // Regular Recruiters can manage applications for jobs from their company
+    this.canDo(
+      ROLE.RECRUITER,
       [Action.Read, Action.Update, Action.List],
       this.isRecruiterFromSameCompany,
     );
@@ -40,6 +40,19 @@ export class JobApplicationAclService extends BaseAclService<JobApplication> {
 
   isOwner(resource: JobApplication, actor: Actor): boolean {
     return resource.user.id === actor.id;
+  }
+
+  isAdminRecruiterOrFromSameCompany(
+    resource: JobApplication,
+    actor: Actor,
+  ): boolean {
+    // Admin recruiters can access all applications
+    if (actor.roles && actor.roles.includes(ROLE.ADMIN_RECRUITER)) {
+      return true;
+    }
+
+    // For regular recruiters, check company association
+    return this.isRecruiterFromSameCompany(resource, actor);
   }
 
   isRecruiterFromSameCompany(resource: JobApplication, actor: Actor): boolean {
@@ -56,6 +69,11 @@ export class JobApplicationAclService extends BaseAclService<JobApplication> {
   }
 
   isFromSameCompany(resource: JobApplication, actor: Actor): boolean {
+    // Admin recruiters can see all applications
+    if (actor.roles && actor.roles.includes(ROLE.ADMIN_RECRUITER)) {
+      return true;
+    }
+
     // Check if the job belongs to the same company
     if (!resource.job?.company) {
       return false;

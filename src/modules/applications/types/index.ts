@@ -6,6 +6,7 @@ export type {
   GetApplicationsResponse,
   GetApplicationDetailResponse,
   GetHrApplicationsResponse,
+  GetJobApplicationsSimplifiedResponse,
 } from './controller.types';
 
 // Export repository types
