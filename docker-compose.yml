@@ -91,12 +91,27 @@ services:
     networks:
       - f-connect-server
 
+  # Python CV Analyzer Worker
+  python-cv-analyzer:
+    build:
+      context: ./python_cv_analyzer
+      dockerfile: Dockerfile
+    container_name: f-connect-cv-analyzer
+    env_file:
+      - .env
+    networks:
+      - f-connect-server
+    restart: unless-stopped
+    volumes:
+      - ./python_cv_analyzer:/app
+    working_dir: /app
+    command: python worker.py
+
 networks:
   f-connect-server:
     driver: bridge
   web:
     driver: bridge
-
 volumes:
   node_modules:
   pgsqldata:

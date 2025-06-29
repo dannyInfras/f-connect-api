@@ -60,6 +60,11 @@ export class JobApplicationRepository {
     application.cv_id = params.cvId || '';
     application.cover_letter = params.coverLetter || '';
     application.status = ApplicationStatus.APPLIED;
+    // Set AI status based on whether cvId is provided and is a URL
+    application.ai_status =
+      params.cvId && params.cvId.startsWith('http')
+        ? 'PENDING_SCORE'
+        : 'PENDING';
     return application;
   }
 

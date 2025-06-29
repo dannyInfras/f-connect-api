@@ -9,8 +9,8 @@ export class CreateJobApplicationDto {
   @IsString()
   @IsOptional()
   @ApiProperty({
-    example: 'https://example.com/cv.pdf',
-    description: 'The ID of the CV to attach to the application (optional)',
+    example: 'https://supabase.storage.url/cv.pdf',
+    description: 'The URL of the CV to attach to the application (optional)',
     required: false,
   })
   cvId?: string;
