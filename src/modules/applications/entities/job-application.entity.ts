@@ -46,4 +46,14 @@ export class JobApplication {
     onUpdate: 'CURRENT_TIMESTAMP',
   })
   updated_at: Date;
+
+  // AI Analysis fields
+  @Column({ type: 'int', nullable: true })
+  ai_score: number;
+
+  @Column({ type: 'text', nullable: true })
+  ai_analysis: string;
+
+  @Column({ type: 'varchar', length: 50, default: 'PENDING' })
+  ai_status: string; // PENDING, PENDING_SCORE, PROCESSING, COMPLETED, FAILED
 }
