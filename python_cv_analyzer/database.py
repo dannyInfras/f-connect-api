@@ -6,6 +6,7 @@ import psycopg2
 import psycopg2.extras
 from contextlib import contextmanager
 from typing import Dict, Any, Optional, Generator
+from urllib.parse import urlparse
 
 from config import config
 from logger import get_logger
@@ -22,13 +23,16 @@ class ConnectionManager:
     """Manages PostgreSQL database connections."""
     
     def __init__(self):
+        # Parse DATABASE_URL
+        parsed = urlparse(config.DATABASE_URL)
         self.connection_params = {
-            'host': config.DB_HOST,
-            'port': config.DB_PORT,
-            'database': config.DB_NAME,
-            'user': config.DB_USER,
-            'password': config.DB_PASS
+            'host': parsed.hostname,
+            'port': parsed.port or 5432,
+            'database': parsed.path.lstrip('/'),
+            'user': parsed.username,
+            'password': parsed.password
         }
+        logger.info("Database connection configured with DATABASE_URL")
     
     def get_connection(self) -> psycopg2.extensions.connection:
         """Create a new database connection."""

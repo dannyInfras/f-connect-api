@@ -9,12 +9,8 @@ from typing import Optional
 class Config:
     """Configuration class for CV Analysis Worker."""
     
-    # Database - Individual connection parameters
-    DB_HOST: str = os.getenv('DB_HOST', 'localhost')
-    DB_PORT: int = int(os.getenv('DB_PORT', '5432'))
-    DB_USER: str = os.getenv('DB_USER', '')
-    DB_PASS: str = os.getenv('DB_PASS', '')
-    DB_NAME: str = os.getenv('DB_NAME', '')
+    # Database - Connection URL
+    DATABASE_URL: str = os.getenv('DATABASE_URL', '')
     
     # Perplexity AI
     PERPLEXITY_API_KEY: str = os.getenv('PERPLEXITY_API_KEY', '')
@@ -47,14 +43,8 @@ class Config:
     @classmethod
     def validate(cls) -> None:
         """Validate required configuration values."""
-        if not cls.DB_HOST:
-            raise ValueError("DB_HOST environment variable is required")
-        if not cls.DB_USER:
-            raise ValueError("DB_USER environment variable is required")
-        if not cls.DB_PASS:
-            raise ValueError("DB_PASS environment variable is required")
-        if not cls.DB_NAME:
-            raise ValueError("DB_NAME environment variable is required")
+        if not cls.DATABASE_URL:
+            raise ValueError("DATABASE_URL environment variable is required")
         if not cls.PERPLEXITY_API_KEY:
             raise ValueError("PERPLEXITY_API_KEY environment variable is required")
 
