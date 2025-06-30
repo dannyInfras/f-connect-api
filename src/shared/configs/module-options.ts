@@ -35,5 +35,9 @@ export const configModuleOptions: ConfigModuleOptions = {
     SUPABASE_KEY: Joi.string().required(),
     SUPABASE_BUCKET_NAME: Joi.string().optional(),
     OPENAI_API_KEY: Joi.string().required(),
+    PAYOS_API_URL: Joi.string().required(),
+    PAYOS_CLIENT_ID: Joi.string().required(),
+    PAYOS_API_KEY: Joi.string().required(),
+    PAYOS_CHECKSUM_KEY: Joi.string().required(),
   }),
 };
