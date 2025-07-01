@@ -7,19 +7,23 @@ import { Job } from '@/modules/jobs/entities/jobs.entity';
 import { User } from '@/modules/user/entities/user.entity';
 import { UnitOfWork } from '@/shared/unit-of-work/unit-of-work.service';
 
+import { Company } from '../../company/entities/company.entity';
 import { JobApplicationResponseDto } from '../dtos/job-appication-response.dto';
 import { JobApplication } from '../entities/job-application.entity';
 import { ApplicationStatus } from '../enums/application-status.enum';
 import {
   ApplicationDetailResponse,
+  ApplicationWithFullCompanyProfile,
   ApplicationWithFullRelations,
   ApplicationWithRelations,
+  CandidateApplicationDetailResponse,
   CandidateProfileRaw,
   CreateApplicationData,
   EmailNotificationData,
   FindByJobIdParams,
   FindByUserIdParams,
   GetApplicationDetailParams,
+  GetApplicationWithCompanyProfileParams,
   GetCandidateProfileParams,
   ServiceApplicationsWithCount,
 } from '../types';
@@ -287,6 +291,16 @@ export class JobApplicationRepository {
         createdAt: application.job.createdAt,
         updatedAt: application.job.updatedAt,
       } as Job,
+      company: {
+        id: application.job.company.id,
+        companyName: application.job.company.companyName,
+        logoUrl: application.job.company.logoUrl,
+        website: application.job.company.website,
+        phone: application.job.company.phone,
+        email: application.job.company.email,
+        description: application.job.company.description,
+        address: application.job.company.address,
+      } as Company,
     };
   }
 
@@ -397,5 +411,134 @@ export class JobApplicationRepository {
     const applications = await queryBuilder.getMany();
 
     return { applications, count };
+  }
+
+  // Separate methods for candidate application view with full company profile
+  async findApplicationWithCompanyProfile(
+    params: GetApplicationWithCompanyProfileParams,
+  ): Promise<ApplicationWithFullCompanyProfile | null> {
+    const application = await this.repo
+      .createQueryBuilder('application')
+      .leftJoinAndSelect('application.user', 'user')
+      .leftJoinAndSelect('application.job', 'job')
+      .leftJoinAndSelect('job.company', 'company')
+      .leftJoinAndSelect('company.users', 'companyUsers')
+      .select([
+        'application',
+        'user.id',
+        'user.name',
+        'user.email',
+        'user.phone',
+        'user.avatar',
+        'user.gender',
+        'job.id',
+        'job.title',
+        'job.location',
+        'job.typeOfEmployment',
+        'job.salaryMin',
+        'job.salaryMax',
+        'job.description',
+        'company.id',
+        'company.companyName',
+        'company.logoUrl',
+        'company.website',
+        'company.phone',
+        'company.email',
+        'company.description',
+        'company.address',
+        'companyUsers.id',
+        'companyUsers.email',
+        'companyUsers.roles',
+        'companyUsers.companyId',
+      ])
+      .where('application.id = :applicationId', {
+        applicationId: params.applicationId,
+      })
+      .getOne();
+
+    if (!application) {
+      return null;
+    }
+
+    return this.mapToApplicationWithCompanyProfile(application);
+  }
+
+  mapToCandidateApplicationDetailResponse(
+    application: ApplicationWithFullCompanyProfile,
+  ): CandidateApplicationDetailResponse {
+    return {
+      id: application.id,
+      status: application.status,
+      cv_id: application.cv_id,
+      cover_letter: application.cover_letter,
+      applied_at: application.applied_at,
+      updated_at: application.updated_at,
+      job: {
+        id: application.job.id,
+        title: application.job.title,
+        location: application.job.location,
+        typeOfEmployment: application.job.typeOfEmployment,
+        salaryMin: application.job.salaryMin,
+        salaryMax: application.job.salaryMax,
+        description: application.job.description,
+      },
+      company: {
+        id: application.job.company.id,
+        name: application.job.company.companyName,
+        logoUrl: application.job.company.logoUrl,
+        website: application.job.company.website,
+        phone: application.job.company.phone,
+        email: application.job.company.email,
+        about: application.job.company.description,
+        contact: application.job.company.address,
+      },
+    };
+  }
+
+  private mapToApplicationWithCompanyProfile(
+    application: JobApplication,
+  ): ApplicationWithFullCompanyProfile {
+    return {
+      id: application.id,
+      status: application.status,
+      cv_id: application.cv_id,
+      cover_letter: application.cover_letter,
+      applied_at: application.applied_at,
+      updated_at: application.updated_at,
+      user: {
+        id: application.user.id,
+        name: application.user.name,
+        email: application.user.email,
+        phone: application.user.phone,
+        avatar: application.user.avatar,
+        gender: application.user.gender,
+      },
+      job: {
+        id: application.job.id,
+        title: application.job.title,
+        location: application.job.location,
+        typeOfEmployment: application.job.typeOfEmployment,
+        salaryMin: application.job.salaryMin,
+        salaryMax: application.job.salaryMax,
+        description: application.job.description,
+        company: {
+          id: application.job.company.id,
+          companyName: application.job.company.companyName,
+          logoUrl: application.job.company.logoUrl,
+          website: application.job.company.website,
+          phone: application.job.company.phone,
+          email: application.job.company.email,
+          description: application.job.company.description,
+          address: application.job.company.address,
+          users:
+            application.job.company.users?.map((user) => ({
+              id: user.id,
+              email: user.email,
+              roles: user.roles as any[], // Cast to any[] to fix type error
+              companyId: user.company?.id || null,
+            })) || [],
+        },
+      },
+    };
   }
 }

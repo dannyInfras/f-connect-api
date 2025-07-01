@@ -26,7 +26,10 @@ import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { ReqContext } from '@/shared/request-context/req-context.decorator';
 import { RequestContext } from '@/shared/request-context/request-context.dto';
 
-import { ApplicationDetailResponseDto } from '../dtos/application-detail-response.dto';
+import {
+  ApplicationDetailResponseDto,
+  CandidateApplicationDetailResponseDto,
+} from '../dtos/application-detail-response.dto';
 import { CreateJobApplicationDto } from '../dtos/create-job-application.dto';
 import { HrApplicationsResponseDto } from '../dtos/hr-applications-response.dto';
 import { JobApplicationResponseDto } from '../dtos/job-appication-response.dto';
@@ -255,6 +258,45 @@ export class JobApplicationController {
     });
 
     return result;
+  }
+
+  @Get(':id/user')
+  @ApiOperation({
+    summary: 'Get application details for candidate user',
+    description:
+      'Retrieve application details of a candidate excluding AI analysis fields',
+  })
+  @ApiParam({ name: 'id', type: 'number', description: 'Application ID' })
+  @ApiOkResponse({ type: CandidateApplicationDetailResponseDto })
+  async getApplicationByIdForUser(
+    @Param('id') id: string,
+    @ReqContext() ctx: RequestContext,
+  ): Promise<CandidateApplicationDetailResponseDto> {
+    const applicationDetail =
+      await this.jobApplicationService.getApplicationByIdForCandidate(
+        Number(id),
+        ctx.user!,
+      );
+
+    return {
+      id: applicationDetail.id,
+      status: applicationDetail.status,
+      cv_id: applicationDetail.cv_id,
+      cover_letter: applicationDetail.cover_letter,
+      applied_at: applicationDetail.applied_at,
+      updated_at: applicationDetail.updated_at,
+      job: applicationDetail.job,
+      company: {
+        id: applicationDetail.company.id,
+        name: applicationDetail.company.name,
+        logoUrl: applicationDetail.company.logoUrl,
+        website: applicationDetail.company.website,
+        phone: applicationDetail.company.phone?.toString(),
+        email: applicationDetail.company.email,
+        about: applicationDetail.company.about,
+        contact: applicationDetail.company.contact,
+      },
+    };
   }
 
   @Get(':id')

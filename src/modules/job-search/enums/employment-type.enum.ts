@@ -2,9 +2,17 @@
  * Enum for employment types in job search
  */
 export enum EmploymentType {
-  FULL_TIME = 'FullTime',
-  PART_TIME = 'PartTime',
-  CONTRACT = 'Contract',
-  INTERNSHIP = 'Internship',
-  REMOTE = 'Remote',
+  FULL_TIME = 'FULL_TIME',
+  PART_TIME = 'PART_TIME',
+  CONTRACT = 'CONTRACT',
+  INTERN = 'INTERN',
+  FREELANCE = 'FREELANCE',
+  TEMPORARY = 'TEMPORARY',
+  VOLUNTEER = 'VOLUNTEER',
+  APPRENTICESHIP = 'APPRENTICESHIP',
+  CO_OP = 'CO_OP',
+  SEASONAL = 'SEASONAL',
+  REMOTE = 'REMOTE',
+  ONSITE = 'ONSITE',
+  HYBRID = 'HYBRID',
 }
