@@ -16,9 +16,11 @@ export type {
   CreateApplicationData,
   GetApplicationDetailParams,
   GetCandidateProfileParams,
+  GetApplicationWithCompanyProfileParams,
   ApplicationsWithCount as RepositoryApplicationsWithCount,
   CandidateProfileRaw,
   ApplicationWithFullRelations,
+  ApplicationWithFullCompanyProfile,
 } from './repository.types';
 
 // Export service types
@@ -33,6 +35,7 @@ export type {
   CreateApplicationResponse as ServiceCreateApplicationResponse,
   UpdateApplicationServiceResponse,
   ApplicationDetailResponse,
+  CandidateApplicationDetailResponse,
   DetailedApplication,
   DetailedApplicationWithProfile,
   StatusTransitionParams,

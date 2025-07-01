@@ -17,6 +17,7 @@ import { ApplicationStatus } from '../enums/application-status.enum';
 import { JobApplicationRepository } from '../repositories/job-application.repository';
 import {
   ApplicationDetailResponse,
+  CandidateApplicationDetailResponse,
   CreateApplicationServiceParams,
   GetHrApplicationsServiceParams,
   GetJobApplicationsServiceParams,
@@ -314,6 +315,48 @@ export class JobApplicationService {
     return this.jobApplicationRepository.mapToApplicationDetailResponse(
       application,
       candidateProfile,
+    );
+  }
+
+  async getApplicationByIdForCandidate(
+    applicationId: number,
+    user: any,
+  ): Promise<CandidateApplicationDetailResponse> {
+    // Fetch application with full company profile using separate repository method
+    const application =
+      await this.jobApplicationRepository.findApplicationWithCompanyProfile({
+        applicationId,
+      });
+
+    if (!application) {
+      throw new NotFoundException('Application not found');
+    }
+
+    // Check ACL permissions - convert to JobApplication-like object for ACL check
+    const aclCheckObject = {
+      id: application.id,
+      user: { id: application.user.id },
+      job: {
+        id: application.job.id,
+        company: {
+          id: application.job.company.id,
+          users:
+            application.job.company.users?.map((u) => ({ id: u.id })) || [],
+        },
+      },
+    } as any;
+
+    if (
+      !this.aclService.forActor(user).canDoAction(Action.Read, aclCheckObject)
+    ) {
+      throw new UnauthorizedException(
+        'You do not have permission to view this application',
+      );
+    }
+
+    // Use repository mapping method to build response with company profile
+    return this.jobApplicationRepository.mapToCandidateApplicationDetailResponse(
+      application,
     );
   }
 

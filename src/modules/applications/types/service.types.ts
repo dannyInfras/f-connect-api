@@ -97,6 +97,35 @@ export interface ApplicationDetailResponse {
   };
 }
 
+// Separate type for candidate application details with full company profile
+export interface CandidateApplicationDetailResponse {
+  id: number;
+  status: ApplicationStatus;
+  cv_id?: string;
+  cover_letter?: string;
+  applied_at: Date;
+  updated_at: Date;
+  job: {
+    id: string;
+    title: string;
+    location?: string;
+    typeOfEmployment: string;
+    salaryMin: number;
+    salaryMax: number;
+    description: string;
+  };
+  company: {
+    id: string;
+    name: string;
+    logoUrl?: string;
+    website?: string;
+    phone?: number;
+    email?: string;
+    about?: string;
+    contact?: any;
+  };
+}
+
 // Helper types for relations
 export interface DetailedApplication {
   id: number;

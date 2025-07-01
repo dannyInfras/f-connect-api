@@ -4,6 +4,7 @@ import { Expose } from 'class-transformer';
 import { Job } from '@/modules/jobs/entities/jobs.entity';
 import { User } from '@/modules/user/entities/user.entity';
 
+import { Company } from '../../company/entities/company.entity';
 import { ApplicationStatus } from '../enums/application-status.enum';
 
 export class JobApplicationResponseDto {
@@ -14,6 +15,10 @@ export class JobApplicationResponseDto {
   @Expose()
   @ApiProperty()
   job: Job;
+
+  @Expose()
+  @ApiProperty()
+  company: Company;
 
   @Expose()
   @ApiProperty()

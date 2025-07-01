@@ -45,6 +45,10 @@ export interface GetCandidateProfileParams {
   userId: number;
 }
 
+export interface GetApplicationWithCompanyProfileParams {
+  applicationId: number;
+}
+
 // Repository return types
 export interface ApplicationsWithCount {
   applications: any[];
@@ -131,6 +135,44 @@ export interface ApplicationWithFullRelations {
       id: string;
       companyName: string;
       logoUrl?: string;
+      users?: UserAccessTokenClaims[];
+    };
+  };
+}
+
+// Application with extended company profile for candidate view
+export interface ApplicationWithFullCompanyProfile {
+  id: number;
+  status: ApplicationStatus;
+  cv_id?: string;
+  cover_letter?: string;
+  applied_at: Date;
+  updated_at: Date;
+  user: {
+    id: number;
+    name: string;
+    email: string;
+    phone?: string;
+    avatar?: string;
+    gender?: 'MALE' | 'FEMALE' | 'OTHER';
+  };
+  job: {
+    id: string;
+    title: string;
+    location?: string;
+    typeOfEmployment: string;
+    salaryMin: number;
+    salaryMax: number;
+    description: string;
+    company: {
+      id: string;
+      companyName: string;
+      logoUrl?: string;
+      website?: string;
+      phone?: number;
+      email?: string;
+      description?: string;
+      address?: string[];
       users?: UserAccessTokenClaims[];
     };
   };

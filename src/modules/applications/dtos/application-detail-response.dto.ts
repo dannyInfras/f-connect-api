@@ -111,6 +111,40 @@ export class JobSummaryDto {
   };
 }
 
+export class CompanyProfileDto {
+  @Expose()
+  @ApiProperty()
+  id: string;
+
+  @Expose()
+  @ApiProperty()
+  name: string;
+
+  @Expose()
+  @ApiProperty()
+  logoUrl?: string;
+
+  @Expose()
+  @ApiProperty()
+  website?: string;
+
+  @Expose()
+  @ApiProperty()
+  phone?: string;
+
+  @Expose()
+  @ApiProperty()
+  email?: string;
+
+  @Expose()
+  @ApiProperty()
+  about?: string;
+
+  @Expose()
+  @ApiProperty()
+  contact?: any;
+}
+
 export class ApplicationDetailResponseDto {
   @Expose()
   @ApiProperty()
@@ -152,7 +186,66 @@ export class ApplicationDetailResponseDto {
   job: JobSummaryDto;
 }
 
+export class JobWithoutCompanyDto {
+  @Expose()
+  @ApiProperty()
+  id: string;
+
+  @Expose()
+  @ApiProperty()
+  title: string;
+
+  @Expose()
+  @ApiProperty()
+  location?: string;
+
+  @Expose()
+  @ApiProperty()
+  typeOfEmployment: string;
+}
+
+export class CandidateApplicationDetailResponseDto {
+  @Expose()
+  @ApiProperty()
+  id: number;
+
+  @Expose()
+  @ApiProperty()
+  status: ApplicationStatus;
+
+  @Expose()
+  @ApiProperty()
+  cv_id?: string;
+
+  @Expose()
+  @ApiProperty()
+  cover_letter?: string;
+
+  @Expose()
+  @ApiProperty()
+  applied_at: Date;
+
+  @Expose()
+  @ApiProperty()
+  updated_at: Date;
+
+  @Expose()
+  @ApiProperty({ type: JobWithoutCompanyDto })
+  @Type(() => JobWithoutCompanyDto)
+  job: JobWithoutCompanyDto;
+
+  @Expose()
+  @ApiProperty({ type: CompanyProfileDto })
+  @Type(() => CompanyProfileDto)
+  company: CompanyProfileDto;
+}
+
 export class ApplicationDetailApiResponse extends BaseApiResponse<ApplicationDetailResponseDto> {
   @ApiProperty({ type: ApplicationDetailResponseDto })
   declare data: ApplicationDetailResponseDto;
+}
+
+export class CandidateApplicationDetailApiResponse extends BaseApiResponse<CandidateApplicationDetailResponseDto> {
+  @ApiProperty({ type: CandidateApplicationDetailResponseDto })
+  declare data: CandidateApplicationDetailResponseDto;
 }
