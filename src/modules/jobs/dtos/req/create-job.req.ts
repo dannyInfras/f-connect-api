@@ -1,5 +1,15 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsArray, IsInt, IsNotEmpty, IsOptional, IsString, Max, Min } from 'class-validator';
+import { Type } from 'class-transformer';
+import {
+  IsArray,
+  IsDate,
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  Max,
+  Min,
+} from 'class-validator';
 
 export class CreateJobReqDto {
   @ApiProperty({ example: 'Senior Software Engineer' })
@@ -56,22 +66,29 @@ export class CreateJobReqDto {
   @IsNotEmpty()
   experienceYears: number;
 
-  @ApiProperty({ example: true, required: true })
-  isVip: boolean;
+  @ApiProperty({
+    example: '2024-12-31T23:59:59.999Z',
+    description: 'VIP expiration date (set this to get priority position 1)',
+    required: false,
+  })
+  @IsOptional()
+  @Type(() => Date)
+  @IsDate()
+  vipExpired?: Date;
 
   @ApiProperty({ example: '2024-01-01T00:00:00.000Z', required: true })
   @IsNotEmpty()
   deadline: Date;
 
-  @ApiProperty({ example: 'FullTime', required: true })
+  @ApiProperty({ example: 'FULL_TIME', required: true })
   @IsNotEmpty()
   typeOfEmployment: string;
 
-  @ApiProperty({ 
-    example: 1, 
-    description: 'Priority position (1-3, where 1 is highest priority)', 
+  @ApiProperty({
+    example: 1,
+    description: 'Priority position (1-3, where 1 is highest priority)',
     required: false,
-    default: 3
+    default: 3,
   })
   @IsOptional()
   @IsInt()

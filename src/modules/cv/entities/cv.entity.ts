@@ -103,6 +103,11 @@ export class CV {
 
   @Column({ type: 'text', nullable: true })
   @IsString()
+  @IsOptional()
+  url: string;
+
+  @Column({ type: 'text', nullable: true })
+  @IsString()
   @IsNotEmpty()
   email: string;
 

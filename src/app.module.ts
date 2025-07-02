@@ -1,4 +1,5 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
+import { ScheduleModule } from '@nestjs/schedule';
 
 import { ApplicationsModule } from '@/modules/applications/applications.module';
 import { ArticleModule } from '@/modules/article/article.module';
@@ -24,6 +25,7 @@ import { SharedModule } from './shared/shared.module';
 @Module({
   imports: [
     SharedModule,
+    ScheduleModule.forRoot(),
     UserModule,
     AuthModule,
     ArticleModule,
