@@ -51,7 +51,7 @@ export class JobResponseDto {
   location: string;
 
   @Expose()
-  @ApiProperty({ example: 'FullTime' })
+  @ApiProperty({ example: 'FULL_TIME' })
   typeOfEmployment: string;
 
   @Expose()
@@ -59,8 +59,12 @@ export class JobResponseDto {
   status: string;
 
   @Expose()
-  @ApiProperty({ example: true })
-  isVip: boolean;
+  @ApiProperty({
+    example: '2024-12-31T23:59:59.999Z',
+    description: 'Date when VIP status expires',
+    required: false,
+  })
+  vipExpired?: Date;
 
   @Expose()
   @ApiProperty({ example: 1, description: 'Priority position (1-3)' })
@@ -88,9 +92,9 @@ export class JobResponseDto {
       { id: '2', name: 'TypeScript' },
     ],
     location: 'New York',
-    typeOfEmployment: 'FullTime',
+    typeOfEmployment: 'FULL_TIME',
     status: 'OPEN',
-    isVip: true,
+    vipExpired: '2024-12-31T23:59:59.999Z',
     priorityPosition: 1,
     createdAt: '2024-01-01T00:00:00.000Z',
     updatedAt: '2024-01-01T00:00:00.000Z',

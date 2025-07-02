@@ -60,6 +60,52 @@ export class MailService {
     }
   }
 
+  /**
+   * Send an email notification when a job's VIP status has expired
+   */
+  async sendVipExpiredEmail(params: {
+    to: string;
+    companyName: string;
+    jobTitle: string;
+    jobId: string;
+  }): Promise<void> {
+    return this.sendMail(
+      params.to,
+      `VIP Status Expired: ${params.jobTitle}`,
+      'vip-expired',
+      {
+        companyName: params.companyName,
+        jobTitle: params.jobTitle,
+        jobId: params.jobId,
+        dashboardUrl: `${process.env.FRONTEND_URL}/company/jobs/${params.jobId}`,
+      },
+    );
+  }
+
+  /**
+   * Send a warning email when a job's VIP status is about to expire
+   */
+  async sendVipExpiringWarningEmail(params: {
+    to: string;
+    companyName: string;
+    jobTitle: string;
+    jobId: string;
+    expiryDate: Date;
+  }): Promise<void> {
+    return this.sendMail(
+      params.to,
+      `VIP Status Expiring Soon: ${params.jobTitle}`,
+      'vip-expiring-warning',
+      {
+        companyName: params.companyName,
+        jobTitle: params.jobTitle,
+        jobId: params.jobId,
+        expiryDate: params.expiryDate.toLocaleDateString(),
+        dashboardUrl: `${process.env.FRONTEND_URL}/company/jobs/${params.jobId}`,
+      },
+    );
+  }
+
   private generateHtmlFromTemplate(
     template: string,
     context: Record<string, any>,

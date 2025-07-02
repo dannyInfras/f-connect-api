@@ -21,6 +21,9 @@ export class CvResDto {
   @ApiProperty({ example: 'https://example.com/image.jpg' })
   image?: string;
 
+  @ApiProperty({ example: 'https://example.com/cv-file.pdf' })
+  url?: string;
+
   @ApiProperty({ example: ' https://example.com/cv.pdf' })
   email: string;
 
@@ -100,6 +103,7 @@ export class CvResDto {
     summary: 'A brief summary of my professional experience...',
     name: 'John Doe',
     image: 'https://example.com/image.jpg',
+    url: 'https://example.com/cv-file.pdf',
     email: 'johndoe@example.com',
     phone: 1234567890,
     linkedin: 'https://www.linkedin.com/in/johndoe',
