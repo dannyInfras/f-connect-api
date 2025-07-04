@@ -98,6 +98,40 @@ export class JobSchedulerService {
   }
 
   /**
+   * Runs every day at midnight to check for jobs with passed deadlines
+   * and update their status to CLOSED
+   */
+  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+  async checkExpiredJobDeadlines() {
+    try {
+      this.logger.log('Running check for jobs with passed deadlines');
+
+      // Execute the database function that handles the updates
+      await this.jobRepository.query('SELECT daily_check_job_deadlines()');
+
+      // Check for jobs updated in the last day to get an approximate count
+      // The actual count might be logged in the database function result
+      const countResult = await this.jobRepository.query(`
+        SELECT COUNT(*) FROM job 
+        WHERE status = 'CLOSED' 
+        AND updated_at > NOW() - INTERVAL '1 day'
+        AND deadline < NOW()
+      `);
+
+      const count = parseInt(countResult[0]?.count || '0', 10);
+      this.logger.log(
+        `Updated status to CLOSED for approximately ${count} jobs with passed deadlines`,
+      );
+    } catch (error) {
+      this.appLogger.error(
+        this.requestContext,
+        'Failed to check for jobs with passed deadlines',
+        error instanceof Error ? error.stack : undefined,
+      );
+    }
+  }
+
+  /**
    * Send notifications for expired VIP jobs
    */
   private async sendExpiredJobNotifications(expiredJobs: Job[]) {

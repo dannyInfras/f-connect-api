@@ -168,6 +168,7 @@ export class CvService {
       languages: cv.languages,
       templateId: cv.templateId,
       userId: cv.userId,
+      url: cv.url,
       createdAt: cv.createdAt,
       updatedAt: cv.updatedAt,
     };
