@@ -14,14 +14,17 @@ import {
   JobWithApplicationStats,
   SearchJobsServiceParams,
 } from '../types';
+import { performanceMonitor } from '../utils/performance-monitor';
+import { JobSearchCacheService } from './job-search-cache.service';
 
 /**
- * Job search service with advanced filtering and full-text search capabilities
+ * Enhanced job search service with performance optimizations
  */
 @Injectable()
 export class JobSearchService {
   constructor(
     private readonly jobSearchRepository: JobSearchRepository,
+    private readonly cacheService: JobSearchCacheService,
     private readonly aclService: JobSearchAclService,
     private readonly logger: AppLogger,
   ) {
@@ -29,12 +32,16 @@ export class JobSearchService {
   }
 
   /**
-   * Search jobs with comprehensive filtering and pagination
+   * Search jobs with caching and performance optimizations
    */
   async searchJobs(
     params: SearchJobsServiceParams,
   ): Promise<JobSearchServiceResponse> {
     const { dto, user } = params;
+    const operationId = `search_${Date.now()}`;
+
+    // Start performance monitoring
+    performanceMonitor.startTimer(operationId);
 
     // Check permissions
     if (!this.aclService.forActor(user).canDoAction(Action.Read, null)) {
@@ -42,6 +49,36 @@ export class JobSearchService {
     }
 
     try {
+      // Track hot queries for analytics
+      if (dto.q) {
+        await this.cacheService.trackHotQuery(dto.q);
+      }
+
+      // Check cache first
+      const cacheKey = this.cacheService.generateSearchKey({
+        query: dto.q,
+        location: dto.location,
+        categoryIds: dto.categoryIds,
+        companyIds: dto.companyIds,
+        employmentTypes: dto.employmentTypes,
+        salaryMin: dto.salaryMin,
+        salaryMax: dto.salaryMax,
+        minExperienceYears: dto.minExperienceYears,
+        activeOnly: dto.activeOnly,
+        sortBy: dto.sortBy,
+        page: dto.page,
+        limit: dto.limit,
+      });
+
+      const cachedResult = await this.cacheService.getSearchResults(cacheKey);
+      if (cachedResult) {
+        performanceMonitor.recordCacheHit(cacheKey, true);
+        performanceMonitor.endTimer(operationId, { cached: true });
+        return cachedResult;
+      }
+
+      performanceMonitor.recordCacheHit(cacheKey, false);
+
       const {
         q,
         location,
@@ -62,7 +99,7 @@ export class JobSearchService {
         categoryIds: categoryIds?.map((id) => parseInt(id)),
         companyIds: companyIds?.map((id) => parseInt(id)),
         employmentTypes,
-        jobLevels: [], // Add job levels when available in DTO
+        jobLevels: [],
         salaryMin,
         salaryMax,
         minExperienceYears,
@@ -71,6 +108,7 @@ export class JobSearchService {
         sortBy: sortBy || 'relevance',
         limit,
         cursor: undefined,
+        page,
       });
 
       // Map repository results to service response
@@ -90,7 +128,7 @@ export class JobSearchService {
 
       const totalPages = Math.ceil(searchResult.totalCount / limit);
 
-      return {
+      const result: JobSearchServiceResponse = {
         data: authorizedJobs,
         pagination: {
           currentPage: page,
@@ -121,13 +159,42 @@ export class JobSearchService {
           availableJobLevels: [],
         },
       };
+
+      // Cache the result
+      await this.cacheService.setSearchResults(cacheKey, result);
+
+      // Record performance metrics
+      performanceMonitor.recordQueryPattern({
+        hasTextSearch: !!q,
+        hasFilters: !!(categoryIds?.length || companyIds?.length || location),
+        filterCount:
+          (categoryIds?.length || 0) +
+          (companyIds?.length || 0) +
+          (location ? 1 : 0),
+        resultCount: authorizedJobs.length,
+      });
+
+      const duration = performanceMonitor.endTimer(operationId, {
+        cached: false,
+      });
+
+      // Log slow queries
+      if (duration > 1000) {
+        console.warn(`Slow search query detected: ${duration}ms`, {
+          query: q,
+          resultCount: authorizedJobs.length,
+        });
+      }
+
+      return result;
     } catch (error) {
+      performanceMonitor.endTimer(operationId, { error: true });
       throw error;
     }
   }
 
   /**
-   * Get search suggestions for autocomplete
+   * Get search suggestions with caching
    */
   async getJobSuggestions(
     params: GetJobSuggestionsServiceParams,
@@ -146,10 +213,21 @@ export class JobSearchService {
         return { suggestions: [] };
       }
 
+      // Check cache first
+      const cacheKey = this.cacheService.generateSuggestionsKey(query, 10);
+      const cachedSuggestions =
+        await this.cacheService.getSuggestions(cacheKey);
+      if (cachedSuggestions) {
+        return { suggestions: cachedSuggestions };
+      }
+
       const result = await this.jobSearchRepository.getJobSuggestions({
         query: query.trim(),
         limit: 10,
       });
+
+      // Cache the suggestions
+      await this.cacheService.setSuggestions(cacheKey, result.suggestions);
 
       return {
         suggestions: result.suggestions,
@@ -160,7 +238,7 @@ export class JobSearchService {
   }
 
   /**
-   * Search jobs with permission checking (for controller use)
+   * Search jobs with permission checking (for controller use) - with caching
    */
   async searchJobsWithPermissions(params: {
     dto: JobSearchDto;
@@ -179,16 +257,16 @@ export class JobSearchService {
   }
 
   /**
-   * Get job suggestions with permission checking (for controller use)
+   * Get job suggestions with permission checking (for controller use) - with caching
    */
   async getJobSuggestionsWithPermissions(params: {
     query: string;
+    limit?: number;
     user: UserAccessTokenClaims | undefined;
   }): Promise<JobSuggestionsServiceResponse> {
-    const { query, user } = params;
+    const { query, limit = 5, user } = params;
 
     // Basic search suggestions are available to all authenticated users
-    // and even unauthenticated users for basic queries
     if (!this.hasBasicSearchPermission(user, query)) {
       throw new UnauthorizedException(
         'Insufficient permissions for suggestions',
@@ -200,10 +278,21 @@ export class JobSearchService {
         return { suggestions: [] };
       }
 
+      // Check cache first
+      const cacheKey = this.cacheService.generateSuggestionsKey(query, limit);
+      const cachedSuggestions =
+        await this.cacheService.getSuggestions(cacheKey);
+      if (cachedSuggestions) {
+        return { suggestions: cachedSuggestions };
+      }
+
       const result = await this.jobSearchRepository.getJobSuggestions({
         query: query.trim(),
-        limit: 10,
+        limit,
       });
+
+      // Cache the suggestions
+      await this.cacheService.setSuggestions(cacheKey, result.suggestions);
 
       return {
         suggestions: result.suggestions,
@@ -214,12 +303,38 @@ export class JobSearchService {
   }
 
   /**
-   * Legacy method for backward compatibility
-   * @deprecated Use searchJobs instead
+   * Legacy method with caching added
    */
   async searchWithCursor(searchDto: JobSearchDto): Promise<any> {
-    // Simple implementation for backward compatibility
+    const operationId = `cursor_search_${Date.now()}`;
+    performanceMonitor.startTimer(operationId);
+
     try {
+      // Check cache first
+      const cacheKey = this.cacheService.generateSearchKey({
+        query: searchDto.q,
+        location: searchDto.location,
+        categoryIds: searchDto.categoryIds,
+        companyIds: searchDto.companyIds,
+        employmentTypes: searchDto.employmentTypes,
+        salaryMin: searchDto.salaryMin,
+        salaryMax: searchDto.salaryMax,
+        minExperienceYears: searchDto.minExperienceYears,
+        activeOnly: searchDto.activeOnly,
+        sortBy: searchDto.sortBy,
+        page: searchDto.page,
+        limit: searchDto.limit,
+      });
+
+      const cachedResult = await this.cacheService.getSearchResults(cacheKey);
+      if (cachedResult) {
+        performanceMonitor.recordCacheHit(cacheKey, true);
+        performanceMonitor.endTimer(operationId, { cached: true });
+        return cachedResult;
+      }
+
+      performanceMonitor.recordCacheHit(cacheKey, false);
+
       const searchResult = await this.jobSearchRepository.searchJobs({
         query: searchDto.q,
         categoryIds: searchDto.categoryIds?.map((id) => parseInt(id)),
@@ -234,13 +349,14 @@ export class JobSearchService {
         sortBy: searchDto.sortBy || 'relevance',
         limit: searchDto.limit || 10,
         cursor: undefined,
+        page: searchDto.page,
       });
 
       const totalPages = Math.ceil(
         searchResult.totalCount / (searchDto.limit || 10),
       );
 
-      return {
+      const result = {
         data: searchResult.jobs,
         pagination: {
           currentPage: searchDto.page || 1,
@@ -261,9 +377,41 @@ export class JobSearchService {
           },
         },
       };
+
+      // Cache the result
+      await this.cacheService.setSearchResults(cacheKey, result);
+
+      const duration = performanceMonitor.endTimer(operationId, {
+        cached: false,
+      });
+
+      // Log slow queries
+      if (duration > 1000) {
+        console.warn(`Slow cursor search: ${duration}ms`, {
+          query: searchDto.q,
+          page: searchDto.page,
+        });
+      }
+
+      return result;
     } catch (error) {
+      performanceMonitor.endTimer(operationId, { error: true });
       throw error;
     }
+  }
+
+  /**
+   * Get performance stats
+   */
+  async getPerformanceStats() {
+    const cacheStats = await this.cacheService.getCacheStats();
+    const performanceStats = performanceMonitor.getPerformanceSummary();
+
+    return {
+      cache: cacheStats,
+      performance: performanceStats,
+      popularPatterns: performanceMonitor.getPopularPatterns(),
+    };
   }
 
   /**
@@ -291,9 +439,8 @@ export class JobSearchService {
     query: string,
   ): boolean {
     // Basic search suggestions are available to all users
-    // including unauthenticated users for simple queries
     if (!user) {
-      return !!(query && query.length >= 2); // Minimum query length for unauthenticated
+      return !!(query && query.length >= 2);
     }
 
     // Authenticated users can always get suggestions
