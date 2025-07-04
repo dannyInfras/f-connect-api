@@ -58,8 +58,22 @@ export class Job {
 
   @Column({
     type: 'enum',
-    enum: ['FullTime', 'PartTime', 'Contract', 'Internship', 'Remote'],
-    default: 'FullTime',
+    enum: [
+      'FULL_TIME',
+      'PART_TIME',
+      'CONTRACT',
+      'INTERNSHIP',
+      'REMOTE',
+      'FREELANCE',
+      'TEMPORARY',
+      'VOLUNTEER',
+      'APPRENTICESHIP',
+      'CO_OP',
+      'SEASONAL',
+      'ONSITE',
+      'HYBRID',
+    ],
+    default: 'FULL_TIME',
   })
   typeOfEmployment: string;
 
@@ -69,8 +83,8 @@ export class Job {
   @Column('text', { array: true })
   benefit: string[];
 
-  @Column({ name: 'is_vip', type: 'boolean', default: false })
-  isVip: boolean;
+  @Column({ name: 'vip_expired', type: 'timestamp', nullable: true })
+  vipExpired: Date;
 
   @Column({ name: 'priority_position', type: 'int', default: 3 })
   priorityPosition: number;

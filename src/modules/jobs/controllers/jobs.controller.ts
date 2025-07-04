@@ -17,7 +17,10 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 
+import { ROLE } from '@/modules/auth/constants/role.constant';
+import { Roles } from '@/modules/auth/decorators/role.decorator';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
+import { RolesGuard } from '@/modules/auth/guards/roles.guard';
 import { JobService } from '@/modules/jobs/services/jobs.service';
 import { Public } from '@/shared/decorators/public.decorator';
 import { BaseApiResponse } from '@/shared/dtos/base-api-response.dto';
@@ -30,13 +33,17 @@ import { UpdateJobDto } from '../dtos/req/update-job.req';
 import { HrJobsListResponseDto } from '../dtos/res/hr-jobs-response.dto';
 import { JobDetailResponseDto } from '../dtos/res/job.res';
 import { ListJobResponseDto } from '../dtos/res/list-job.res';
+import { JobSchedulerService } from '../job-scheduler.service';
 
 @ApiTags('Jobs')
 @Controller('jobs')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 export class JobsController {
-  constructor(private readonly jobService: JobService) {}
+  constructor(
+    private readonly jobService: JobService,
+    private readonly jobSchedulerService: JobSchedulerService,
+  ) {}
 
   @Post()
   @ApiOperation({ summary: 'Create a new job' })
@@ -202,5 +209,35 @@ export class JobsController {
       throw new UnauthorizedException('User must be logged in');
     }
     await this.jobService.delete(ctx.user, id);
+  }
+
+  @Post('test-vip-expiration')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(ROLE.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Test VIP expiration for all jobs' })
+  @ApiResponse({
+    status: 200,
+    description: 'VIP expiration check triggered successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        message: {
+          type: 'string',
+          example: 'VIP expiration check triggered successfully',
+        },
+      },
+    },
+  })
+  async testVipExpiration() {
+    // Run both checks
+    await this.jobSchedulerService.checkExpiredVipJobs();
+    await this.jobSchedulerService.checkSoonToExpireVipJobs();
+
+    return {
+      success: true,
+      message: 'VIP expiration check triggered successfully',
+    };
   }
 }

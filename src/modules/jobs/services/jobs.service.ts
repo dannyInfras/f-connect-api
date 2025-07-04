@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   NotFoundException,
   UnauthorizedException,
@@ -12,6 +13,7 @@ import { SkillRepository } from '@/modules/skill/repositories/skill.repository';
 import { Action } from '@/shared/acl/action.constant';
 import { Actor } from '@/shared/acl/actor.constant';
 import { AppLogger } from '@/shared/logger/logger.service';
+import { RequestContext } from '@/shared/request-context/request-context.dto';
 
 import { CreateJobReqDto } from '../dtos/req/create-job.req';
 import { HrJobResponseDto } from '../dtos/res/hr-jobs-response.dto';
@@ -41,6 +43,9 @@ export class JobService {
       await this.aclService.canList();
     }
 
+    // Update priority positions for expired VIP jobs
+    await this.updatePriorityForExpiredVipJobs();
+
     const [jobs, count] = await this.repository.findAndCount({
       take: limit,
       skip: offset,
@@ -54,11 +59,35 @@ export class JobService {
     };
   }
 
+  // New method to update priority positions for expired VIP jobs
+  private async updatePriorityForExpiredVipJobs(): Promise<void> {
+    try {
+      // Call the PostgreSQL function directly instead of doing the update in TypeORM
+      await this.repository.query('SELECT check_vip_status()');
+    } catch (error) {
+      // Create a minimal RequestContext for logging
+      const ctx = new RequestContext();
+      ctx.requestID = 'system';
+      ctx.url = 'job-service';
+      ctx.user = null;
+
+      this.logger.error(
+        ctx,
+        'Failed to update priority for expired VIP jobs',
+        error instanceof Error ? error.stack : undefined,
+        { error: error instanceof Error ? error.message : String(error) },
+      );
+    }
+  }
+
   async findJobsByCompany(
     companyId: string,
     limit: number,
     offset: number,
   ): Promise<{ jobs: JobResponseDto[]; count: number }> {
+    // Update priority positions for expired VIP jobs
+    await this.updatePriorityForExpiredVipJobs();
+
     const [jobs, count] = await this.repository.findAndCount({
       where: { company: { id: companyId } },
       take: limit,
@@ -85,6 +114,9 @@ export class JobService {
   ): Promise<{ jobs: HrJobResponseDto[]; count: number }> {
     // Check if user has permission to view company jobs
     await this.aclService.canList();
+
+    // Update priority positions for expired VIP jobs
+    await this.updatePriorityForExpiredVipJobs();
 
     const queryBuilder = this.repository
       .createQueryBuilder('job')
@@ -130,11 +162,19 @@ export class JobService {
 
   private formatJobType(typeOfEmployment: string): string {
     const typeMapping: Record<string, string> = {
-      FullTime: 'Full-time',
-      PartTime: 'Part-time',
-      Contract: 'Contract',
-      Internship: 'Internship',
-      Remote: 'Remote',
+      FULL_TIME: 'Full-time',
+      PART_TIME: 'Part-time',
+      CONTRACT: 'Contract',
+      INTERNSHIP: 'Internship',
+      REMOTE: 'Remote',
+      FREELANCE: 'Freelance',
+      TEMPORARY: 'Temporary',
+      VOLUNTEER: 'Volunteer',
+      APPRENTICESHIP: 'Apprenticeship',
+      CO_OP: 'Co-op',
+      SEASONAL: 'Seasonal',
+      ONSITE: 'On-site',
+      HYBRID: 'Hybrid',
     };
     return typeMapping[typeOfEmployment] || typeOfEmployment;
   }
@@ -158,6 +198,20 @@ export class JobService {
         throw new NotFoundException('One or more skills not found');
       }
     }
+
+    // If VIP expiration date is provided, validate it's in the future
+    if (dto.vipExpired) {
+      const vipExpiredDate = new Date(dto.vipExpired);
+      const now = new Date();
+
+      if (vipExpiredDate <= now) {
+        throw new BadRequestException(
+          'VIP expiration date must be in the future',
+        );
+      }
+    }
+
+    // Priority position will be set by the database trigger based on vipExpired
 
     const jobData = {
       ...dto,
@@ -209,6 +263,18 @@ export class JobService {
       throw new UnauthorizedException();
     }
 
+    // Check if job can be modified (within 24 hours of creation)
+    const now = new Date();
+    const createdAt = new Date(job.createdAt);
+    const timeDiff = now.getTime() - createdAt.getTime();
+    const hoursDiff = timeDiff / (1000 * 60 * 60);
+
+    if (hoursDiff > 24) {
+      throw new BadRequestException(
+        'Job can only be modified within 24 hours of creation',
+      );
+    }
+
     // Update skills if skillIds are provided
     if (dto.skillIds) {
       const skills = await this.skillRepository.findByIds(dto.skillIds);
@@ -216,6 +282,23 @@ export class JobService {
         throw new NotFoundException('One or more skills not found');
       }
       job.skills = skills;
+    }
+
+    // If VIP expiration date is provided, validate it's in the future
+    if (dto.vipExpired) {
+      const vipExpiredDate = new Date(dto.vipExpired);
+      const now = new Date();
+
+      if (vipExpiredDate <= now) {
+        throw new BadRequestException(
+          'VIP expiration date must be in the future',
+        );
+      }
+
+      // If updating vipExpired to a future date, also update priority position
+      if (dto.priorityPosition === undefined) {
+        dto.priorityPosition = 1; // Default to highest priority for VIP jobs
+      }
     }
 
     // Extract fields from DTO
@@ -228,7 +311,7 @@ export class JobService {
       experienceYears,
       deadline,
       benefit,
-      isVip,
+      vipExpired,
       typeOfEmployment,
       priorityPosition,
     } = dto;
@@ -245,7 +328,7 @@ export class JobService {
       updateData.experienceYears = experienceYears;
     if (deadline !== undefined) updateData.deadline = deadline;
     if (benefit !== undefined) updateData.benefit = benefit;
-    if (isVip !== undefined) updateData.isVip = isVip;
+    if (vipExpired !== undefined) updateData.vipExpired = vipExpired;
     if (typeOfEmployment !== undefined)
       updateData.typeOfEmployment = typeOfEmployment;
     if (priorityPosition !== undefined)

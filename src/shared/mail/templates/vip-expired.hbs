@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>VIP Status Expired</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .header {
+      background-color: #f8f9fa;
+      padding: 20px;
+      text-align: center;
+      border-bottom: 3px solid #0066cc;
+    }
+
+    .content {
+      padding: 20px;
+    }
+
+    .footer {
+      margin-top: 30px;
+      text-align: center;
+      font-size: 12px;
+      color: #666;
+    }
+
+    .button {
+      display: inline-block;
+      background-color: #0066cc;
+      color: white;
+      text-decoration: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      margin-top: 20px;
+    }
+
+    .highlight {
+      color: #0066cc;
+      font-weight: bold;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="header">
+    <h2>VIP Status Expired</h2>
+  </div>
+  <div class="content">
+    <p>Dear {{companyName}},</p>
+
+    <p>We're writing to inform you that the VIP status for your job posting <span class="highlight">{{jobTitle}}</span>
+      has expired.</p>
+
+    <p>What this means:</p>
+    <ul>
+      <li>Your job posting will now appear in the standard job listings</li>
+      <li>It will no longer have priority placement in search results</li>
+      <li>It will no longer be featured in the VIP jobs section</li>
+    </ul>
+
+    <p>To restore VIP status and maximize your job posting's visibility:</p>
+    <ul>
+      <li>Visit your job dashboard</li>
+      <li>Select the job posting</li>
+      <li>Choose the "Upgrade to VIP" option</li>
+    </ul>
+
+    <p>VIP job postings receive significantly more views and applications!</p>
+
+    <p style="text-align: center;">
+      <a href="{{dashboardUrl}}" class="button">View Job Dashboard</a>
+    </p>
+
+    <p>Thank you for using our platform for your recruitment needs.</p>
+
+    <p>Best regards,<br>
+      The F Career Connect Team</p>
+  </div>
+  <div class="footer">
+    <p>This is an automated message. Please do not reply directly to this email.</p>
+    <p>&copy; 2024 F Career Connect. All rights reserved.</p>
+  </div>
+</body>
+
+</html>

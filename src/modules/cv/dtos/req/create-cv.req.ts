@@ -23,6 +23,11 @@ export class CreateCvReqDto {
   @IsString()
   image?: string;
 
+  @ApiProperty({ example: 'https://example.com/cv-file.pdf' })
+  @IsOptional()
+  @IsString()
+  url?: string;
+
   @ApiProperty({ example: 'https://example.com/cv.pdf' })
   @IsNotEmpty()
   @IsString()
@@ -37,7 +42,7 @@ export class CreateCvReqDto {
   @IsString()
   linkedin?: string;
 
-  @ApiProperty({ example: 'https://github.com/phamnamphuong' })
+  @ApiProperty({ example: 'https://github.com/phamnampuong' })
   @IsOptional()
   @IsString()
   github?: string;
