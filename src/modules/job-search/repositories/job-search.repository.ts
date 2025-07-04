@@ -13,10 +13,31 @@ import {
   JobSearchSuggestionsParams,
   JobSearchSuggestionsResult,
 } from '../types';
+import { performanceMonitor } from '../utils/performance-monitor';
 
 @Injectable()
 export class JobSearchRepository {
   private readonly logger = new Logger(JobSearchRepository.name);
+
+  // Common synonyms for better search results
+  private readonly SYNONYMS_MAP = new Map([
+    ['dev', 'developer'],
+    ['developer', 'dev'],
+    ['js', 'javascript'],
+    ['javascript', 'js'],
+    ['ts', 'typescript'],
+    ['typescript', 'ts'],
+    ['fe', 'frontend'],
+    ['frontend', 'fe'],
+    ['be', 'backend'],
+    ['backend', 'be'],
+    ['fullstack', 'full-stack'],
+    ['full-stack', 'fullstack'],
+    ['react', 'reactjs'],
+    ['reactjs', 'react'],
+    ['node', 'nodejs'],
+    ['nodejs', 'node'],
+  ]);
 
   constructor(
     @InjectRepository(Job)
@@ -44,15 +65,14 @@ export class JobSearchRepository {
       sortBy,
       cursor,
       limit,
+      page,
     } = params;
 
+    // Performance Optimization: Use simpler query without JOINs first
     let queryBuilder = this.jobRepo
       .createQueryBuilder('job')
       .leftJoinAndSelect('job.company', 'company')
-      .leftJoinAndSelect('job.category', 'category')
-      .leftJoin('job_application', 'application', 'application.job_id = job.id')
-      .addSelect('COUNT(application.id)', 'totalApplications')
-      .groupBy('job.id, company.id, category.id');
+      .leftJoinAndSelect('job.category', 'category');
 
     // Apply filters
     queryBuilder = this.applyFilters(queryBuilder, {
@@ -69,29 +89,41 @@ export class JobSearchRepository {
     });
 
     // Apply sorting
-    queryBuilder = this.applySorting(queryBuilder, sortBy, query);
+    queryBuilder = this.applySorting(queryBuilder, sortBy, query, false);
 
-    // Apply cursor pagination
+    // Apply pagination (either cursor-based or page-based)
     if (cursor) {
       queryBuilder = this.applyCursor(queryBuilder, cursor, sortBy);
+      queryBuilder = queryBuilder.limit(limit + 1);
+    } else if (page) {
+      // Page-based pagination with proper offset calculation
+      const offset = (page - 1) * limit;
+      queryBuilder = queryBuilder.offset(offset).limit(limit);
+    } else {
+      // Default pagination
+      queryBuilder = queryBuilder.limit(limit);
     }
 
-    // Apply limit with +1 to check for next page
-    queryBuilder = queryBuilder.limit(limit + 1);
+    // Performance optimization: Add monitoring
+    const startTime = Date.now();
+    const jobs = await queryBuilder.getMany();
+    const queryTime = Date.now() - startTime;
 
-    const results = await queryBuilder.getRawAndEntities();
-    const jobs = results.entities.slice(0, limit);
-    const hasNextPage = results.entities.length > limit;
-
-    // Map results
-    const mappedJobs: JobSearchJobResult[] = jobs.map((job, index) => {
-      const raw = results.raw[index];
-      return this.mapToJobSearchJobResult(job, raw);
+    performanceMonitor.recordMetric('searchJobs', queryTime, {
+      params,
+      resultCount: jobs.length,
     });
 
-    // Generate next cursor
+    // For cursor pagination, check if there's a next page
+    const hasNextPage = cursor ? jobs.length > limit : false;
+    const finalJobs = cursor ? jobs.slice(0, limit) : jobs;
+
+    // Use efficient subquery approach for application counts
+    const mappedJobs = await this.addApplicationCountsSubquery(finalJobs);
+
+    // Generate next cursor (only for cursor pagination)
     const nextCursor =
-      hasNextPage && jobs.length > 0
+      cursor && hasNextPage && jobs.length > 0
         ? this.generateCursor(jobs[jobs.length - 1], sortBy)
         : undefined;
 
@@ -152,12 +184,37 @@ export class JobSearchRepository {
       activeOnly,
     } = filters;
 
-    // Full-text search
+    // Enhanced full-text search with fuzzy matching and synonyms
     if (query) {
-      queryBuilder.andWhere('job.tsv @@ plainto_tsquery(:language, :query)', {
+      const normalizedQuery = this.normalizeQuery(query);
+      const synonyms = this.expandSynonyms(normalizedQuery);
+
+      let searchCondition = 'job.tsv @@ plainto_tsquery(:language, :query)';
+      const searchParams: any = {
         language: 'english',
-        query: query.trim(),
-      });
+        query: normalizedQuery,
+      };
+
+      // Note: Fuzzy matching with similarity() requires pg_trgm extension
+      // searchCondition += ' OR similarity(job.title, :fuzzyQuery) > 0.3';
+      // searchParams.fuzzyQuery = normalizedQuery;
+
+      // Add exact title matching for better relevance
+      searchCondition += ' OR job.title ILIKE :titleQuery';
+      searchParams.titleQuery = `%${normalizedQuery}%`;
+
+      // Add synonym matching
+      if (synonyms.length > 0) {
+        const synonymTsQuery = synonyms
+          .map((synonym, index) => {
+            searchParams[`synonymQuery${index}`] = synonym;
+            return `job.tsv @@ plainto_tsquery(:language, :synonymQuery${index})`;
+          })
+          .join(' OR ');
+        searchCondition += ` OR ${synonymTsQuery}`;
+      }
+
+      queryBuilder.andWhere(`(${searchCondition})`, searchParams);
     }
 
     // Category filter
@@ -225,6 +282,7 @@ export class JobSearchRepository {
     queryBuilder: SelectQueryBuilder<Job>,
     sortBy: string,
     query?: string,
+    usePagePagination: boolean = false,
   ): SelectQueryBuilder<Job> {
     // Always sort by priority position first
     queryBuilder.orderBy('job.priority_position', 'ASC');
@@ -232,11 +290,20 @@ export class JobSearchRepository {
     switch (sortBy) {
       case JobSearchSortBy.RELEVANCE:
         if (query) {
-          queryBuilder.addSelect(
-            'ts_rank_cd(job.tsv, plainto_tsquery(:language, :query))',
-            'relevance_rank',
-          );
-          queryBuilder.addOrderBy('relevance_rank', 'DESC');
+          if (usePagePagination) {
+            // For page-based pagination, use the expression directly in ORDER BY
+            queryBuilder.addOrderBy(
+              'ts_rank_cd(job.tsv, plainto_tsquery(:language, :query))',
+              'DESC',
+            );
+          } else {
+            // For cursor-based pagination, use addSelect with alias
+            queryBuilder.addSelect(
+              'ts_rank_cd(job.tsv, plainto_tsquery(:language, :query))',
+              'relevance_rank',
+            );
+            queryBuilder.addOrderBy('relevance_rank', 'DESC');
+          }
         } else {
           queryBuilder.addOrderBy('job.created_at', 'DESC');
         }
@@ -359,6 +426,93 @@ export class JobSearchRepository {
   }
 
   /**
+   * Normalize search query for better matching
+   */
+  private normalizeQuery(query: string): string {
+    return query
+      .toLowerCase()
+      .trim()
+      .replace(/[^\w\s]/g, ' ')
+      .replace(/\s+/g, ' ');
+  }
+
+  /**
+   * Expand query with synonyms for better results
+   */
+  private expandSynonyms(query: string): string[] {
+    const words = query.split(' ');
+    const synonyms: string[] = [];
+
+    words.forEach((word) => {
+      const synonym = this.SYNONYMS_MAP.get(word);
+      if (synonym && synonym !== word) {
+        synonyms.push(synonym);
+      }
+    });
+
+    return synonyms;
+  }
+
+  /**
+   * Use subquery to get application counts efficiently (Performance Optimization)
+   */
+  private async addApplicationCountsSubquery(
+    jobs: Job[],
+  ): Promise<JobSearchJobResult[]> {
+    if (jobs.length === 0) {
+      return [];
+    }
+
+    const jobIds = jobs.map((job) => job.id);
+
+    // Single optimized subquery for all application counts
+    const applicationCounts = await this.dataSource
+      .getRepository(JobApplication)
+      .createQueryBuilder('app')
+      .select('app.job_id', 'jobId')
+      .addSelect('COUNT(*)', 'count')
+      .where('app.job_id = ANY(:jobIds)', { jobIds })
+      .groupBy('app.job_id')
+      .getRawMany();
+
+    // Create lookup map for O(1) access
+    const countMap = new Map<string, number>();
+    applicationCounts.forEach(({ jobId, count }) => {
+      countMap.set(jobId, parseInt(count, 10));
+    });
+
+    // Map jobs to result format
+    return jobs.map((job) => ({
+      id: job.id,
+      title: job.title,
+      description: job.description,
+      location: job.location,
+      typeOfEmployment: job.typeOfEmployment,
+      jobLevel: undefined,
+      salaryMin: job.salaryMin,
+      salaryMax: job.salaryMax,
+      minExperienceYears: job.experienceYears,
+      deadline: job.deadline,
+      isActive: job.status === 'OPEN',
+      createdAt: job.createdAt,
+      updatedAt: job.updatedAt,
+      priorityPosition: job.priorityPosition || 3,
+      company: {
+        id: job.company.id,
+        companyName: job.company.companyName,
+        logoUrl: job.company.logoUrl,
+      },
+      category: {
+        id: parseInt(job.category.id, 10),
+        name: job.category.name,
+      },
+      totalApplications: countMap.get(job.id) || 0,
+      capacity: undefined,
+      rank: undefined,
+    }));
+  }
+
+  /**
    * Map Job entity to JobSearchJobResult
    */
   private mapToJobSearchJobResult(job: Job, raw: any): JobSearchJobResult {
@@ -386,9 +540,9 @@ export class JobSearchRepository {
         id: parseInt(job.category.id),
         name: job.category.name,
       },
-      totalApplications: parseInt(raw.totalApplications) || 0,
+      totalApplications: parseInt(raw?.totalApplications) || 0,
       capacity: undefined, // Not available in current entity
-      rank: raw.relevance_rank ? parseFloat(raw.relevance_rank) : undefined,
+      rank: raw?.relevance_rank ? parseFloat(raw.relevance_rank) : undefined,
     };
   }
 }

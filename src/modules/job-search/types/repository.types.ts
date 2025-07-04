@@ -13,6 +13,7 @@ export interface JobSearchQueryParams {
   sortBy: string;
   cursor?: string;
   limit: number;
+  page?: number;
 }
 
 export interface JobSearchSuggestionsParams {
