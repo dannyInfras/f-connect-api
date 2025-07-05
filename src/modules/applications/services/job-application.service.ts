@@ -206,6 +206,9 @@ export class JobApplicationService {
           applicantName: app.user.name,
           applicationStatus: app.status.toString(),
           appliedDate: formattedDate,
+          ai_score: app.ai_score || undefined,
+          ai_analysis: app.ai_analysis || undefined,
+          ai_status: app.ai_status || 'PENDING',
         };
       });
 
@@ -438,6 +441,9 @@ export class JobApplicationService {
           id: app.job.id.toString(),
           title: app.job.title,
         },
+        ai_score: app.ai_score || undefined,
+        ai_analysis: app.ai_analysis || undefined,
+        ai_status: app.ai_status || 'PENDING',
       }));
 
       return { applications, count };

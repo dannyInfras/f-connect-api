@@ -45,6 +45,29 @@ export class HrApplicationResponseDto {
 
   @ApiProperty({ type: HrApplicationJobDto })
   job: HrApplicationJobDto;
+
+  @ApiProperty({
+    description: 'AI analysis score (0-100)',
+    required: false,
+    type: Number,
+  })
+  ai_score?: number;
+
+  @ApiProperty({
+    description: 'AI analysis of the application',
+    required: false,
+    type: String,
+  })
+  ai_analysis?: string;
+
+  @ApiProperty({
+    description: 'AI processing status',
+    required: false,
+    type: String,
+    enum: ['PENDING', 'PENDING_SCORE', 'PROCESSING', 'COMPLETED', 'FAILED'],
+    default: 'PENDING',
+  })
+  ai_status?: string;
 }
 
 /**

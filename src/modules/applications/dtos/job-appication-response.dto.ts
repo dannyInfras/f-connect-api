@@ -43,4 +43,29 @@ export class JobApplicationResponseDto {
   @Expose()
   @ApiProperty()
   updated_at: Date;
+
+  @Expose()
+  @ApiProperty({
+    description: 'AI analysis score (0-100)',
+    required: false,
+    type: Number,
+  })
+  ai_score?: number;
+
+  @Expose()
+  @ApiProperty({
+    description: 'AI analysis of the application',
+    required: false,
+    type: String,
+  })
+  ai_analysis?: string;
+
+  @Expose()
+  @ApiProperty({
+    description: 'AI processing status',
+    required: false,
+    type: String,
+    enum: ['PENDING', 'PENDING_SCORE', 'PROCESSING', 'COMPLETED', 'FAILED'],
+  })
+  ai_status?: string;
 }

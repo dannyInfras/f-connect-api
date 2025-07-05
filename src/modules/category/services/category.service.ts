@@ -42,11 +42,7 @@ export class CategoryService {
     return this.mapToResponse(category);
   }
 
-  async findAll(actor: Actor): Promise<CategoryResponseDto[]> {
-    if (!this.aclService.forActor(actor).canDoAction(Action.List)) {
-      throw new UnauthorizedException('Not authorized to list categories');
-    }
-
+  async findAll(): Promise<CategoryResponseDto[]> {
     const categories = await this.repository.find({
       order: { name: 'ASC' },
     });
