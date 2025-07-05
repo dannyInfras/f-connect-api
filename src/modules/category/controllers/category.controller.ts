@@ -25,6 +25,7 @@ import { CreateCategoryReqDto } from '../dtos/req/create-category.req';
 import { UpdateCategoryDto } from '../dtos/req/update-category.req';
 import { CategoryResponseDto } from '../dtos/res/create-category.res';
 import { CategoryService } from '../services/category.service';
+import { Public } from '../../../shared/decorators/public.decorator';
 
 @ApiTags('Categories')
 @ApiBearerAuth()
@@ -50,7 +51,7 @@ export class CategoryController {
     const actor = this.getActor(ctx);
     return this.categoryService.create(actor, dto);
   }
-
+  @Public()
   @Get()
   @ApiOperation({ summary: 'Get all categories' })
   @ApiResponse({
@@ -61,11 +62,8 @@ export class CategoryController {
       example: [CategoryResponseDto.example],
     },
   })
-  async findAll(
-    @ReqContext() ctx: RequestContext,
-  ): Promise<CategoryResponseDto[]> {
-    const actor = this.getActor(ctx);
-    return this.categoryService.findAll(actor);
+  async findAll(): Promise<CategoryResponseDto[]> {
+    return this.categoryService.findAll();
   }
 
   @Get(':id')
