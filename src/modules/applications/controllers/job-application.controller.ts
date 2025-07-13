@@ -352,6 +352,10 @@ export class JobApplicationController {
       cover_letter: applicationDetail.cover_letter,
       applied_at: applicationDetail.applied_at,
       updated_at: applicationDetail.updated_at,
+      ai_status: applicationDetail.ai_status || 'PENDING_SCORE',
+      ai_score: applicationDetail.ai_score || 0,
+      ai_analysis:
+        applicationDetail.ai_analysis || 'This application is pending analysis',
       candidate: applicationDetail.candidate,
       candidateProfile: applicationDetail.candidateProfile || undefined,
       job: applicationDetail.job,

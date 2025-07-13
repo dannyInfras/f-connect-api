@@ -118,6 +118,9 @@ export interface ApplicationWithFullRelations {
   cover_letter?: string;
   applied_at: Date;
   updated_at: Date;
+  ai_status: string;
+  ai_score?: number;
+  ai_analysis?: string;
   user: {
     id: number;
     name: string;

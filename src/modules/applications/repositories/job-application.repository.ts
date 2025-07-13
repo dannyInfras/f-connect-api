@@ -224,6 +224,9 @@ export class JobApplicationRepository {
       cover_letter: application.cover_letter,
       applied_at: application.applied_at,
       updated_at: application.updated_at,
+      ai_status: application.ai_status,
+      ai_score: application.ai_score,
+      ai_analysis: application.ai_analysis,
       candidate: {
         id: application.user.id,
         name: application.user.name,
@@ -317,6 +320,9 @@ export class JobApplicationRepository {
       cover_letter: application.cover_letter,
       applied_at: application.applied_at,
       updated_at: application.updated_at,
+      ai_status: application.ai_status,
+      ai_score: application.ai_score,
+      ai_analysis: application.ai_analysis,
       user: {
         id: application.user.id,
         name: application.user.name,
