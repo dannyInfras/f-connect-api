@@ -171,6 +171,18 @@ export class ApplicationDetailResponseDto {
   updated_at: Date;
 
   @Expose()
+  @ApiProperty({ description: 'AI assessment status' })
+  ai_status: string;
+
+  @Expose()
+  @ApiProperty({ description: 'AI assessment score', required: false })
+  ai_score?: number;
+
+  @Expose()
+  @ApiProperty({ description: 'AI detailed analysis', required: false })
+  ai_analysis?: string;
+
+  @Expose()
   @ApiProperty({ type: CandidateDetailDto })
   @Type(() => CandidateDetailDto)
   candidate: CandidateDetailDto;
