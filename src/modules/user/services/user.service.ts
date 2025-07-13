@@ -74,6 +74,9 @@ export class UserService {
     const user = await this.repository.findOne({ where: { username } });
     if (!user) throw new UnauthorizedException();
 
+    if (!user.password)
+      throw new UnauthorizedException('User has no password set');
+
     const match = await compare(pass, user.password);
     if (!match) throw new UnauthorizedException();
 
@@ -92,6 +95,9 @@ export class UserService {
     this.logger.log(ctx, `calling ${UserRepository.name}.findOne`);
     const user = await this.repository.findOne({ where: { email } });
     if (!user) throw new UnauthorizedException();
+
+    if (!user.password)
+      throw new UnauthorizedException('User has no password set');
 
     const match = await compare(pass, user.password);
     if (!match) throw new UnauthorizedException();
@@ -249,5 +255,130 @@ export class UserService {
     return plainToClass(VerifyUserInput, updatedUser, {
       excludeExtraneousValues: true,
     });
+  }
+
+  /**
+   * Find user by Google ID.
+   */
+  async findByGoogleId(
+    ctx: RequestContext,
+    googleId: string,
+  ): Promise<UserOutput | null> {
+    this.logger.log(ctx, `${this.findByGoogleId.name} was called`);
+
+    const user = await this.repository.findOne({
+      where: { googleId },
+      relations: ['company'],
+    });
+
+    if (!user) {
+      return null;
+    }
+
+    const userOutput = plainToClass(UserOutput, user, {
+      excludeExtraneousValues: true,
+    });
+    userOutput.companyId = user.company?.id || null;
+    return userOutput;
+  }
+
+  /**
+   * Link Google account to existing user.
+   */
+  async linkGoogleAccount(
+    ctx: RequestContext,
+    userId: number,
+    googleId: string,
+  ): Promise<UserOutput> {
+    this.logger.log(ctx, `${this.linkGoogleAccount.name} was called`);
+
+    const user = await this.repository.getById(userId);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const updatedUser: User = {
+      ...user,
+      googleId,
+      provider: 'google',
+    };
+
+    this.logger.log(ctx, `calling ${UserRepository.name}.save`);
+    await this.repository.save(updatedUser);
+
+    const userOutput = plainToClass(UserOutput, updatedUser, {
+      excludeExtraneousValues: true,
+    });
+    userOutput.companyId = updatedUser.company?.id || null;
+    return userOutput;
+  }
+
+  /**
+   * Create new user with Google authentication.
+   */
+  async createGoogleUser(
+    ctx: RequestContext,
+    input: {
+      googleId: string;
+      email: string;
+      name: string;
+      avatar?: string;
+      provider: 'google';
+      isAccountDisabled: boolean;
+    },
+  ): Promise<UserOutput> {
+    this.logger.log(ctx, `${this.createGoogleUser.name} was called`);
+
+    try {
+      const user = new User();
+      user.googleId = input.googleId;
+      user.email = input.email;
+      user.name = input.name;
+      user.avatar = input.avatar;
+      user.provider = input.provider;
+      user.isAccountDisabled = input.isAccountDisabled;
+
+      // Generate a safe username from email (take part before @, max 30 chars)
+      let username = input.email.split('@')[0];
+      username = username.substring(0, 30); // Ensure it fits the column length
+
+      // Check if username already exists and make it unique if needed
+      let uniqueUsername = username;
+      let counter = 1;
+      while (
+        await this.repository.findOne({ where: { username: uniqueUsername } })
+      ) {
+        uniqueUsername = `${username}${counter}`;
+        counter++;
+        // Safety check to prevent infinite loops
+        if (counter > 1000) {
+          uniqueUsername = `${username}_${Date.now()}`;
+          break;
+        }
+      }
+
+      user.username = uniqueUsername;
+      user.roles = ['USER']; // Default role
+      user.password = undefined; // No password for OAuth users
+
+      this.logger.log(
+        ctx,
+        `Creating Google user with username: ${uniqueUsername}`,
+      );
+      await this.repository.save(user);
+
+      return plainToClass(UserOutput, user, {
+        excludeExtraneousValues: true,
+      });
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(
+        ctx,
+        `Failed to create Google user: ${errorMessage}`,
+        error instanceof Error ? error.stack : undefined,
+      );
+      throw error;
+    }
   }
 }

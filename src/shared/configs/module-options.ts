@@ -23,11 +23,6 @@ export const configModuleOptions: ConfigModuleOptions = {
     JWT_ACCESS_TOKEN_EXP_IN_SEC: Joi.number().required(),
     JWT_REFRESH_TOKEN_EXP_IN_SEC: Joi.number().required(),
     DEFAULT_ADMIN_USER_PASSWORD: Joi.string().required(),
-    // MAIL_HOST: Joi.string().required(),
-    // MAIL_PORT: Joi.number().required(),
-    // MAIL_USER: Joi.string().required(),
-    // MAIL_PASSWORD: Joi.string().required(),
-    // MAIL_FROM: Joi.string().required(),
     RESEND_API_KEY: Joi.string().required(),
     MAIL_FROM: Joi.string().required(),
     FRONTEND_URL: Joi.string().required(),
@@ -39,5 +34,9 @@ export const configModuleOptions: ConfigModuleOptions = {
     PAYOS_CLIENT_ID: Joi.string().required(),
     PAYOS_API_KEY: Joi.string().required(),
     PAYOS_CHECKSUM_KEY: Joi.string().required(),
+
+    //Google OAuth
+    GOOGLE_CLIENT_ID: Joi.string().required(),
+    GOOGLE_CLIENT_SECRET: Joi.string().required(),
   }),
 };

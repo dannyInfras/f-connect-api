@@ -35,5 +35,15 @@ export default (): any => ({
     key: process.env.SUPABASE_KEY,
     bucketName: process.env.SUPABASE_BUCKET_NAME || 'cvs',
   },
+
+  google: {
+    clientId: process.env.GOOGLE_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+  },
+
+  frontend: {
+    url: process.env.FRONTEND_URL || 'http://localhost:3000',
+  },
+
   defaultAdminUserPassword: process.env.DEFAULT_ADMIN_USER_PASSWORD,
 });

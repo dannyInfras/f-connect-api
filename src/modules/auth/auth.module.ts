@@ -12,8 +12,10 @@ import { SharedModule } from '@/shared/shared.module';
 import { STRATEGY_JWT_AUTH } from './constants/strategy.constant';
 import { AuthController } from './controllers/auth.controller';
 import { EmailVerificationToken } from './entities/email-verification-token.entity';
+import { GoogleAuthGuard } from './guards/google-auth.guard';
 import { AuthService } from './services/auth.service';
 import { EmailVerificationService } from './services/email-verification.service';
+import { GoogleStrategy } from './strategies/google.strategy';
 import { JwtAuthStrategy } from './strategies/jwt-auth.strategy';
 import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
 import { LocalStrategy } from './strategies/local.strategy';
@@ -44,6 +46,8 @@ import { LocalStrategy } from './strategies/local.strategy';
     LocalStrategy,
     JwtAuthStrategy,
     JwtRefreshStrategy,
+    GoogleStrategy,
+    GoogleAuthGuard,
     EmailVerificationService,
   ],
 })

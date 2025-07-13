@@ -8,10 +8,14 @@ import {
   Post,
   Query,
   Redirect,
+  Req,
+  Res,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Response } from 'express';
 
 import { LoginInput } from '@/modules/auth/dtos/auth-login-input.dto';
 import { RefreshTokenInput } from '@/modules/auth/dtos/auth-refresh-token-input.dto';
@@ -19,6 +23,7 @@ import { RegisterCompanyInput } from '@/modules/auth/dtos/auth-register-company-
 import { RegisterInput } from '@/modules/auth/dtos/auth-register-input.dto';
 import { RegisterOutput } from '@/modules/auth/dtos/auth-register-output.dto';
 import { AuthTokenOutput } from '@/modules/auth/dtos/auth-token-output.dto';
+import { GoogleAuthGuard } from '@/modules/auth/guards/google-auth.guard';
 import { JwtRefreshGuard } from '@/modules/auth/guards/jwt-refresh.guard';
 import { LocalAuthGuard } from '@/modules/auth/guards/local-auth.guard';
 import { AuthService } from '@/modules/auth/services/auth.service';
@@ -37,6 +42,7 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly logger: AppLogger,
+    private readonly configService: ConfigService,
   ) {
     this.logger.setContext(AuthController.name);
   }
@@ -154,5 +160,65 @@ export class AuthController {
     @Body('email') email: string,
   ): Promise<{ message: string }> {
     return this.authService.resendVerificationEmail(ctx, email);
+  }
+
+  @Get('google')
+  @ApiOperation({ summary: 'Initiate Google OAuth authentication' })
+  @UseGuards(GoogleAuthGuard)
+  async googleAuth(): Promise<void> {
+    // This method initiates the Google OAuth flow
+    // The actual redirect is handled by Passport
+  }
+
+  @Get('google/callback')
+  @ApiOperation({
+    summary:
+      'Google OAuth callback endpoint - redirects to frontend with JWT token',
+  })
+  @ApiResponse({
+    status: HttpStatus.FOUND,
+    description:
+      'Redirects to frontend success page with JWT token or error page on failure',
+  })
+  @UseGuards(GoogleAuthGuard)
+  async googleAuthRedirect(
+    @Req() req: any,
+    @Res() res: Response,
+  ): Promise<void> {
+    const ctx = new RequestContext();
+    const frontendUrl = this.configService.get<string>('frontend.url');
+
+    try {
+      // Check if user authentication was successful
+      if (!req.user) {
+        this.logger.error(ctx, 'Google OAuth failed: No user found in request');
+        res.redirect(`${frontendUrl}/error?message=Authentication failed`);
+        return;
+      }
+
+      // User is available in req.user after successful Google authentication
+      ctx.user = req.user;
+      const authToken = this.authService.login(ctx);
+
+      // Redirect to frontend success page with JWT token
+      const frontendSuccessUrl = `${frontendUrl}/success?token=${authToken.accessToken}`;
+
+      this.logger.log(
+        ctx,
+        `Redirecting Google OAuth user to: ${frontendSuccessUrl}`,
+      );
+      res.redirect(frontendSuccessUrl);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      const errorStack = error instanceof Error ? error.stack : undefined;
+
+      this.logger.error(
+        ctx,
+        `Google OAuth callback error: ${errorMessage}`,
+        errorStack,
+      );
+      res.redirect(`${frontendUrl}/error?message=Authentication failed`);
+    }
   }
 }

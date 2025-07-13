@@ -21,8 +21,8 @@ export class User {
   @Column({ length: 100, name: 'full_name' })
   name: string;
 
-  @Column({ length: 100, name: 'password' })
-  password: string;
+  @Column({ length: 100, name: 'password', nullable: true })
+  password?: string;
 
   @Unique('username', ['username'])
   @Column({ length: 30 })
@@ -37,6 +37,17 @@ export class User {
   @Unique('email', ['email'])
   @Column({ length: 50 })
   email: string;
+
+  @Column({ name: 'google_id', nullable: true, unique: true })
+  googleId?: string;
+
+  @Column({
+    name: 'provider',
+    default: 'local',
+    type: 'enum',
+    enum: ['local', 'google'],
+  })
+  provider: 'local' | 'google';
 
   @Column({
     name: 'gender',
