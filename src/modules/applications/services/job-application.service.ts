@@ -6,10 +6,13 @@ import {
 } from '@nestjs/common';
 
 import { ROLE } from '@/modules/auth/constants/role.constant';
+import { UserService } from '@/modules/user/services/user.service';
 import { Action } from '@/shared/acl/action.constant';
 import { AppLogger } from '@/shared/logger/logger.service';
+import { RequestContext } from '@/shared/request-context/request-context.dto';
 import { UnitOfWork } from '@/shared/unit-of-work/unit-of-work.service';
 
+import { UserAccessTokenClaims } from '../../auth/dtos/auth-token-output.dto';
 import { JobApplicationAclService } from '../acl/job-application-acl.service';
 import { JobApplicationResponseDto } from '../dtos/job-appication-response.dto';
 import { JobApplication } from '../entities/job-application.entity';
@@ -39,6 +42,7 @@ export class JobApplicationService {
     private readonly notificationService: JobApplicationNotificationService,
     private readonly unitOfWork: UnitOfWork,
     private readonly logger: AppLogger,
+    private readonly userService: UserService,
   ) {
     this.logger.setContext(JobApplicationService.name);
   }
@@ -363,41 +367,6 @@ export class JobApplicationService {
     );
   }
 
-  private validateStatusTransition(params: StatusTransitionParams): void {
-    const { currentStatus, newStatus } = params;
-
-    if (currentStatus === newStatus) {
-      return; // No transition needed, already at the target status
-    }
-
-    // Define allowed transitions for each status
-    const allowedTransitions: Record<ApplicationStatus, ApplicationStatus[]> = {
-      [ApplicationStatus.APPLIED]: [
-        ApplicationStatus.INTERVIEW,
-        ApplicationStatus.HIRED,
-        ApplicationStatus.REJECTED,
-      ],
-      [ApplicationStatus.INTERVIEW]: [
-        ApplicationStatus.HIRED,
-        ApplicationStatus.REJECTED,
-      ],
-      [ApplicationStatus.HIRED]: [],
-      [ApplicationStatus.REJECTED]: [],
-    };
-
-    if (
-      !allowedTransitions[currentStatus] ||
-      !allowedTransitions[currentStatus].includes(newStatus)
-    ) {
-      throw new BadRequestException(
-        `Cannot transition from ${currentStatus} to ${newStatus}`,
-      );
-    }
-  }
-
-  /**
-   * Get all applications for HR view with pagination
-   */
   async getHrApplications(
     params: GetHrApplicationsServiceParams,
   ): Promise<HrApplicationsWithCount> {
@@ -417,9 +386,18 @@ export class JobApplicationService {
         );
       }
 
-      // Get applications using repository with company filtering if applicable
-      const companyId =
-        typeof user.companyId === 'string' ? Number(user.companyId) : undefined;
+      // Find user's company ID from database instead of relying on JWT token
+      const userCompanyId = await this.findCompanyIdByUserId(user.id);
+
+      // Convert string companyId to number for database query
+      const companyId = userCompanyId ? Number(userCompanyId) : null;
+
+      // If user has no company association, return empty results
+      // HR users should only see applications for their specific company
+      if (companyId === null) {
+        return { applications: [], count: 0 };
+      }
+
       const { applications: rawApplications, count } =
         await this.jobApplicationRepository.findAllApplications({
           companyId,
@@ -456,6 +434,59 @@ export class JobApplicationService {
         `Failed to fetch HR applications: ${error instanceof Error ? error.message : 'Unknown error'}`,
       );
       throw new BadRequestException('Failed to fetch applications');
+    }
+  }
+
+  private validateStatusTransition(params: StatusTransitionParams): void {
+    const { currentStatus, newStatus } = params;
+
+    if (currentStatus === newStatus) {
+      return; // No transition needed, already at the target status
+    }
+
+    // Define allowed transitions for each status
+    const allowedTransitions: Record<ApplicationStatus, ApplicationStatus[]> = {
+      [ApplicationStatus.APPLIED]: [
+        ApplicationStatus.INTERVIEW,
+        ApplicationStatus.HIRED,
+        ApplicationStatus.REJECTED,
+      ],
+      [ApplicationStatus.INTERVIEW]: [
+        ApplicationStatus.HIRED,
+        ApplicationStatus.REJECTED,
+      ],
+      [ApplicationStatus.HIRED]: [],
+      [ApplicationStatus.REJECTED]: [],
+    };
+
+    if (
+      !allowedTransitions[currentStatus] ||
+      !allowedTransitions[currentStatus].includes(newStatus)
+    ) {
+      throw new BadRequestException(
+        `Cannot transition from ${currentStatus} to ${newStatus}`,
+      );
+    }
+  }
+
+  /**
+   * Find user's company ID from database
+   */
+  private async findCompanyIdByUserId(userId: number): Promise<string | null> {
+    const ctx = new RequestContext();
+    ctx.user = { id: userId } as UserAccessTokenClaims;
+
+    try {
+      const user = await this.userService.findById(ctx, userId);
+      return user.companyId || null;
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(
+        ctx,
+        `Failed to find company for user ${userId}: ${errorMessage}`,
+      );
+      return null;
     }
   }
 }
