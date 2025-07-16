@@ -61,6 +61,9 @@ export class CandidateProfile {
   @Column({ type: 'varchar', length: 50, nullable: true })
   birthDate: string;
 
+  @Column({ type: 'boolean', default: false, name: 'has_updated' })
+  hasUpdated: boolean;
+
   @Column({
     type: 'timestamp',
     name: 'created_at',

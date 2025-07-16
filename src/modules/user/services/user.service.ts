@@ -14,6 +14,8 @@ import { UpdateUserInput } from '@/modules/user/dtos/user-update-input.dto';
 import { VerifyUserInput } from '@/modules/user/dtos/user-verify-input.dto';
 import { User } from '@/modules/user/entities/user.entity';
 import { UserRepository } from '@/modules/user/repositories/user.repository';
+import { AppEvents } from '@/shared/events/event.constants';
+import { EventEmitterService } from '@/shared/events/event-emitter.service';
 import { AppLogger } from '@/shared/logger/logger.service';
 import { RequestContext } from '@/shared/request-context/request-context.dto';
 
@@ -25,6 +27,7 @@ export class UserService {
     private repository: UserRepository,
     private readonly logger: AppLogger,
     private readonly companyRepository: CompanyRepository,
+    private readonly eventEmitter: EventEmitterService,
   ) {
     this.logger.setContext(UserService.name);
   }
@@ -366,6 +369,13 @@ export class UserService {
         `Creating Google user with username: ${uniqueUsername}`,
       );
       await this.repository.save(user);
+
+      // Emit EMAIL_VERIFIED event for Google users since they are verified by default
+      this.eventEmitter.emit(AppEvents.EMAIL_VERIFIED, user);
+      this.logger.log(
+        ctx,
+        `Emitted EMAIL_VERIFIED event for Google user: ${user.id}`,
+      );
 
       return plainToClass(UserOutput, user, {
         excludeExtraneousValues: true,

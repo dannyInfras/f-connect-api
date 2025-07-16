@@ -113,6 +113,7 @@ export class CandidateProfileListenerService implements OnModuleInit {
         // Create an empty profile for the user with nullable fields
         const candidateProfile = new CandidateProfile();
         candidateProfile.user = plainToClass(User, { id: userData.id });
+        candidateProfile.hasUpdated = false; // Set to false for auto-created profiles
 
         // Save using transaction manager
         const profileRepo = manager.getRepository(CandidateProfile);

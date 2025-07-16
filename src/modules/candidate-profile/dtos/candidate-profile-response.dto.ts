@@ -58,4 +58,10 @@ export class CandidateProfileResponseDto {
   @Expose()
   @ApiProperty()
   birthDate: string;
+
+  @Expose()
+  @ApiProperty({
+    description: 'Indicates if the user has manually updated their profile',
+  })
+  hasUpdated: boolean;
 }
