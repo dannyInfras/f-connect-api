@@ -101,7 +101,8 @@ export class CandidateProfileRepository {
     if (!existing) throw new NotFoundException('Candidate profile not found');
 
     // Create the update object with only the fields provided in the DTO
-    const updateData = { ...dto };
+    // Set hasUpdated to true when profile is manually updated
+    const updateData = { ...dto, hasUpdated: true };
 
     // Update the entity
     await this.repo.update(id, updateData);
@@ -142,6 +143,7 @@ export class CandidateProfileRepository {
       skills: [],
       portfolios: [],
       birthDate: entity.birthDate,
+      hasUpdated: entity.hasUpdated,
     });
   }
 }
