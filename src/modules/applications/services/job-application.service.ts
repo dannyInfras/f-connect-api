@@ -8,6 +8,8 @@ import {
 import { ROLE } from '@/modules/auth/constants/role.constant';
 import { UserService } from '@/modules/user/services/user.service';
 import { Action } from '@/shared/acl/action.constant';
+import { AppEvents } from '@/shared/events/event.constants';
+import { EventEmitterService } from '@/shared/events/event-emitter.service';
 import { AppLogger } from '@/shared/logger/logger.service';
 import { RequestContext } from '@/shared/request-context/request-context.dto';
 import { UnitOfWork } from '@/shared/unit-of-work/unit-of-work.service';
@@ -43,6 +45,7 @@ export class JobApplicationService {
     private readonly unitOfWork: UnitOfWork,
     private readonly logger: AppLogger,
     private readonly userService: UserService,
+    private readonly eventEmitter: EventEmitterService,
   ) {
     this.logger.setContext(JobApplicationService.name);
   }
@@ -256,9 +259,23 @@ export class JobApplicationService {
         });
       }
 
+      const oldStatus = application.status;
+
       await this.jobApplicationRepository.updateApplication(id, {
         status: dto.status,
       });
+
+      // Emit event if status actually changed
+      if (dto.status && dto.status !== oldStatus) {
+        this.eventEmitter.emit(AppEvents.APPLICATION_STATUS_CHANGED, {
+          applicationId: application.id,
+          userId: application.user.id,
+          jobTitle: application.job.title,
+          oldStatus,
+          newStatus: dto.status,
+          companyName: application.job.company.companyName || 'Company',
+        });
+      }
 
       return {
         message: 'Application status updated successfully',

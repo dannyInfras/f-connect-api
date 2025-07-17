@@ -5,6 +5,7 @@ import { SharedModule } from '../../shared/shared.module';
 import { JwtAuthStrategy } from '../auth/strategies/jwt-auth.strategy';
 import { Job } from '../jobs/entities/jobs.entity';
 import { JobsModule } from '../jobs/jobs.module';
+import { NotificationModule } from '../notification/notification.module';
 import { User } from '../user/entities/user.entity';
 import { UserModule } from '../user/user.module';
 import { JobApplicationAclService } from './acl/job-application-acl.service';
@@ -20,6 +21,7 @@ import { JobApplicationNotificationService } from './services/job-application-no
     TypeOrmModule.forFeature([JobApplication, User, Job]),
     UserModule,
     forwardRef(() => JobsModule),
+    NotificationModule,
   ],
   controllers: [JobApplicationController],
   providers: [
