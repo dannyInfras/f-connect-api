@@ -16,6 +16,8 @@ export class CandidateProfileAclService extends BaseAclService<CandidateProfile>
   ) {
     super();
     this.canDo(ROLE.ADMIN, [Action.Manage]);
+    this.canDo(ROLE.ADMIN_RECRUITER, [Action.Read, Action.List]);
+    this.canDo(ROLE.RECRUITER, [Action.Read, Action.List]);
     this.canDo(ROLE.USER, [Action.Create, Action.List]);
     this.canDo(
       ROLE.USER,
