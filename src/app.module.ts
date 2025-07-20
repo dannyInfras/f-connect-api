@@ -1,6 +1,7 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
 
+import { AdminModule } from '@/modules/admin/admin.module';
 import { ApplicationsModule } from '@/modules/applications/applications.module';
 import { ArticleModule } from '@/modules/article/article.module';
 import { AuthModule } from '@/modules/auth/auth.module';
@@ -30,6 +31,7 @@ import { SharedModule } from './shared/shared.module';
     ScheduleModule.forRoot(),
     UserModule,
     AuthModule,
+    AdminModule,
     ArticleModule,
     CandidateProfileModule,
     CompanyModule,
