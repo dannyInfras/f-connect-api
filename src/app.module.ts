@@ -19,6 +19,7 @@ import { VideoCallModule } from '@/modules/video-call/video-call.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { CvModule } from './modules/cv/cv.module';
+import { RoomModule } from './modules/room/room.module';
 import { SkillModule } from './modules/skill/skill.module';
 import { RequestLoggerMiddleware } from './shared/middleware/request-logger.middleware';
 import { SharedModule } from './shared/shared.module';
@@ -43,6 +44,7 @@ import { SharedModule } from './shared/shared.module';
     VideoCallModule,
     PayosModule,
     PackageModule,
+    RoomModule,
   ],
   controllers: [AppController],
   providers: [AppService],
