@@ -21,11 +21,11 @@ import { Actor } from '@/shared/acl/actor.constant';
 import { ReqContext } from '@/shared/request-context/req-context.decorator';
 import { RequestContext } from '@/shared/request-context/request-context.dto';
 
+import { Public } from '../../../shared/decorators/public.decorator';
 import { CreateCategoryReqDto } from '../dtos/req/create-category.req';
 import { UpdateCategoryDto } from '../dtos/req/update-category.req';
 import { CategoryResponseDto } from '../dtos/res/create-category.res';
 import { CategoryService } from '../services/category.service';
-import { Public } from '../../../shared/decorators/public.decorator';
 
 @ApiTags('Categories')
 @ApiBearerAuth()

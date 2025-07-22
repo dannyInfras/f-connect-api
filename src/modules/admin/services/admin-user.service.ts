@@ -2,7 +2,6 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { plainToClass } from 'class-transformer';
 
 import { ROLE } from '@/modules/auth/constants/role.constant';
-import { UpdateUserInput } from '@/modules/user/dtos/user-update-input.dto';
 import { UserService } from '@/modules/user/services/user.service';
 import { Action } from '@/shared/acl/action.constant';
 import { Actor } from '@/shared/acl/actor.constant';
@@ -47,7 +46,7 @@ export class AdminUserService {
       throw new UnauthorizedException('Insufficient permissions to list users');
     }
 
-    const { users, count } = await this.userService.getUsers(
+    const { users } = await this.userService.getUsers(
       ctx,
       limit,
       offset,

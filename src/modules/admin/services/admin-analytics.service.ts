@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, Inject } from '@nestjs/common';
+import { Inject,Injectable, UnauthorizedException } from '@nestjs/common';
 import { plainToClass } from 'class-transformer';
 
 import { Action } from '@/shared/acl/action.constant';
@@ -6,54 +6,54 @@ import { Actor } from '@/shared/acl/actor.constant';
 import { AppLogger } from '@/shared/logger/logger.service';
 import { RequestContext } from '@/shared/request-context/request-context.dto';
 
+import { ANALYTICS_REPOSITORY_TOKENS } from '../constants/analytics-tokens';
 import {
-  DashboardAnalyticsResponseDto,
-  DashboardMetricsDto,
-  RecentActivityDto,
-  AdminAlertDto,
-} from '../dtos/dashboard-analytics.dto';
-import {
-  UserAnalyticsResponseDto,
-  RegistrationTrendDto,
-  UserDemographicsDto,
-  UserActivityMetricsDto,
-} from '../dtos/user-analytics.dto';
-import {
-  JobAnalyticsResponseDto,
-  JobPostingTrendDto,
-  CategoryAnalysisDto,
-  EmploymentTypeDto,
-  SalaryAnalyticsDto,
-  VipJobsAnalyticsDto,
-  PopularSkillDto,
-} from '../dtos/job-analytics.dto';
-import {
+  AiAnalysisInsightsDto,
   ApplicationAnalyticsResponseDto,
   ApplicationTrendDto,
-  StatusDistributionDto,
   ConversionRatesDto,
-  AiAnalysisInsightsDto,
+  StatusDistributionDto,
   TimeMetricsDto,
   TopPerformingJobDto,
 } from '../dtos/application-analytics.dto';
 import {
   CompanyAnalyticsResponseDto,
+  CompanyGrowthMetricsDto,
   CompanyRegistrationTrendDto,
   CompanySizeDistributionDto,
-  IndustryAnalysisDto,
-  HiringActivityDto,
   GeographicDistributionDto,
-  CompanyGrowthMetricsDto,
+  HiringActivityDto,
+  IndustryAnalysisDto,
 } from '../dtos/company-analytics.dto';
 import {
-  IDashboardAnalyticsRepository,
-  IUserAnalyticsRepository,
-  IJobAnalyticsRepository,
+  AdminAlertDto,
+  DashboardAnalyticsResponseDto,
+  DashboardMetricsDto,
+  RecentActivityDto,
+} from '../dtos/dashboard-analytics.dto';
+import {
+  CategoryAnalysisDto,
+  EmploymentTypeDto,
+  JobAnalyticsResponseDto,
+  JobPostingTrendDto,
+  PopularSkillDto,
+  SalaryAnalyticsDto,
+  VipJobsAnalyticsDto,
+} from '../dtos/job-analytics.dto';
+import {
+  RegistrationTrendDto,
+  UserActivityMetricsDto,
+  UserAnalyticsResponseDto,
+  UserDemographicsDto,
+} from '../dtos/user-analytics.dto';
+import {
   IApplicationAnalyticsRepository,
   ICompanyAnalyticsRepository,
+  IDashboardAnalyticsRepository,
+  IJobAnalyticsRepository,
+  IUserAnalyticsRepository,
 } from '../interfaces/analytics-repositories.interface';
 import { AdminAnalyticsAclService } from './admin-analytics-acl.service';
-import { ANALYTICS_REPOSITORY_TOKENS } from '../constants/analytics-tokens';
 
 /**
  * Service for admin analytics operations

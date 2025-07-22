@@ -11,18 +11,18 @@ import { User } from '@/modules/user/entities/user.entity';
 import { UserModule } from '@/modules/user/user.module';
 import { SharedModule } from '@/shared/shared.module';
 
+import { ANALYTICS_REPOSITORY_TOKENS } from './constants/analytics-tokens';
 import { AdminAnalyticsController } from './controllers/admin-analytics.controller';
 import { AdminUserController } from './controllers/admin-user.controller';
-import { ANALYTICS_REPOSITORY_TOKENS } from './constants/analytics-tokens';
 import { AdminApplicationAnalyticsRepository } from './repositories/admin-application-analytics.repository';
 import { AdminCompanyAnalyticsRepository } from './repositories/admin-company-analytics.repository';
 import { AdminDashboardAnalyticsRepository } from './repositories/admin-dashboard-analytics.repository';
 import { AdminJobAnalyticsRepository } from './repositories/admin-job-analytics.repository';
 import { AdminUserAnalyticsRepository } from './repositories/admin-user-analytics.repository';
-import { AdminAnalyticsAclService } from './services/admin-analytics-acl.service';
 import { AdminAnalyticsService } from './services/admin-analytics.service';
-import { AdminUserAclService } from './services/admin-user-acl.service';
+import { AdminAnalyticsAclService } from './services/admin-analytics-acl.service';
 import { AdminUserService } from './services/admin-user.service';
+import { AdminUserAclService } from './services/admin-user-acl.service';
 
 @Module({
   imports: [
