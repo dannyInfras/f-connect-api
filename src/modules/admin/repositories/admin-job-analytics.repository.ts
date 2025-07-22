@@ -250,7 +250,6 @@ export class AdminJobAnalyticsRepository implements IJobAnalyticsRepository {
     // This would need a proper join table query in a real implementation
     // For now, returning skills with placeholder data
     const skills = await this.skillRepository.find({ take: 10 });
-    const totalJobs = await this.jobRepository.count();
 
     return skills.map((skill) => ({
       skillId: skill.id,

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Not, IsNull } from 'typeorm';
+import { IsNull,Not, Repository } from 'typeorm';
 
 import { JobApplication } from '@/modules/applications/entities/job-application.entity';
 import { Company } from '@/modules/company/entities/company.entity';
