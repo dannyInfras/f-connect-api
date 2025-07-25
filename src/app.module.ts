@@ -11,6 +11,7 @@ import { EducationModule } from '@/modules/education/education.module';
 import { ExperienceModule } from '@/modules/experience/experience.module';
 import { JobSearchModule } from '@/modules/job-search/job-search.module';
 import { JobsModule } from '@/modules/jobs/jobs.module';
+import { MessengerModule } from '@/modules/messenger/messenger.module';
 import { NotificationModule } from '@/modules/notification/notification.module';
 import { PackageModule } from '@/modules/package/package.module';
 import { PayosModule } from '@/modules/payos/payos.module';
@@ -49,6 +50,7 @@ import { SharedModule } from './shared/shared.module';
     PackageModule,
     RoomModule,
     RoadmapModule,
+    MessengerModule,
   ],
   controllers: [AppController],
   providers: [AppService],
