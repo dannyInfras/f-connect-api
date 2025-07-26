@@ -7,6 +7,7 @@ import { ArticleModule } from '@/modules/article/article.module';
 import { AuthModule } from '@/modules/auth/auth.module';
 import { CandidateProfileModule } from '@/modules/candidate-profile/candidate-profile.module';
 import { CompanyModule } from '@/modules/company/company.module';
+import { CouponModule } from '@/modules/coupon/coupon.module';
 import { EducationModule } from '@/modules/education/education.module';
 import { ExperienceModule } from '@/modules/experience/experience.module';
 import { JobSearchModule } from '@/modules/job-search/job-search.module';
@@ -51,6 +52,7 @@ import { SharedModule } from './shared/shared.module';
     RoomModule,
     RoadmapModule,
     MessengerModule,
+    CouponModule,
   ],
   controllers: [AppController],
   providers: [AppService],
