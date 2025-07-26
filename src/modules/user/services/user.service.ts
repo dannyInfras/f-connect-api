@@ -74,7 +74,10 @@ export class UserService {
     this.logger.log(ctx, `${this.validateUsernamePassword.name} was called`);
 
     this.logger.log(ctx, `calling ${UserRepository.name}.findOne`);
-    const user = await this.repository.findOne({ where: { username } });
+    const user = await this.repository.findOne({
+      where: { username },
+      relations: ['company'],
+    });
     if (!user) throw new UnauthorizedException();
 
     if (!user.password)
@@ -83,9 +86,11 @@ export class UserService {
     const match = await compare(pass, user.password);
     if (!match) throw new UnauthorizedException();
 
-    return plainToClass(UserOutput, user, {
+    const userOutput = plainToClass(UserOutput, user, {
       excludeExtraneousValues: true,
     });
+    userOutput.companyId = user.company?.id || null;
+    return userOutput;
   }
 
   async validateEmailPassword(
@@ -96,7 +101,10 @@ export class UserService {
     this.logger.log(ctx, `${this.validateEmailPassword.name} was called`);
 
     this.logger.log(ctx, `calling ${UserRepository.name}.findOne`);
-    const user = await this.repository.findOne({ where: { email } });
+    const user = await this.repository.findOne({
+      where: { email },
+      relations: ['company'],
+    });
     if (!user) throw new UnauthorizedException();
 
     if (!user.password)
@@ -105,9 +113,11 @@ export class UserService {
     const match = await compare(pass, user.password);
     if (!match) throw new UnauthorizedException();
 
-    return plainToClass(UserOutput, user, {
+    const userOutput = plainToClass(UserOutput, user, {
       excludeExtraneousValues: true,
     });
+    userOutput.companyId = user.company?.id || null;
+    return userOutput;
   }
 
   async getUsers(

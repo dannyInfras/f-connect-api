@@ -17,6 +17,7 @@ import { NotificationModule } from '@/modules/notification/notification.module';
 import { PackageModule } from '@/modules/package/package.module';
 import { PayosModule } from '@/modules/payos/payos.module';
 import { RoadmapModule } from '@/modules/roadmap/roadmap.module';
+import { ScheduleModule as ScheduleManagementModule } from '@/modules/schedule/schedule.module';
 import { UserModule } from '@/modules/user/user.module';
 import { VideoCallModule } from '@/modules/video-call/video-call.module';
 
@@ -53,6 +54,7 @@ import { SharedModule } from './shared/shared.module';
     RoadmapModule,
     MessengerModule,
     CouponModule,
+    ScheduleManagementModule,
   ],
   controllers: [AppController],
   providers: [AppService],
