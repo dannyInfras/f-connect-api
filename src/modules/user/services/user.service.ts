@@ -391,4 +391,19 @@ export class UserService {
       throw error;
     }
   }
+
+  async findUserByCompanyId(companyId: string): Promise<UserOutput[]> {
+    const users = await this.repository.find({
+      where: { company: { id: companyId } },
+      relations: ['company'],
+    });
+
+    return users.map((user) => {
+      const userOutput = plainToClass(UserOutput, user, {
+        excludeExtraneousValues: true,
+      });
+      userOutput.companyId = user.company?.id || null;
+      return userOutput;
+    });
+  }
 }
