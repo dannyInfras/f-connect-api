@@ -27,6 +27,14 @@ interface MessagePayload {
   senderId: string;
 }
 
+interface VideoCallPayload {
+  conversationId: string;
+  to: string;
+  from: string;
+  signal?: any;
+  enabled?: boolean;
+}
+
 @WebSocketGateway({ 
   cors: { 
     origin: process.env.FRONTEND_URL || 'http://localhost:3000',
@@ -217,5 +225,100 @@ export class MessengerGateway
       this.logger.error(`Error finding user conversations: ${error.message}`);
       return [];
     }
+  }
+
+  // Video Call Event Handlers
+  @SubscribeMessage('video-call-offer')
+  handleVideoCallOffer(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: VideoCallPayload,
+  ) {
+    this.logger.log(`Video call offer from ${payload.from} to ${payload.to} in conversation ${payload.conversationId}`);
+    
+    const recipientSocket = this.connectedUsers.get(payload.to);
+    if (recipientSocket) {
+      recipientSocket.emit('video-call-offer', {
+        from: payload.from,
+        signal: payload.signal,
+        conversationId: payload.conversationId,
+      });
+      this.logger.log(`Video call offer sent to recipient: ${payload.to}`);
+    } else {
+      this.logger.log(`Recipient ${payload.to} is not online`);
+      client.emit('video-call-user-offline', { userId: payload.to });
+    }
+
+    return { success: true };
+  }
+
+  @SubscribeMessage('video-call-answer')
+  handleVideoCallAnswer(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: VideoCallPayload,
+  ) {
+    this.logger.log(`Video call answer from ${payload.from} to ${payload.to}`);
+    
+    const recipientSocket = this.connectedUsers.get(payload.to);
+    if (recipientSocket) {
+      recipientSocket.emit('video-call-answer', {
+        from: payload.from,
+        signal: payload.signal,
+        conversationId: payload.conversationId,
+      });
+    }
+
+    return { success: true };
+  }
+
+  @SubscribeMessage('video-call-end')
+  handleVideoCallEnd(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: VideoCallPayload,
+  ) {
+    this.logger.log(`Video call ended by ${payload.from} for ${payload.to}`);
+    
+    const recipientSocket = this.connectedUsers.get(payload.to);
+    if (recipientSocket) {
+      recipientSocket.emit('video-call-end', {
+        from: payload.from,
+        conversationId: payload.conversationId,
+      });
+    }
+
+    return { success: true };
+  }
+
+  @SubscribeMessage('video-call-toggle-video')
+  handleVideoCallToggleVideo(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: VideoCallPayload,
+  ) {
+    const recipientSocket = this.connectedUsers.get(payload.to);
+    if (recipientSocket) {
+      recipientSocket.emit('video-call-toggle-video', {
+        from: payload.from,
+        enabled: payload.enabled,
+        conversationId: payload.conversationId,
+      });
+    }
+
+    return { success: true };
+  }
+
+  @SubscribeMessage('video-call-toggle-audio')
+  handleVideoCallToggleAudio(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: VideoCallPayload,
+  ) {
+    const recipientSocket = this.connectedUsers.get(payload.to);
+    if (recipientSocket) {
+      recipientSocket.emit('video-call-toggle-audio', {
+        from: payload.from,
+        enabled: payload.enabled,
+        conversationId: payload.conversationId,
+      });
+    }
+
+    return { success: true };
   }
 }
