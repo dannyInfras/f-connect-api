@@ -33,19 +33,19 @@ interface VideoCallPayload {
   from: string;
   signal?: any;
   enabled?: boolean;
+  reason?: string;
 }
 
-@WebSocketGateway({ 
-  cors: { 
+@WebSocketGateway({
+  cors: {
     origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-    credentials: true 
+    credentials: true
   },
   namespace: 'messenger'
 })
 @Injectable()
 export class MessengerGateway
-  implements OnGatewayConnection, OnGatewayDisconnect
-{
+  implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
 
@@ -60,21 +60,21 @@ export class MessengerGateway
     private conversationRepository: Repository<Conversation>,
     private userService: UserService,
     private messagesService: MessagesService,
-  ) {}
+  ) { }
 
   handleConnection(client: Socket) {
     const userId = client.handshake.query.userId as string;
     if (userId) {
       this.logger.log(`User ${userId} connected`);
       this.connectedUsers.set(userId, client);
-      
+
       // Notify all users that this user is online
       this.server.emit('userStatus', { userId, isOnline: true });
-      
+
       // Join user to all their conversations
       this.findUserConversations(userId).then(conversationIds => {
         if (!conversationIds.length) return;
-        
+
         this.userConversations.set(userId, conversationIds);
         conversationIds.forEach(convId => {
           client.join(convId);
@@ -89,7 +89,7 @@ export class MessengerGateway
       this.logger.log(`User ${userId} disconnected`);
       this.connectedUsers.delete(userId);
       this.userConversations.delete(userId);
-      
+
       // Notify all users that this user is offline
       this.server.emit('userStatus', { userId, isOnline: false });
     }
@@ -120,15 +120,15 @@ export class MessengerGateway
   ) {
     try {
       const { conversationId, content, senderId } = payload;
-      
+
       this.logger.log(`Received message from user ${senderId} in conversation ${conversationId}`);
-      
+
       // Validate conversation exists
       const conversation = await this.conversationRepository.findOne({
         where: { id: conversationId },
         relations: ['user1', 'user2'],
       });
-      
+
       if (!conversation) {
         this.logger.error(`Conversation ${conversationId} not found`);
         return { success: false, error: 'Conversation not found' };
@@ -234,7 +234,7 @@ export class MessengerGateway
     @MessageBody() payload: VideoCallPayload,
   ) {
     this.logger.log(`Video call offer from ${payload.from} to ${payload.to} in conversation ${payload.conversationId}`);
-    
+
     const recipientSocket = this.connectedUsers.get(payload.to);
     if (recipientSocket) {
       recipientSocket.emit('video-call-offer', {
@@ -251,13 +251,77 @@ export class MessengerGateway
     return { success: true };
   }
 
+  @SubscribeMessage('video-call-decline')
+  async handleVideoCallDecline(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: VideoCallPayload,
+  ) {
+    this.logger.log(`Video call declined by ${payload.from} for ${payload.to}`);
+
+    const recipientSocket = this.connectedUsers.get(payload.to);
+    if (recipientSocket) {
+      recipientSocket.emit('video-call-declined', {
+        from: payload.from,
+        conversationId: payload.conversationId,
+      });
+    }
+
+    // Create system message for declined call
+    try {
+      const systemMessage = await this.messagesService.createMessage(
+        payload.conversationId,
+        payload.from,
+        '📞 Video call declined',
+        'text'
+      );
+
+      this.server.to(payload.conversationId).emit('newMessage', {
+        ...systemMessage,
+        sender: { id: payload.from, name: 'System' }
+      });
+
+    } catch (error: any) {
+      this.logger.error(`Error creating declined call message: ${error.message}`);
+    }
+
+    return { success: true };
+  }
+
+  @SubscribeMessage('video-call-started')
+  async handleVideoCallStarted(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: VideoCallPayload,
+  ) {
+    this.logger.log(`Video call started between ${payload.from} and ${payload.to}`);
+    
+    // Create system message for call started
+    try {
+      const systemMessage = await this.messagesService.createMessage(
+        payload.conversationId,
+        payload.from,
+        '📞 Video call started',
+        'text'
+      );
+
+      this.server.to(payload.conversationId).emit('newMessage', {
+        ...systemMessage,
+        sender: { id: payload.from, name: 'System' }
+      });
+
+    } catch (error: any) {
+      this.logger.error(`Error creating call started message: ${error.message}`);
+    }
+
+    return { success: true };
+  }
+
   @SubscribeMessage('video-call-answer')
   handleVideoCallAnswer(
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: VideoCallPayload,
   ) {
     this.logger.log(`Video call answer from ${payload.from} to ${payload.to}`);
-    
+
     const recipientSocket = this.connectedUsers.get(payload.to);
     if (recipientSocket) {
       recipientSocket.emit('video-call-answer', {
@@ -271,18 +335,47 @@ export class MessengerGateway
   }
 
   @SubscribeMessage('video-call-end')
-  handleVideoCallEnd(
+  async handleVideoCallEnd(
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: VideoCallPayload,
   ) {
-    this.logger.log(`Video call ended by ${payload.from} for ${payload.to}`);
-    
+    this.logger.log(`Video call ended by ${payload.from} for ${payload.to}, reason: ${payload.reason || 'normal'}`);
+
     const recipientSocket = this.connectedUsers.get(payload.to);
     if (recipientSocket) {
       recipientSocket.emit('video-call-end', {
         from: payload.from,
         conversationId: payload.conversationId,
+        reason: payload.reason,
       });
+    }
+
+    // Create system message for missed call or call ended
+    try {
+      let messageContent = '';
+      if (payload.reason === 'timeout') {
+        messageContent = '📞 Missed video call';
+      } else if (payload.reason === 'busy') {
+        messageContent = '📞 Video call - User busy';
+      } else {
+        messageContent = '📞 Video call ended';
+      }
+
+      const systemMessage = await this.messagesService.createMessage(
+        payload.conversationId,
+        payload.from,
+        messageContent,
+        'text'
+      );
+
+      // Emit the system message to both users
+      this.server.to(payload.conversationId).emit('newMessage', {
+        ...systemMessage,
+        sender: { id: payload.from, name: 'System' }
+      });
+
+    } catch (error: any) {
+      this.logger.error(`Error creating call end message: ${error.message}`);
     }
 
     return { success: true };
