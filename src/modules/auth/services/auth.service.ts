@@ -28,6 +28,8 @@ import { MailService } from '@/shared/mail/mail.service';
 import { RequestContext } from '@/shared/request-context/request-context.dto';
 import { UnitOfWork } from '@/shared/unit-of-work/unit-of-work.service';
 
+import { TaxCodeReportDto } from '../dtos/auth-report-taxcode-input.dto';
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -134,14 +136,37 @@ export class AuthService {
     ctx: RequestContext,
     input: RegisterCompanyInput,
   ): Promise<{ message: string }> {
-    const { taxCode, companyEmail, ...userInput } = input;
+    const { taxCode, business_license_url, ...userInput } = input;
 
     // Step 1: Check if the company already exists
     const existingCompany = await this.companyService.findByTaxCode(taxCode);
+
     if (existingCompany) {
-      throw new BadRequestException(
-        'A company with this tax code already exists.',
-      );
+      // If the company has not been verified and it has been more than 24 hours -> delete it immediately
+      if (!existingCompany.isVerified) {
+        const hoursSinceCreated =
+          (Date.now() - existingCompany.createdAt.getTime()) / (1000 * 60 * 60);
+
+        if (hoursSinceCreated > 24) {
+          // Delete the old company and related users
+          const users = await this.userService.findUserByCompanyId(
+            existingCompany.id,
+          );
+          await this.userService.deleteUser(users[0].id);
+          await this.companyService.delete(existingCompany.id);
+          // Continue with the new registration
+        } else {
+          // The company was created within 24 hours -> report an error
+          throw new BadRequestException(
+            'A company with this tax code is pending verification. Please try again later or contact support.',
+          );
+        }
+      } else {
+        // The company has been verified -> report an error
+        throw new BadRequestException(
+          'A company with this tax code already exists.',
+        );
+      }
     }
 
     // Step 2: Fetch data from external API
@@ -171,11 +196,13 @@ export class AuthService {
           {
             companyName: externalCompanyData.name || 'Unknown',
             taxCode,
-            email: companyEmail,
+            email: userInput.email,
             address: externalCompanyData.address
               ? [externalCompanyData.address]
               : [],
             industry: externalCompanyData.industry || 'Unknown',
+            businessLicenseUrl: business_license_url,
+            isVerified: false,
           },
           manager,
         );
@@ -200,7 +227,7 @@ export class AuthService {
     );
 
     await this.mailService.sendMail(
-      companyEmail,
+      userInput.email,
       'Verify Your Company Registration',
       './verify-company',
       {
@@ -234,6 +261,17 @@ export class AuthService {
     if (!user) {
       throw new NotFoundException('User not found.');
     }
+
+    const company = await this.companyService.findOne(
+      String(user.companyId),
+      null,
+    );
+    if (!company) {
+      throw new NotFoundException('Company not found.');
+    }
+    await this.companyService.update(company.id, {
+      isVerified: true,
+    });
 
     // Check if already active
     if (!user.isAccountDisabled) {
@@ -297,5 +335,36 @@ export class AuthService {
     });
 
     return { message: 'Verification email sent.' };
+  }
+
+  async handleTaxCodeReport(
+    reportData: TaxCodeReportDto,
+  ): Promise<{ message: string }> {
+    // Gửi email cho admin
+    await this.mailService.sendMail(
+      process.env.MAIL_USER || 'admin@company.com',
+      'Tax Code Duplication Report',
+      './admin-tax-code-report',
+      {
+        taxCode: reportData.taxCode,
+        companyName: reportData.companyName,
+        userEmail: reportData.userEmail,
+        contactPhone: reportData.contactPhone,
+        additionalInfo: reportData.additionalInfo,
+        reportedAt: reportData.timestamp,
+      },
+    );
+
+    // Lưu report vào database (optional)
+    // await this.reportRepository.save({
+    //   type: reportData.reportType,
+    //   data: reportData,
+    //   status: 'PENDING',
+    //   createdAt: new Date(),
+    // });
+
+    return {
+      message: 'Report sent successfully. Admin will review within 24 hours.',
+    };
   }
 }

@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tax Code Duplication Report</title>
+    <!--[if mso]>
+    <noscript>
+        <xml>
+            <o:OfficeDocumentSettings>
+                <o:PixelsPerInch>96</o:PixelsPerInch>
+            </o:OfficeDocumentSettings>
+        </xml>
+    </noscript>
+    <![endif]-->
+    <style>
+        /* Reset styles */
+        body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+        table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+        img { -ms-interpolation-mode: bicubic; }
+
+        /* Remove default styling */
+        img { border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+        table { border-collapse: collapse !important; }
+        body { height: 100% !important; margin: 0 !important; padding: 0 !important; width: 100% !important; }
+
+        /* Mobile styles */
+        @media screen and (max-width: 600px) {
+            .mobile-hide { display: none !important; }
+            .mobile-center { text-align: center !important; }
+            .container { padding: 0 !important; width: 100% !important; }
+            .content { padding: 20px !important; }
+        }
+    </style>
+</head>
+<body style="margin: 0; padding: 0; font-family: Arial, sans-serif; font-size: 16px; line-height: 1.6; color: #333333; background-color: #f4f4f4;">
+    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+        <tr>
+            <td align="center" style="padding: 40px 0;">
+                <table class="container" role="presentation" border="0" cellpadding="0" cellspacing="0" width="600" style="background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <!-- Header -->
+                    <tr>
+                        <td align="center" style="padding: 40px 20px; background-color: #dc2626; border-radius: 8px 8px 0 0;">
+                            <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: bold;">
+                                ⚠️ Tax Code Duplication Report
+                            </h1>
+                            <p style="margin: 10px 0 0 0; color: #fef2f2; font-size: 16px;">
+                                Immediate Attention Required
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Alert Box -->
+                    <tr>
+                        <td class="content" style="padding: 30px 40px 20px 40px;">
+                            <div style="background-color: #fef2f2; border-left: 4px solid #dc2626; padding: 15px; margin-bottom: 30px; border-radius: 4px;">
+                                <p style="margin: 0; color: #991b1b; font-weight: bold;">
+                                    A user has reported that they cannot register their company because the tax code already exists in the system.
+                                </p>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <!-- Report Details -->
+                    <tr>
+                        <td class="content" style="padding: 0 40px 30px 40px;">
+                            <h2 style="color: #1f2937; font-size: 20px; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #e5e7eb;">
+                                Report Details
+                            </h2>
+                            
+                            <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+                                <tr>
+                                    <td style="padding: 10px 0;">
+                                        <strong style="color: #6b7280; display: inline-block; width: 140px;">Company Name:</strong>
+                                        <span style="color: #1f2937; font-weight: 500;">{{companyName}}</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 10px 0;">
+                                        <strong style="color: #6b7280; display: inline-block; width: 140px;">Tax Code:</strong>
+                                        <span style="background-color: #fef3c7; padding: 2px 8px; border-radius: 4px; color: #92400e; font-weight: bold;">{{taxCode}}</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 10px 0;">
+                                        <strong style="color: #6b7280; display: inline-block; width: 140px;">User Email:</strong>
+                                        <a href="mailto:{{userEmail}}" style="color: #2563eb; text-decoration: none;">{{userEmail}}</a>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 10px 0;">
+                                        <strong style="color: #6b7280; display: inline-block; width: 140px;">Contact Phone:</strong>
+                                        <a href="tel:{{contactPhone}}" style="color: #2563eb; text-decoration: none;">{{contactPhone}}</a>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 10px 0;">
+                                        <strong style="color: #6b7280; display: inline-block; width: 140px;">Reported At:</strong>
+                                        <span style="color: #1f2937;">{{reportedAt}}</span>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            {{#if additionalInfo}}
+                            <div style="margin-top: 30px;">
+                                <h3 style="color: #1f2937; font-size: 18px; margin-bottom: 10px;">
+                                    Additional Information from User
+                                </h3>
+                                <div style="background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 15px;">
+                                    <p style="margin: 0; color: #4b5563; white-space: pre-wrap;">{{additionalInfo}}</p>
+                                </div>
+                            </div>
+                            {{/if}}
+                        </td>
+                    </tr>
+
+                    <!-- Action Required -->
+                    <tr>
+                        <td class="content" style="padding: 0 40px 30px 40px;">
+                            <div style="background-color: #eff6ff; border-radius: 8px; padding: 20px;">
+                                <h3 style="color: #1e40af; font-size: 18px; margin: 0 0 15px 0;">
+                                    🔍 Action Required
+                                </h3>
+                                <ol style="margin: 0; padding-left: 20px; color: #3730a3;">
+                                    <li style="margin-bottom: 8px;">Check if tax code <strong>{{taxCode}}</strong> exists in the database</li>
+                                    <li style="margin-bottom: 8px;">Verify if the existing company is legitimate</li>
+                                    <li style="margin-bottom: 8px;">Contact the user at <strong>{{contactPhone}}</strong> or <strong>{{userEmail}}</strong></li>
+                                    <li style="margin-bottom: 8px;">Resolve the conflict and update the user</li>
+                                </ol>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <!-- Quick Actions -->
+                    <tr>
+                        <td class="content" align="center" style="padding: 0 40px 40px 40px;">
+                            <table role="presentation" border="0" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td align="center">
+                                        <a href="{{process.env.ADMIN_DASHBOARD_URL}}/companies?taxCode={{taxCode}}" 
+                                           style="background-color: #2563eb; color: #ffffff; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; margin: 0 10px;">
+                                            View in Dashboard
+                                        </a>
+                                    </td>
+                                    <td align="center">
+                                        <a href="mailto:{{userEmail}}?subject=Re: Tax Code Registration Issue - {{taxCode}}" 
+                                           style="background-color: #10b981; color: #ffffff; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; margin: 0 10px;">
+                                            Email User
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="padding: 30px 40px; background-color: #f9fafb; border-top: 1px solid #e5e7eb; border-radius: 0 0 8px 8px;">
+                            <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+                                <tr>
+                                    <td align="center">
+                                        <p style="margin: 0 0 10px 0; color: #6b7280; font-size: 14px;">
+                                            This is an automated report from the F-Career Registration System
+                                        </p>
+                                        <p style="margin: 0; color: #9ca3af; font-size: 12px;">
+                                            Please handle this report within 24 hours to ensure good user experience.
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

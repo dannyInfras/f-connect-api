@@ -406,4 +406,8 @@ export class UserService {
       return userOutput;
     });
   }
+
+  async deleteUser(userId: number): Promise<void> {
+    await this.repository.delete(userId);
+  }
 }

@@ -76,7 +76,7 @@ export class CompanyService {
     return { companies, count };
   }
 
-  async update(id: string, dto: UpdateCompanyDto, actor: Actor) {
+  async update(id: string, dto: UpdateCompanyDto, actor?: Actor) {
     const company = await this.companyRepo.findOne({
       where: { id },
       relations: ['users'],
@@ -84,7 +84,10 @@ export class CompanyService {
 
     if (!company) throw new NotFoundException('Company not found');
 
-    if (!this.aclService.forActor(actor).canDoAction(Action.Update, company)) {
+    if (
+      actor &&
+      !this.aclService.forActor(actor).canDoAction(Action.Update, company)
+    ) {
       throw new UnauthorizedException();
     }
 
@@ -92,7 +95,7 @@ export class CompanyService {
     return this.companyRepo.save(company);
   }
 
-  async delete(id: string, actor: Actor) {
+  async delete(id: string, actor?: Actor) {
     const company = await this.companyRepo.findOne({
       where: { id },
       relations: ['users'],
@@ -100,7 +103,10 @@ export class CompanyService {
 
     if (!company) throw new NotFoundException('Company not found');
 
-    if (!this.aclService.forActor(actor).canDoAction(Action.Delete, company)) {
+    if (
+      actor &&
+      !this.aclService.forActor(actor).canDoAction(Action.Delete, company)
+    ) {
       throw new UnauthorizedException();
     }
 
