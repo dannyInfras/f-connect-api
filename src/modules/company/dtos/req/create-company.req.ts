@@ -2,6 +2,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
   IsArray,
+  IsBoolean,
   IsDateString,
   IsEmail,
   IsInt,
@@ -109,6 +110,13 @@ export class CreateCompanyReqDto {
   @IsUrl()
   businessLicenseUrl?: string;
 
+  @ApiProperty({
+    example: false,
+    description: 'Is the company verified?',
+  })
+  @IsBoolean()
+  isVerified: boolean;
+
   static example = {
     companyName: 'OpenAI',
     foundedAt: '2024-01-01T00:00:00.000Z',
@@ -122,5 +130,6 @@ export class CreateCompanyReqDto {
     workImageUrl: ['https://work-image.url/1.png'],
     taxCode: '123456789',
     businessLicenseUrl: 'https://license.url/doc.pdf',
+    isVerified: false,
   };
 }

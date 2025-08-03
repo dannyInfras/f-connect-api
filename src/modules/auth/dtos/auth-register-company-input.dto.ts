@@ -5,7 +5,9 @@ import {
   IsEmail,
   IsEnum,
   IsNotEmpty,
+  IsOptional,
   IsString,
+  IsUrl,
   Length,
   MaxLength,
 } from 'class-validator';
@@ -55,4 +57,9 @@ export class RegisterCompanyInput {
   @ApiProperty({ default: true })
   @IsBoolean()
   isAccountDisabled: boolean = true;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsUrl()
+  business_license_url?: string;
 }

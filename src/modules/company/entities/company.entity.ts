@@ -78,4 +78,7 @@ export class Company {
 
   @OneToMany(() => User, (user) => user.company)
   users: User[];
+
+  @Column({ default: false })
+  isVerified: boolean;
 }

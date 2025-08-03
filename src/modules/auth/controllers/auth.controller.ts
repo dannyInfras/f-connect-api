@@ -36,6 +36,8 @@ import { AppLogger } from '@/shared/logger/logger.service';
 import { ReqContext } from '@/shared/request-context/req-context.decorator';
 import { RequestContext } from '@/shared/request-context/request-context.dto';
 
+import { TaxCodeReportDto } from '../dtos/auth-report-taxcode-input.dto';
+
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
@@ -121,7 +123,7 @@ export class AuthController {
     description: 'Company registered successfully',
   })
   async registerCompany(
-    @Body() input: RegisterCompanyInput, // Use the combined DTO
+    @Body() input: RegisterCompanyInput,
     @ReqContext() ctx: RequestContext,
   ): Promise<{ message: string }> {
     try {
@@ -220,5 +222,13 @@ export class AuthController {
       );
       res.redirect(`${frontendUrl}/error?message=Authentication failed`);
     }
+  }
+
+  @Post('report/tax-code-issue')
+  @ApiOperation({ summary: 'Report duplicate tax code issue' })
+  async reportTaxCodeIssue(
+    @Body() reportData: TaxCodeReportDto,
+  ): Promise<{ message: string }> {
+    return this.authService.handleTaxCodeReport(reportData);
   }
 }
