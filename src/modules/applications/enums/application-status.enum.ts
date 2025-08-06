@@ -1,5 +1,7 @@
 export enum ApplicationStatus {
   APPLIED = 'APPLIED',
+  IN_REVIEW = 'IN_REVIEW',
+  IN_SHORTLIST = 'SHORTED_LIST',
   INTERVIEW = 'INTERVIEW',
   HIRED = 'HIRED',
   REJECTED = 'REJECTED',

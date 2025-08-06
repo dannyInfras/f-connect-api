@@ -464,8 +464,16 @@ export class JobApplicationService {
     // Define allowed transitions for each status
     const allowedTransitions: Record<ApplicationStatus, ApplicationStatus[]> = {
       [ApplicationStatus.APPLIED]: [
+        ApplicationStatus.IN_REVIEW,
+        ApplicationStatus.IN_SHORTLIST,
+        ApplicationStatus.REJECTED,
+      ],
+      [ApplicationStatus.IN_REVIEW]: [
+        ApplicationStatus.IN_SHORTLIST,
+        ApplicationStatus.REJECTED,
+      ],
+      [ApplicationStatus.IN_SHORTLIST]: [
         ApplicationStatus.INTERVIEW,
-        ApplicationStatus.HIRED,
         ApplicationStatus.REJECTED,
       ],
       [ApplicationStatus.INTERVIEW]: [
