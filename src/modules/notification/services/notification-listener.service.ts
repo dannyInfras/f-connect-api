@@ -94,6 +94,18 @@ export class NotificationListenerService implements OnModuleInit {
     const { jobTitle, newStatus, companyName } = data;
 
     switch (newStatus) {
+      case ApplicationStatus.IN_REVIEW:
+        return {
+          title: 'The HR team has seen your application',
+          content: `Your application for "${jobTitle}" at ${companyName} has been viewed by the HR team. They will be in touch with you regarding next steps.`,
+        };
+
+      case ApplicationStatus.IN_SHORTLIST:
+        return {
+          title: 'Application Reviewed',
+          content: `Your application for "${jobTitle}" at ${companyName} has been reviewed. The company will be in touch with you regarding next steps.`,
+        };
+
       case ApplicationStatus.INTERVIEW:
         return {
           title: 'Interview Scheduled!',
