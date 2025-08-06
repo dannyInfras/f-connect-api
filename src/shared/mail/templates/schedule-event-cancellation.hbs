@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Cancellation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #f44336;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 5px 5px 0 0;
+        }
+        .content {
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 0 0 5px 5px;
+        }
+        .event-details {
+            background-color: white;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            border-left: 4px solid #f44336;
+        }
+        .event-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #C62828;
+            margin-bottom: 10px;
+        }
+        .event-info {
+            margin: 8px 0;
+        }
+        .event-info strong {
+            color: #555;
+        }
+        .cancellation-notice {
+            background-color: #FFEBEE;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            border-left: 4px solid #f44336;
+        }
+        .role-badge {
+            display: inline-block;
+            background-color: #2196F3;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            color: #666;
+            font-size: 12px;
+        }
+        .button {
+            display: inline-block;
+            background-color: #2196F3;
+            color: white;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 10px 5px;
+        }
+        .button:hover {
+            background-color: #1976D2;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>{{eventType}} Cancelled</h1>
+    </div>
+    
+    <div class="content">
+        <p>Hello {{participantName}},</p>
+        
+        <p>We regret to inform you that the {{eventType}} event you were scheduled to attend has been cancelled.</p>
+        
+        <div class="cancellation-notice">
+            <h3>⚠️ Event Cancellation Notice</h3>
+            <p>This event has been cancelled and will no longer take place.</p>
+        </div>
+        
+        <div class="event-details">
+            <div class="event-title">{{eventTitle}}</div>
+            
+            <div class="event-info">
+                <strong>Originally Scheduled:</strong> {{eventDateTime}}
+            </div>
+            
+            {{#if eventLocation}}
+            <div class="event-info">
+                <strong>Location:</strong> {{eventLocation}}
+            </div>
+            {{/if}}
+            
+            <div class="event-info">
+                <strong>Your Role:</strong> <span class="role-badge">{{participantRole}}</span>
+            </div>
+        </div>
+        
+        <p>We apologize for any inconvenience this may cause. If you have any questions or if a new date is scheduled, you will be notified separately.</p>
+        
+        <div style="text-align: center; margin: 20px 0;">
+            <a href="{{dashboardUrl}}" class="button">View Dashboard</a>
+        </div>
+        
+        <p>Thank you for your understanding.</p>
+        
+        <p>Best regards,<br>
+        The FConnect Team</p>
+    </div>
+    
+    <div class="footer">
+        <p>This is an automated message from FConnect. Please do not reply to this email.</p>
+        <p>If you have any questions, please contact our support team.</p>
+    </div>
+</body>
+</html> 

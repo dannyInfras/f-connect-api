@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Update</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #FF9800;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 5px 5px 0 0;
+        }
+        .content {
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 0 0 5px 5px;
+        }
+        .event-details {
+            background-color: white;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            border-left: 4px solid #FF9800;
+        }
+        .event-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #E65100;
+            margin-bottom: 10px;
+        }
+        .event-info {
+            margin: 8px 0;
+        }
+        .event-info strong {
+            color: #555;
+        }
+        .changes-section {
+            background-color: #FFF3E0;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            border-left: 4px solid #FF9800;
+        }
+        .change-item {
+            margin: 5px 0;
+            padding: 5px 0;
+        }
+        .role-badge {
+            display: inline-block;
+            background-color: #2196F3;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            color: #666;
+            font-size: 12px;
+        }
+        .button {
+            display: inline-block;
+            background-color: #FF9800;
+            color: white;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 10px 5px;
+        }
+        .button:hover {
+            background-color: #F57C00;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>{{eventType}} Update</h1>
+    </div>
+    
+    <div class="content">
+        <p>Hello {{participantName}},</p>
+        
+        <p>The {{eventType}} event you're scheduled to attend has been updated. Please review the changes below:</p>
+        
+        <div class="event-details">
+            <div class="event-title">{{eventTitle}}</div>
+            
+            <div class="event-info">
+                <strong>Date & Time:</strong> {{eventDateTime}}
+            </div>
+            
+            {{#if eventLocation}}
+            <div class="event-info">
+                <strong>Location:</strong> {{eventLocation}}
+            </div>
+            {{/if}}
+            
+            <div class="event-info">
+                <strong>Your Role:</strong> <span class="role-badge">{{participantRole}}</span>
+            </div>
+            
+            {{#if eventNotes}}
+            <div class="event-info">
+                <strong>Notes:</strong> {{eventNotes}}
+            </div>
+            {{/if}}
+        </div>
+        
+        {{#if changes}}
+        <div class="changes-section">
+            <h3>Changes Made:</h3>
+            {{#each changes}}
+            <div class="change-item">
+                <strong>{{this.field}}:</strong> {{this.description}}
+            </div>
+            {{/each}}
+        </div>
+        {{/if}}
+        
+        <p>If you have any questions about these changes or need to reschedule, please contact the event organizer.</p>
+        
+        <div style="text-align: center; margin: 20px 0;">
+            <a href="{{eventUrl}}" class="button">View Event Details</a>
+        </div>
+        
+        <p>Thank you for your understanding!</p>
+        
+        <p>Best regards,<br>
+        The FConnect Team</p>
+    </div>
+    
+    <div class="footer">
+        <p>This is an automated message from FConnect. Please do not reply to this email.</p>
+        <p>If you have any questions, please contact our support team.</p>
+    </div>
+</body>
+</html> 
