@@ -140,7 +140,7 @@ export class CandidateProfileRepository {
       social: entity.social || {},
       experiences: entity.experiences || [],
       education: entity.educations || [],
-      skills: [],
+      skills: entity.skills || [],
       portfolios: [],
       birthDate: entity.birthDate,
       hasUpdated: entity.hasUpdated,

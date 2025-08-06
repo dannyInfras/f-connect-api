@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -162,6 +163,15 @@ export class CandidateProfileService {
       .canDoAction(Action.Update, profileWithUser);
     if (!isAllowed) {
       throw new ForbiddenException();
+    }
+
+    // Check for duplicate skill names and throw BadRequestException if found
+    if (dto.skills) {
+      const skillNames = dto.skills.map((skill) => skill.name);
+      const uniqueSkillNames = new Set(skillNames);
+      if (uniqueSkillNames.size !== skillNames.length) {
+        throw new BadRequestException('Duplicate skill names are not allowed');
+      }
     }
 
     this.logger.log(

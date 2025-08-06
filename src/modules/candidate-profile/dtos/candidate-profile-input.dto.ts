@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
+  IsArray,
   IsBoolean,
   IsOptional,
   IsString,
@@ -8,6 +9,7 @@ import {
 } from 'class-validator';
 
 import { ContactDto } from './contact.dto';
+import { SkillDataDto } from './skill-data.dto';
 import { SocialDto } from './social.dto';
 
 export class CandidateProfileInputDto {
@@ -58,12 +60,12 @@ export class CandidateProfileInputDto {
   @Type(() => SocialDto)
   social?: SocialDto;
 
-  // @ApiProperty({ type: [SkillDto] })
-  // @ValidateNested({ each: true })
-  // @Type(() => SkillDto)
-  // @IsArray()
-  // @IsOptional()
-  // skills?: SkillDto[];
+  @ApiProperty({ type: [SkillDataDto] })
+  @ValidateNested({ each: true })
+  @Type(() => SkillDataDto)
+  @IsArray()
+  @IsOptional()
+  skills?: SkillDataDto[];
 
   // @ApiProperty({ type: [PortfolioDto] })
   // @ValidateNested({ each: true })
