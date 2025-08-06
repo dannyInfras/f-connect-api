@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Expose, Type } from 'class-transformer';
 
 import { ContactDto } from './contact.dto';
+import { SkillDataDto } from './skill-data.dto';
 import { SocialDto } from './social.dto';
 export class CandidateProfileResponseDto {
   @Expose()
@@ -46,10 +47,10 @@ export class CandidateProfileResponseDto {
   @Type(() => SocialDto)
   social: SocialDto;
 
-  //@Expose()
-  // @ApiProperty({ type: [SkillDto] })
-  // @Type(() => SkillDto)
-  // skills: SkillDto[];
+  @Expose()
+  @ApiProperty({ type: [SkillDataDto] })
+  @Type(() => SkillDataDto)
+  skills: SkillDataDto[];
 
   // @Expose()
   // @ApiProperty({ type: [PortfolioDto] })

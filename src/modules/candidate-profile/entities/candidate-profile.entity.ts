@@ -12,6 +12,7 @@ import { Experience } from '@/modules/experience/entities/experience.entity';
 import { User } from '@/modules/user/entities/user.entity';
 
 import { ContactDto } from '../dtos/contact.dto';
+import { SkillDataDto } from '../dtos/skill-data.dto';
 import { SocialDto } from '../dtos/social.dto';
 @Entity('candidate_profile')
 export class CandidateProfile {
@@ -57,6 +58,9 @@ export class CandidateProfile {
 
   @Column({ type: 'jsonb', nullable: true })
   social: SocialDto;
+
+  @Column({ type: 'jsonb', nullable: true })
+  skills: SkillDataDto[];
 
   @Column({ type: 'varchar', length: 50, nullable: true })
   birthDate: string;
