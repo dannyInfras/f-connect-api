@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 
 import { CV } from '../entities/cv.entity';
+import { CvOptimizationHistory } from '../entities/cv-optimization-history.entity';
 import {
   AiOptimizerInput,
   AiOptimizerOutput,
@@ -10,14 +11,17 @@ import {
   ExperienceSuggestion,
   SuggestionWithReason,
 } from '../interfaces/ai-optimizer.interface';
+import { CvOptimizationHistoryRepository } from '../repositories/cv-optimization-history.repository';
 
 @Injectable()
 export class CvOptimizerService {
   private readonly logger = new Logger(CvOptimizerService.name);
   private readonly openaiApiKey: string;
-  private readonly openaiApiUrl = 'https://api.openai.com/v1/chat/completions';
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly historyRepository: CvOptimizationHistoryRepository,
+  ) {
     this.openaiApiKey = this.configService.get<string>('OPENAI_API_KEY') || '';
   }
 
@@ -37,10 +41,22 @@ export class CvOptimizerService {
 
       this.applySuggestions(optimizedCv, suggestions);
 
-      return {
+      const result = {
         optimizedCv,
         suggestions,
       };
+
+      await this.historyRepository.create({
+        cvId: input.cv.id,
+        userId: input.userId,
+        jobTitle: input.jobTitle,
+        jobDescription: input.jobDescription,
+        suggestions,
+        optimizedCv,
+        isApplied: false,
+      });
+
+      return result;
     } catch (error: any) {
       this.logger.error(`Error optimizing CV: ${error.message}`, error.stack);
       throw error;
@@ -163,9 +179,9 @@ Important guidelines:
     jobDescription?: string,
   ): AiOptimizerOutput['suggestions'] {
     const title = jobTitle || 'the position';
-    
+
     // Extract some basic keywords from job description if available
-    const keywords = jobDescription 
+    const keywords = jobDescription
       ? this.extractBasicKeywords(jobDescription)
       : ['communication', 'teamwork', 'problem-solving'];
 
@@ -184,22 +200,26 @@ Important guidelines:
     };
 
     // Create experience suggestions with reasons
-    const experience: ExperienceSuggestion[] = (cv.experience || []).map((exp, index) => ({
-      index,
-      field: 'description',
-      suggestion: `${exp.description} Demonstrated expertise in ${keywords.slice(0, 3).join(', ')}, contributing to successful project outcomes.`,
-      reason: `This description emphasizes your achievements and the specific skills that are relevant to the ${title} position.`,
-    }));
+    const experience: ExperienceSuggestion[] = (cv.experience || []).map(
+      (exp, index) => ({
+        index,
+        field: 'description',
+        suggestion: `${exp.description} Demonstrated expertise in ${keywords.slice(0, 3).join(', ')}, contributing to successful project outcomes.`,
+        reason: `This description emphasizes your achievements and the specific skills that are relevant to the ${title} position.`,
+      }),
+    );
 
     // Create education suggestions with reasons
-    const education: EducationSuggestion[] = (cv.education || []).map((edu, index) => ({
-      index,
-      field: 'description',
-      suggestion: edu.description
-        ? `${edu.description} Coursework included ${keywords.slice(0, 2).join(' and ')}, providing relevant knowledge for the ${title} position.`
-        : `Relevant coursework included ${keywords.slice(0, 3).join(', ')}, providing a strong foundation for ${title}.`,
-      reason: `This connects your educational background to the specific requirements of the ${title} position.`,
-    }));
+    const education: EducationSuggestion[] = (cv.education || []).map(
+      (edu, index) => ({
+        index,
+        field: 'description',
+        suggestion: edu.description
+          ? `${edu.description} Coursework included ${keywords.slice(0, 2).join(' and ')}, providing relevant knowledge for the ${title} position.`
+          : `Relevant coursework included ${keywords.slice(0, 3).join(', ')}, providing a strong foundation for ${title}.`,
+        reason: `This connects your educational background to the specific requirements of the ${title} position.`,
+      }),
+    );
 
     return {
       summary,
@@ -211,15 +231,38 @@ Important guidelines:
 
   private extractBasicKeywords(text: string): string[] {
     const commonKeywords = [
-      'JavaScript', 'TypeScript', 'React', 'Angular', 'Vue', 'Node.js',
-      'Python', 'Java', 'C#', 'PHP', 'Ruby', 'Go', 'Rust',
-      'AWS', 'Azure', 'GCP', 'Docker', 'Kubernetes', 'CI/CD',
-      'Agile', 'Scrum', 'Kanban', 'TDD', 'BDD',
-      'communication', 'teamwork', 'leadership', 'problem-solving',
+      'JavaScript',
+      'TypeScript',
+      'React',
+      'Angular',
+      'Vue',
+      'Node.js',
+      'Python',
+      'Java',
+      'C#',
+      'PHP',
+      'Ruby',
+      'Go',
+      'Rust',
+      'AWS',
+      'Azure',
+      'GCP',
+      'Docker',
+      'Kubernetes',
+      'CI/CD',
+      'Agile',
+      'Scrum',
+      'Kanban',
+      'TDD',
+      'BDD',
+      'communication',
+      'teamwork',
+      'leadership',
+      'problem-solving',
     ];
 
     return commonKeywords
-      .filter(keyword => text.toLowerCase().includes(keyword.toLowerCase()))
+      .filter((keyword) => text.toLowerCase().includes(keyword.toLowerCase()))
       .slice(0, 5);
   }
 
@@ -236,9 +279,25 @@ Important guidelines:
     if (suggestions.skills && suggestions.skills.suggestions.length > 0) {
       cv.skills = [...suggestions.skills.suggestions];
     }
+  }
 
-    // We don't automatically apply experience and education suggestions
-    // as these would typically be reviewed by the user first
+  async getOptimizationHistory(cvId: string): Promise<CvOptimizationHistory[]> {
+    return this.historyRepository.findByCvId(cvId);
+  }
+
+  // Quick restore từ history
+  async restoreFromHistory(historyId: string): Promise<AiOptimizerOutput> {
+    const history = await this.historyRepository.findById(historyId);
+    if (!history) {
+      throw new Error('History not found');
+    }
+
+    // await this.historyRepository.markAsApplied(historyId);
+
+    return {
+      optimizedCv: history.optimizedCv as CV,
+      suggestions: history.suggestions,
+    };
   }
 
   private cloneCV(cv: CV): CV {

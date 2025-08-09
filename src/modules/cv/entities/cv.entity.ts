@@ -111,10 +111,10 @@ export class CV {
   @IsNotEmpty()
   email: string;
 
-  @Column({ type: 'bigint' })
-  @IsNumber()
+  @Column({ type: 'text' })
+  @IsString()
   @IsNotEmpty()
-  phone: number;
+  phone: string;
 
   @Column({ type: 'text', nullable: true })
   @IsString()

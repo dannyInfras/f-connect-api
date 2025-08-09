@@ -27,8 +27,8 @@ export class CvResDto {
   @ApiProperty({ example: ' https://example.com/cv.pdf' })
   email: string;
 
-  @ApiProperty({ example: '+1234567890' })
-  phone: number;
+  @ApiProperty({ example: '0234567890' })
+  phone: string;
 
   @ApiProperty({ example: 'https://www.linkedin.com/in/phamnampuong' })
   linkedin?: string;

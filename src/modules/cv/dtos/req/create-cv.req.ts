@@ -33,9 +33,9 @@ export class CreateCvReqDto {
   @IsString()
   email: string;
 
-  @ApiProperty({ example: '+1234567890' })
+  @ApiProperty({ example: '0234567890' })
   @IsNotEmpty()
-  phone: number;
+  phone: string;
 
   @ApiProperty({ example: 'https://www.linkedin.com/in/phamnampuong' })
   @IsOptional()

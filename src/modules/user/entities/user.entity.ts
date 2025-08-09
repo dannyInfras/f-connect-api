@@ -67,6 +67,9 @@ export class User {
   @Column({ name: 'dob', nullable: true })
   dob?: Date;
 
+  @Column({ name: 'point', type: 'integer', default: 5 })
+  point: number;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
