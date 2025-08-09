@@ -1,5 +1,10 @@
 module.exports = {
   root: true,
+  ignorePatterns: [
+    'dist/**/*',
+    'node_modules/**/*',
+    'src/shared/logger/pino-logger.config.ts',
+  ],
   env: {
     node: true,
     jest: true,

@@ -6,9 +6,11 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { plainToClass } from 'class-transformer';
+import { In } from 'typeorm';
 
 import { UserAccessTokenClaims } from '@/modules/auth/dtos/auth-token-output.dto';
 import { User } from '@/modules/user/entities/user.entity';
+import { UserRepository } from '@/modules/user/repositories/user.repository';
 import { AppLogger } from '@/shared/logger/logger.service';
 
 import {
@@ -19,6 +21,7 @@ import {
 import { ScheduleEventResponseDto } from '../dtos/schedule-event-response.dto';
 import { ScheduleEvent } from '../entities/schedule-event.entity';
 import { EventStatus } from '../enums/event-status.enum';
+import { EventType } from '../enums/event-type.enum';
 import { ResponseStatus } from '../enums/response-status.enum';
 import { ScheduleEventRepository } from '../repositories/schedule-event.repository';
 import { ScheduleParticipantRepository } from '../repositories/schedule-participant.repository';
@@ -40,6 +43,7 @@ export class ScheduleService implements IScheduleService {
     private readonly participantRepository: ScheduleParticipantRepository,
     private readonly aclService: ScheduleAclService,
     private readonly notificationService: ScheduleNotificationService,
+    private readonly userRepository: UserRepository,
     private readonly logger: AppLogger,
   ) {
     this.logger.setContext(ScheduleService.name);
@@ -62,6 +66,18 @@ export class ScheduleService implements IScheduleService {
 
     // Validate participants
     this.validateParticipants(data.participants);
+    // Ensure all participant user IDs exist to avoid FK violation
+    const uniqueIds = Array.from(
+      new Set(data.participants.map((p) => p.userId)),
+    );
+    const existingUsers = await this.userRepository.find({
+      where: { id: In(uniqueIds) },
+    });
+    if (existingUsers.length !== uniqueIds.length) {
+      throw new BadRequestException(
+        'One or more participants are invalid users',
+      );
+    }
 
     // Check for time conflicts
     const participantIds = data.participants.map((p) => p.userId.toString());
@@ -297,6 +313,43 @@ export class ScheduleService implements IScheduleService {
     return plainToClass(ScheduleEventResponseDto, event, {
       excludeExtraneousValues: true,
     });
+  }
+
+  /**
+   * Get all events for a specific application
+   */
+  async getEventsByApplication(
+    applicationId: number,
+    user: User,
+    type?: EventType,
+  ): Promise<ScheduleEventResponseDto[]> {
+    const actor = this.userToActor(user);
+
+    // Create filter for the application
+    const filter: EventFilter = {
+      applicationId,
+      type,
+      // Get all events without pagination
+      page: 1,
+      limit: 100, // reasonable limit to avoid performance issues
+    };
+
+    // Apply user-specific filters based on permissions
+    const userFilter = this.applyUserFilter(filter, actor);
+
+    const result = await this.scheduleRepository.findByFilter(userFilter);
+
+    // Filter results based on ACL permissions
+    const allowedEvents = result.data.filter((event) => {
+      return this.aclService.forActor(actor).canDoAction('read', event);
+    });
+
+    // Convert to response DTOs
+    return allowedEvents.map((event) =>
+      plainToClass(ScheduleEventResponseDto, event, {
+        excludeExtraneousValues: true,
+      }),
+    );
   }
 
   /**

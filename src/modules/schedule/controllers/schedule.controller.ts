@@ -70,6 +70,7 @@ export class ScheduleController {
       endsAt: new Date(createEventDto.endsAt),
       location: createEventDto.location,
       notes: createEventDto.notes,
+      applicationId: createEventDto.applicationId,
       participants: createEventDto.participants.map((participant) => ({
         userId: participant.userId,
         role: participant.role,

@@ -117,6 +117,14 @@ export class CreateScheduleEventDto {
   })
   notes?: string;
 
+  @ApiPropertyOptional({
+    description: 'Related application ID (link schedule to a job application)',
+    example: 18,
+  })
+  @IsOptional()
+  @IsInt({ message: 'Application ID must be a valid integer' })
+  applicationId?: number;
+
   @ApiProperty({
     description: `List of event participants (max ${SCHEDULE_CONTENT_LIMITS.MAX_PARTICIPANTS_PER_EVENT})`,
     type: [CreateParticipantDto],

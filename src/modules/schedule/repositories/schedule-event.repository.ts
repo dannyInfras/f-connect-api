@@ -33,6 +33,7 @@ export class ScheduleEventRepository implements IScheduleRepository {
       endsAt: data.endsAt,
       location: data.location,
       notes: data.notes,
+      applicationId: data.applicationId,
     });
 
     const savedEvent = await this.eventRepository.save(event);
@@ -102,6 +103,11 @@ export class ScheduleEventRepository implements IScheduleRepository {
     if (filter.companyId) {
       queryBuilder.andWhere('event.companyId = :companyId', {
         companyId: filter.companyId,
+      });
+    }
+    if (filter.applicationId) {
+      queryBuilder.andWhere('event.applicationId = :applicationId', {
+        applicationId: filter.applicationId,
       });
     }
 

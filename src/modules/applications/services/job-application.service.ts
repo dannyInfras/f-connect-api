@@ -6,6 +6,9 @@ import {
 } from '@nestjs/common';
 
 import { ROLE } from '@/modules/auth/constants/role.constant';
+import { EventType } from '@/modules/schedule/enums/event-type.enum';
+import { ParticipantRole } from '@/modules/schedule/enums/participant-role.enum';
+import { ScheduleService } from '@/modules/schedule/services/schedule.service';
 import { UserService } from '@/modules/user/services/user.service';
 import { Action } from '@/shared/acl/action.constant';
 import { AppEvents } from '@/shared/events/event.constants';
@@ -46,8 +49,95 @@ export class JobApplicationService {
     private readonly logger: AppLogger,
     private readonly userService: UserService,
     private readonly eventEmitter: EventEmitterService,
+    private readonly scheduleService: ScheduleService,
   ) {
     this.logger.setContext(JobApplicationService.name);
+  }
+
+  /**
+   * Create an interview schedule for a given application (HR or Admin only)
+   */
+  async scheduleInterviewForApplication(params: {
+    applicationId: number;
+    title?: string;
+    startsAt: string;
+    endsAt: string;
+    location?: string;
+    notes?: string;
+    interviewerIds: number[];
+    user: UserAccessTokenClaims;
+  }) {
+    const {
+      applicationId,
+      title,
+      startsAt,
+      endsAt,
+      location,
+      notes,
+      interviewerIds,
+      user,
+    } = params;
+    const application = await this.jobApplicationRepository.findOne({
+      where: { id: applicationId },
+      relations: ['user', 'job', 'job.company'],
+    });
+    if (!application) {
+      throw new NotFoundException('Application not found');
+    }
+
+    // ACL: ensure HR/admin can update application
+    if (
+      !this.aclService.forActor(user).canDoAction(Action.Update, application)
+    ) {
+      throw new UnauthorizedException(
+        'You are not authorized to schedule an interview for this application',
+      );
+    }
+
+    const companyId = application.job.company.id.toString();
+    const eventTitle =
+      title || `Interview: ${application.job.title} - ${application.user.name}`;
+
+    // Build participants: Candidate + Host (creator) + Interviewers
+    const participants = [
+      { userId: application.user.id, role: ParticipantRole.CANDIDATE },
+      { userId: user.id, role: ParticipantRole.HOST },
+      ...interviewerIds.map((id) => ({
+        userId: id,
+        role: ParticipantRole.INTERVIEWER,
+      })),
+    ];
+
+    const event = await this.scheduleService.createEvent(
+      {
+        companyId,
+        createdBy: user.id,
+        title: eventTitle,
+        type: EventType.INTERVIEW,
+        startsAt: new Date(startsAt),
+        endsAt: new Date(endsAt),
+        location,
+        notes,
+        applicationId,
+        participants,
+      },
+      user,
+    );
+
+    // Best-effort: update status to INTERVIEW if allowed
+    try {
+      if (application.status !== ApplicationStatus.INTERVIEW) {
+        await this.updateApplication({
+          id: applicationId,
+          dto: { status: ApplicationStatus.INTERVIEW },
+          user,
+        });
+      }
+    } catch {
+      // TODO: consider logging but do not block schedule creation
+    }
+
+    return event;
   }
 
   async createApplication(

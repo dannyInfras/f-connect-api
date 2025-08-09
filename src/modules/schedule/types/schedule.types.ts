@@ -19,6 +19,7 @@ export interface CreateEventData {
   endsAt: Date;
   location?: string;
   notes?: string;
+  applicationId?: number;
   participants: CreateParticipantData[];
 }
 
@@ -41,6 +42,7 @@ export interface UpdateEventData {
 export interface EventFilter {
   companyId?: string;
   userId?: number;
+  applicationId?: number;
   type?: EventType;
   status?: EventStatus;
   startDate?: Date;
@@ -70,6 +72,11 @@ export interface IScheduleService {
   declineAttendance(eventId: string, user: User): Promise<void>;
   fetchEvents(filter: EventFilter, user: User): Promise<PaginatedResult<any>>;
   getEventById(id: string, user: User): Promise<any>;
+  getEventsByApplication(
+    applicationId: number,
+    user: User,
+    type?: EventType,
+  ): Promise<any[]>;
 }
 
 export interface IScheduleRepository {

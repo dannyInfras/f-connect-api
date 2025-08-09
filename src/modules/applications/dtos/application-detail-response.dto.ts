@@ -145,6 +145,56 @@ export class CompanyProfileDto {
   contact?: any;
 }
 
+export class InterviewScheduleDto {
+  @Expose()
+  @ApiProperty({ description: 'Company name' })
+  companyName: string;
+
+  @Expose()
+  @ApiProperty({ description: 'User ID who created the event' })
+  createdBy: number;
+
+  @Expose()
+  @ApiProperty({ description: 'Event title' })
+  title: string;
+
+  @Expose()
+  @ApiProperty({ description: 'Type of event' })
+  type: string;
+
+  @Expose()
+  @ApiProperty({ description: 'Event status' })
+  status: string;
+
+  @Expose()
+  @ApiProperty({ description: 'Event start time' })
+  startsAt: Date;
+
+  @Expose()
+  @ApiProperty({ description: 'Event end time' })
+  endsAt: Date;
+
+  @Expose()
+  @ApiProperty({ description: 'Event location', required: false })
+  location?: string;
+
+  @Expose()
+  @ApiProperty({ description: 'Event notes', required: false })
+  notes?: string;
+
+  @Expose()
+  @ApiProperty({ description: 'Optimistic version' })
+  version: number;
+
+  @Expose()
+  @ApiProperty({ description: 'Creation timestamp' })
+  createdAt: Date;
+
+  @Expose()
+  @ApiProperty({ description: 'Last update timestamp' })
+  updatedAt: Date;
+}
+
 export class ApplicationDetailResponseDto {
   @Expose()
   @ApiProperty()
@@ -196,6 +246,23 @@ export class ApplicationDetailResponseDto {
   @ApiProperty({ type: JobSummaryDto })
   @Type(() => JobSummaryDto)
   job: JobSummaryDto;
+
+  @Expose()
+  @ApiProperty({
+    required: false,
+    description:
+      'Interview schedule if exists (deprecated, use interviewSchedules)',
+  })
+  interviewSchedule?: InterviewScheduleDto;
+
+  @Expose()
+  @ApiProperty({
+    type: [InterviewScheduleDto],
+    required: false,
+    description: 'All interview schedules for this application',
+  })
+  @Type(() => InterviewScheduleDto)
+  interviewSchedules?: InterviewScheduleDto[];
 }
 
 export class JobWithoutCompanyDto {
@@ -250,6 +317,23 @@ export class CandidateApplicationDetailResponseDto {
   @ApiProperty({ type: CompanyProfileDto })
   @Type(() => CompanyProfileDto)
   company: CompanyProfileDto;
+
+  @Expose()
+  @ApiProperty({
+    required: false,
+    description:
+      'Interview schedule if exists (deprecated, use interviewSchedules)',
+  })
+  interviewSchedule?: InterviewScheduleDto;
+
+  @Expose()
+  @ApiProperty({
+    type: [InterviewScheduleDto],
+    required: false,
+    description: 'All interview schedules for this application',
+  })
+  @Type(() => InterviewScheduleDto)
+  interviewSchedules?: InterviewScheduleDto[];
 }
 
 export class ApplicationDetailApiResponse extends BaseApiResponse<ApplicationDetailResponseDto> {

@@ -59,6 +59,9 @@ export class ScheduleEvent {
   @Column({ type: 'text', nullable: true })
   notes?: string;
 
+  @Column({ name: 'application_id', type: 'int', nullable: true })
+  applicationId?: number;
+
   @VersionColumn()
   version: number;
 
