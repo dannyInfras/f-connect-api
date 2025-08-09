@@ -28,6 +28,7 @@ import { CreateCvReqDto } from '../dtos/req/create-cv.req';
 import { OptimizeCvReqDto } from '../dtos/req/optimize-cv.req';
 import { UpdateCvReqDto } from '../dtos/req/update-cv.req';
 import { CvResDto } from '../dtos/res/cv.res';
+import { CvOptimizationHistoryResDto } from '../dtos/res/cv-optimization-history.res';
 import { ListCvResDto } from '../dtos/res/list-cv.res';
 import { OptimizeCvResDto } from '../dtos/res/optimize-cv.res';
 import { CvService } from '../services/cv.service';
@@ -157,24 +158,25 @@ export class CvController {
     if (!ctx.user) {
       throw new UnauthorizedException('User must be logged in');
     }
-    
+
     // Find the CV and check permissions
     const cv = await this.cvService.findOne(id);
     await this.cvAclService.canUpdate(ctx.user, cv);
-    
+
     // Optimize the CV using AI
     const result = await this.cvOptimizerService.optimizeCv({
       cv,
+      userId: optimizeCvDto.userId,
       jobTitle: optimizeCvDto.jobTitle,
       jobDescription: optimizeCvDto.jobDescription,
     });
-    
+
     // Map the result to the response DTO
     const response: OptimizeCvResDto = {
       optimizedCv: this.cvService.mapToDto(result.optimizedCv),
       suggestions: result.suggestions,
     };
-    
+
     return {
       data: response,
       meta: {},
@@ -194,5 +196,64 @@ export class CvController {
     const cv = await this.cvService.findOne(id);
     await this.cvAclService.canDelete(ctx.user, cv);
     return this.cvService.remove(id);
+  }
+
+  @Get(':id/optimization-history')
+  @ApiOperation({ summary: 'Get optimization history for a CV' })
+  @ApiResponse({
+    status: 200,
+    type: [CvOptimizationHistoryResDto],
+  })
+  async getOptimizationHistory(
+    @Param('id') id: string,
+    @ReqContext() ctx: RequestContext,
+  ): Promise<BaseApiResponse<CvOptimizationHistoryResDto[]>> {
+    if (!ctx.user) {
+      throw new UnauthorizedException('User must be logged in');
+    }
+
+    const cv = await this.cvService.findOne(id);
+    await this.cvAclService.canView(ctx.user, cv);
+
+    const history = await this.cvOptimizerService.getOptimizationHistory(id);
+
+    return {
+      data: history.map((h) => ({
+        id: h.id,
+        cvId: h.cvId,
+        jobTitle: h.jobTitle,
+        jobDescription: h.jobDescription,
+        suggestions: h.suggestions,
+        optimizedCv: h.optimizedCv,
+        isApplied: h.isApplied,
+        createdAt: h.createdAt,
+      })),
+      meta: {},
+    };
+  }
+
+  @Post('optimization-history/:historyId/restore')
+  @ApiOperation({ summary: 'Restore CV from optimization history' })
+  @ApiResponse({
+    status: 200,
+    type: OptimizeCvResDto,
+  })
+  async restoreFromHistory(
+    @Param('historyId') historyId: string,
+    @ReqContext() ctx: RequestContext,
+  ): Promise<BaseApiResponse<OptimizeCvResDto>> {
+    if (!ctx.user) {
+      throw new UnauthorizedException('User must be logged in');
+    }
+
+    const result = await this.cvOptimizerService.restoreFromHistory(historyId);
+
+    return {
+      data: {
+        optimizedCv: this.cvService.mapToDto(result.optimizedCv),
+        suggestions: result.suggestions,
+      },
+      meta: {},
+    };
   }
 }

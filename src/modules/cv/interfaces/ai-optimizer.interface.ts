@@ -2,6 +2,7 @@ import { CV } from '../entities/cv.entity';
 
 export interface AiOptimizerInput {
   cv: CV;
+  userId: number;
   jobTitle?: string;
   jobDescription: string;
 }

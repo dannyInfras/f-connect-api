@@ -28,7 +28,6 @@ import { CreateTaskDto } from '../dtos/create-task.dto';
 import { ListTaskResDto } from '../dtos/res/list-task.res';
 import { TaskResDto } from '../dtos/res/task.res';
 import { UpdateTaskDto } from '../dtos/update-task.dto';
-import { TaskNotificationGateway } from '../gateways/task-notification.gateway';
 import { TaskService } from '../services/task.service';
 
 @ApiTags('Tasks')
@@ -39,7 +38,6 @@ export class TaskController {
   constructor(
     private readonly taskService: TaskService,
     private readonly taskAclService: TaskAclService,
-    private readonly notificationGateway: TaskNotificationGateway,
   ) {}
 
   @Post()
@@ -56,18 +54,17 @@ export class TaskController {
     if (!ctx.user) {
       throw new UnauthorizedException('User must be logged in');
     }
-    
+
     // Check if user can create this task
     await this.taskAclService.canCreate(ctx.user, {
       ...createTaskDto,
-      userId: ctx.user.id
+      userId: ctx.user.id,
     } as any);
-    
-    const createdTask = await this.taskService.create(createTaskDto, ctx.user.id);
-    
-    // Notify via WebSocket
-    this.notificationGateway.notifyTaskCreated(ctx.user.id, createdTask);
-    
+
+    const createdTask = await this.taskService.create(
+      createTaskDto,
+      ctx.user.id,
+    );
     return {
       data: createdTask,
       meta: {},
@@ -84,10 +81,10 @@ export class TaskController {
     if (!ctx.user) {
       throw new UnauthorizedException('User must be logged in');
     }
-    
+
     // Check if user can list tasks
     await this.taskAclService.canList(ctx.user);
-    
+
     const page = Math.floor(query.offset / query.limit) + 1;
     return this.taskService.findAll(page, query.limit);
   }
@@ -103,10 +100,10 @@ export class TaskController {
     if (!ctx.user) {
       throw new UnauthorizedException('User must be logged in');
     }
-    
+
     // Check if user can list tasks for the specified user
     await this.taskAclService.canList(ctx.user, Number(userId));
-    
+
     return this.taskService.findByUserId(
       Number(userId),
       query.limit,
@@ -124,14 +121,14 @@ export class TaskController {
     if (!ctx.user) {
       throw new UnauthorizedException('User must be logged in');
     }
-    
+
     const task = await this.taskService.findOne(id);
-    
+
     // Check if user can view this task
     await this.taskAclService.canView(ctx.user, task);
-    
+
     const taskDto = await this.taskService.getTaskDto(id);
-    
+
     return {
       data: taskDto,
       meta: {},
@@ -149,17 +146,14 @@ export class TaskController {
     if (!ctx.user) {
       throw new UnauthorizedException('User must be logged in');
     }
-    
+
     const task = await this.taskService.findOne(id);
-    
+
     // Check if user can update this task
     await this.taskAclService.canUpdate(ctx.user, task);
-    
+
     const updatedTask = await this.taskService.update(id, updateTaskDto);
-    
-    // Notify via WebSocket
-    this.notificationGateway.notifyTaskUpdated(task.userId, updatedTask);
-    
+
     return {
       data: updatedTask,
       meta: {},
@@ -176,16 +170,11 @@ export class TaskController {
     if (!ctx.user) {
       throw new UnauthorizedException('User must be logged in');
     }
-    
+
     const task = await this.taskService.findOne(id);
-    
+
     // Check if user can delete this task
     await this.taskAclService.canDelete(ctx.user, task);
-    
-    const userId = task.userId;
     await this.taskService.remove(id);
-    
-    // Notify via WebSocket
-    this.notificationGateway.notifyTaskDeleted(userId, id);
   }
-} 
+}
