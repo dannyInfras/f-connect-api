@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Expose, Type } from 'class-transformer';
+import { Expose, Transform, Type } from 'class-transformer';
 
 import { EventStatus } from '../enums/event-status.enum';
 import { EventType } from '../enums/event-type.enum';
@@ -13,6 +13,11 @@ export class ScheduleEventResponseDto {
   @ApiProperty({ description: 'Company ID' })
   @Expose()
   companyId: string;
+
+  @ApiPropertyOptional({ description: 'Company name' })
+  @Expose()
+  @Transform(({ obj }) => obj?.company?.companyName ?? '')
+  companyName?: string;
 
   @ApiProperty({ description: 'User ID who created the event' })
   @Expose()
@@ -46,6 +51,10 @@ export class ScheduleEventResponseDto {
   @Expose()
   notes?: string;
 
+  @ApiPropertyOptional({ description: 'Related application ID if any' })
+  @Expose()
+  applicationId?: number;
+
   @ApiProperty({ description: 'Version for optimistic locking' })
   @Expose()
   version: number;
@@ -58,7 +67,10 @@ export class ScheduleEventResponseDto {
   @Expose()
   updatedAt: Date;
 
-  @ApiProperty({ description: 'Event participants', type: [ParticipantResponseDto] })
+  @ApiProperty({
+    description: 'Event participants',
+    type: [ParticipantResponseDto],
+  })
   @Expose()
   @Type(() => ParticipantResponseDto)
   participants: ParticipantResponseDto[];

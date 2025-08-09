@@ -23,6 +23,9 @@ import {
 
 import { ROLE } from '@/modules/auth/constants/role.constant';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
+import { EventStatus } from '@/modules/schedule/enums/event-status.enum';
+import { EventType } from '@/modules/schedule/enums/event-type.enum';
+import { ScheduleService } from '@/modules/schedule/services/schedule.service';
 import { ReqContext } from '@/shared/request-context/req-context.decorator';
 import { RequestContext } from '@/shared/request-context/request-context.dto';
 
@@ -48,7 +51,10 @@ import {
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class JobApplicationController {
-  constructor(private readonly jobApplicationService: JobApplicationService) {}
+  constructor(
+    private readonly jobApplicationService: JobApplicationService,
+    private readonly scheduleService: ScheduleService,
+  ) {}
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
@@ -278,6 +284,17 @@ export class JobApplicationController {
         ctx.user!,
       );
 
+    // Fetch related interview schedules if candidate is a participant
+    const interviewEvents = await this.scheduleService.getEventsByApplication(
+      Number(id),
+      ctx.user as any,
+      EventType.INTERVIEW,
+    );
+    // Get the first non-cancelled interview event (for backward compatibility)
+    const interviewEvent = interviewEvents.find(
+      (e) => e.status !== EventStatus.CANCELLED,
+    );
+
     return {
       id: applicationDetail.id,
       status: applicationDetail.status,
@@ -296,6 +313,36 @@ export class JobApplicationController {
         about: applicationDetail.company.about,
         contact: applicationDetail.company.contact,
       },
+      interviewSchedule: interviewEvent
+        ? {
+            companyName: interviewEvent.companyName ?? '',
+            createdBy: Number(interviewEvent.createdBy),
+            title: interviewEvent.title,
+            type: interviewEvent.type,
+            status: interviewEvent.status,
+            startsAt: interviewEvent.startsAt,
+            endsAt: interviewEvent.endsAt,
+            location: interviewEvent.location,
+            notes: interviewEvent.notes,
+            version: interviewEvent.version,
+            createdAt: interviewEvent.createdAt,
+            updatedAt: interviewEvent.updatedAt,
+          }
+        : undefined,
+      interviewSchedules: interviewEvents.map((event) => ({
+        companyName: event.companyName ?? '',
+        createdBy: Number(event.createdBy),
+        title: event.title,
+        type: event.type,
+        status: event.status,
+        startsAt: event.startsAt,
+        endsAt: event.endsAt,
+        location: event.location,
+        notes: event.notes,
+        version: event.version,
+        createdAt: event.createdAt,
+        updatedAt: event.updatedAt,
+      })),
     };
   }
 
@@ -345,6 +392,17 @@ export class JobApplicationController {
         ctx.user!,
       );
 
+    // Fetch related interview schedules (HR/company users can see company events)
+    const interviewEvents = await this.scheduleService.getEventsByApplication(
+      Number(applicationId),
+      ctx.user as any,
+      EventType.INTERVIEW,
+    );
+    // Get the first non-cancelled interview event (for backward compatibility)
+    const interviewEvent = interviewEvents.find(
+      (e) => e.status !== EventStatus.CANCELLED,
+    );
+
     return {
       id: applicationDetail.id,
       status: applicationDetail.status,
@@ -359,6 +417,36 @@ export class JobApplicationController {
       candidate: applicationDetail.candidate,
       candidateProfile: applicationDetail.candidateProfile || undefined,
       job: applicationDetail.job,
+      interviewSchedule: interviewEvent
+        ? {
+            companyName: interviewEvent.companyName ?? '',
+            createdBy: Number(interviewEvent.createdBy),
+            title: interviewEvent.title,
+            type: interviewEvent.type,
+            status: interviewEvent.status,
+            startsAt: interviewEvent.startsAt,
+            endsAt: interviewEvent.endsAt,
+            location: interviewEvent.location,
+            notes: interviewEvent.notes,
+            version: interviewEvent.version,
+            createdAt: interviewEvent.createdAt,
+            updatedAt: interviewEvent.updatedAt,
+          }
+        : undefined,
+      interviewSchedules: interviewEvents.map((event) => ({
+        companyName: event.companyName ?? '',
+        createdBy: Number(event.createdBy),
+        title: event.title,
+        type: event.type,
+        status: event.status,
+        startsAt: event.startsAt,
+        endsAt: event.endsAt,
+        location: event.location,
+        notes: event.notes,
+        version: event.version,
+        createdAt: event.createdAt,
+        updatedAt: event.updatedAt,
+      })),
     };
   }
 }

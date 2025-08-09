@@ -6,6 +6,7 @@ import { JwtAuthStrategy } from '../auth/strategies/jwt-auth.strategy';
 import { Job } from '../jobs/entities/jobs.entity';
 import { JobsModule } from '../jobs/jobs.module';
 import { NotificationModule } from '../notification/notification.module';
+import { ScheduleModule } from '../schedule/schedule.module';
 import { User } from '../user/entities/user.entity';
 import { UserModule } from '../user/user.module';
 import { JobApplicationAclService } from './acl/job-application-acl.service';
@@ -21,6 +22,7 @@ import { JobApplicationNotificationService } from './services/job-application-no
     TypeOrmModule.forFeature([JobApplication, User, Job]),
     UserModule,
     forwardRef(() => JobsModule),
+    ScheduleModule,
     NotificationModule,
   ],
   controllers: [JobApplicationController],
