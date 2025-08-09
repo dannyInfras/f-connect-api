@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Expose } from 'class-transformer';
+import { Expose, Transform } from 'class-transformer';
 
 import { ParticipantRole } from '../enums/participant-role.enum';
 import { ResponseStatus } from '../enums/response-status.enum';
@@ -23,6 +23,11 @@ export class ParticipantResponseDto {
 
   @ApiProperty({ description: 'User details' })
   @Expose()
+  @Transform(({ obj }) => ({
+    id: obj.user?.id?.toString() || obj.userId,
+    name: obj.user?.name || '',
+    email: obj.user?.email || '',
+  }))
   user?: {
     id: string;
     name: string;
