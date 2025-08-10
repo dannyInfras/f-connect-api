@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { CvModule } from '../cv/cv.module';
+import { JobsModule } from '../jobs/jobs.module';
 import { RoadmapAclService } from './acl/roadmap.acl';
 import { RoadmapController } from './controllers/roadmap.controller';
 import { Roadmap } from './entities/roadmap.entity';
@@ -12,9 +13,10 @@ import { RoadmapAiService } from './services/roadmap-ai.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Roadmap]), 
+    TypeOrmModule.forFeature([Roadmap]),
     CvModule,
-    ConfigModule
+    JobsModule,
+    ConfigModule,
   ],
   controllers: [RoadmapController],
   providers: [

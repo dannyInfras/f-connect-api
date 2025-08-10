@@ -150,4 +150,26 @@ export class RoadmapController {
     }
     return this.roadmapService.generateRoadmap(ctx.user, generateRoadmapDto);
   }
+
+  @Put(':id/skills/:skillId/tasks/:taskId/toggle')
+  @ApiOperation({ summary: 'Toggle task completion' })
+  async updateTaskCompletion(
+    @ReqContext() ctx: RequestContext,
+    @Param('id') roadmapId: string,
+    @Param('skillId') skillId: string,
+    @Param('taskId') taskId: string,
+    @Query('subTaskId') subTaskId?: string,
+  ): Promise<RoadmapResDto> {
+    if (!ctx.user) {
+      throw new UnauthorizedException('User must be logged in');
+    }
+
+    return this.roadmapService.updateTaskCompletion(
+      ctx.user,
+      roadmapId,
+      skillId,
+      taskId,
+      subTaskId,
+    );
+  }
 }
