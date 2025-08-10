@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNotEmpty, IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsNotEmpty, IsNumber,IsOptional, IsString } from 'class-validator';
 
 export class CreateRoadmapReqDto {
   @ApiProperty({ example: 'Backend Dev Roadmap' })
@@ -17,13 +17,13 @@ export class CreateRoadmapReqDto {
   @IsString()
   jobTitle: string;
 
-  @ApiPropertyOptional({ example: 'uuid' })
+  @ApiPropertyOptional({ example: 12 })
   @IsOptional()
-  @IsUUID()
-  cvId?: string;
+  @IsNumber()
+  estimatedDuration?: number;
 
   @ApiPropertyOptional({ example: 'job123' })
   @IsOptional()
   @IsString()
   jobId?: string;
-} 
+}

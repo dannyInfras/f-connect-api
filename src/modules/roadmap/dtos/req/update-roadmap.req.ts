@@ -19,7 +19,12 @@ export class UpdateRoadmapReqDto {
   @IsNumber()
   progress?: number;
 
+  @ApiPropertyOptional({ example: 16 })
+  @IsOptional()
+  @IsNumber()
+  estimatedDuration?: number;
+
   @ApiPropertyOptional({ type: () => [RoadmapSkillDto] })
   @IsOptional()
   skills?: RoadmapSkillDto[];
-} 
+}
