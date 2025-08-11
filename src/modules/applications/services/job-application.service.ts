@@ -211,6 +211,26 @@ export class JobApplicationService {
         this.logger.error(error, 'Failed to send email');
       }
 
+      // Notify company users about the new application
+      try {
+        const applicationWithFullDetails =
+          await this.jobApplicationRepository.findApplicationWithFullDetails({
+            applicationId: result.id,
+          });
+
+        if (applicationWithFullDetails) {
+          await this.notificationService.notifyCompanyAboutNewApplication(
+            applicationWithFullDetails,
+            result.id,
+          );
+        }
+      } catch (error: any) {
+        this.logger.error(
+          { requestID: 'internal', url: 'internal', ip: '0.0.0.0', user: null },
+          `Failed to notify company about new application ${result.id}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        );
+      }
+
       return result;
     } catch (error) {
       if (
