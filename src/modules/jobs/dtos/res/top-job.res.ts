@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
 
-export class JobDetailResponseDto {
+export class TopJobResponseDto {
   @Expose()
   @ApiProperty({ example: '1' })
   id: string;
@@ -29,7 +29,6 @@ export class JobDetailResponseDto {
     id: string;
     companyName: string;
     logoUrl: string;
-    address: string;
   };
 
   @Expose()
@@ -66,42 +65,12 @@ export class JobDetailResponseDto {
   experienceYears: number;
 
   @Expose()
-  @ApiProperty({ example: 'OPEN' })
-  status: string;
-
-  @Expose()
   @ApiProperty({ example: 'FULL_TIME' })
   typeOfEmployment: string;
 
   @Expose()
   @ApiProperty({ example: '2024-01-01T00:00:00.000Z', required: true })
   deadline: Date;
-
-  @Expose()
-  @ApiProperty({
-    example: ['Health insurance', 'Gym membership'],
-  })
-  benefit: string[];
-
-  @Expose()
-  @ApiProperty({
-    example: '2024-12-31T23:59:59.999Z',
-    description: 'Date when VIP status expires',
-    required: false,
-  })
-  vipExpired?: Date;
-
-  @Expose()
-  @ApiProperty({ example: 1, description: 'Priority position (1-3)' })
-  priorityPosition: number;
-
-  @Expose()
-  @ApiProperty()
-  createdAt: Date;
-
-  @Expose()
-  @ApiProperty()
-  updatedAt: Date;
 
   @Expose()
   @ApiProperty({
@@ -127,7 +96,6 @@ export class JobDetailResponseDto {
       id: '1',
       companyName: 'Tech Corp',
       logoUrl: 'https://example.com/logo.png',
-      address: '123 Tech Street, New York, NY',
     },
     skills: [
       { id: '1', name: 'JavaScript' },
@@ -138,15 +106,34 @@ export class JobDetailResponseDto {
     salaryMin: 80000,
     salaryMax: 120000,
     experienceYears: 5,
-    status: 'OPEN',
-    vipExpired: '2024-12-31T23:59:59.999Z',
-    deadline: '2024-01-01T00:00:00.000Z',
     typeOfEmployment: 'FULL_TIME',
-    benefit: ['Health insurance', 'Gym membership'],
-    priorityPosition: 1,
-    createdAt: '2024-01-01T00:00:00.000Z',
-    updatedAt: '2024-01-01T00:00:00.000Z',
+    deadline: '2024-01-01T00:00:00.000Z',
     isDeleted: false,
     topJob: 1,
+  };
+}
+
+export class TopJobsListResponseDto {
+  @ApiProperty({
+    type: [TopJobResponseDto],
+    example: {
+      data: [TopJobResponseDto.example],
+      meta: {
+        count: 1,
+        page: 1,
+      },
+    },
+  })
+  data: TopJobResponseDto[];
+
+  @ApiProperty({
+    example: {
+      count: 1,
+      page: 1,
+    },
+  })
+  meta: {
+    count: number;
+    page: number;
   };
 }

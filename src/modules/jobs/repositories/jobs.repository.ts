@@ -11,8 +11,8 @@ export class JobRepository extends Repository<Job> {
 
   async getById(id: string): Promise<Job> {
     const job = await this.findOne({
-      where: { id },
-      relations: ['company', 'categories', 'company.user'],
+      where: { id, isDeleted: false },
+      relations: ['company', 'category', 'company.users'],
     });
 
     if (!job) {
@@ -24,8 +24,9 @@ export class JobRepository extends Repository<Job> {
 
   async getByCategoryId(categoryId: string): Promise<Job[]> {
     return this.createQueryBuilder('job')
-      .leftJoinAndSelect('job.categories', 'category')
+      .leftJoinAndSelect('job.category', 'category')
       .where('category.id = :categoryId', { categoryId })
+      .andWhere('job.isDeleted = :isDeleted', { isDeleted: false })
       .getMany();
   }
 }

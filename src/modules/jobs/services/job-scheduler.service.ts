@@ -39,9 +39,10 @@ export class JobSchedulerService {
       const expiredJobs = await this.jobRepository
         .createQueryBuilder('job')
         .leftJoinAndSelect('job.company', 'company')
-        .leftJoinAndSelect('company.user', 'user')
+        .leftJoinAndSelect('company.users', 'users')
         .where('job.vip_expired < NOW()')
         .andWhere('job.priority_position != 3')
+        .andWhere('job.isDeleted = :isDeleted', { isDeleted: false })
         .getMany();
 
       if (expiredJobs.length > 0) {
@@ -95,10 +96,11 @@ export class JobSchedulerService {
       const soonToExpireJobs = await this.jobRepository
         .createQueryBuilder('job')
         .leftJoinAndSelect('job.company', 'company')
-        .leftJoinAndSelect('company.user', 'user')
+        .leftJoinAndSelect('company.users', 'users')
         .where('job.vip_expired > NOW()')
         .andWhere("job.vip_expired < NOW() + interval '1 day'")
         .andWhere('job.priority_position != 3')
+        .andWhere('job.isDeleted = :isDeleted', { isDeleted: false })
         .getMany();
 
       if (soonToExpireJobs.length > 0) {

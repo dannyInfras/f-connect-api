@@ -14,9 +14,16 @@ export class JobAclService extends BaseAclService<Job> {
     // Admin can do everything
     this.canDo(ROLE.ADMIN, [Action.Manage]);
 
-    // Recruiters (both admin and regular) can perform CRUD operations on their own jobs
+    // Admin recruiters can perform CRUD operations on any job (admin privilege)
+    this.canDo(ROLE.ADMIN_RECRUITER, [
+      Action.Create,
+      Action.Update,
+      Action.Delete,
+    ]);
+
+    // Regular recruiters can perform CRUD operations on their own jobs
     this.canDo(
-      ROLE.ADMIN_RECRUITER,
+      ROLE.RECRUITER,
       [Action.Create, Action.Update, Action.Delete],
       this.isOwner,
     );

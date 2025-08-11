@@ -34,6 +34,7 @@ import { HrJobsListResponseDto } from '../dtos/res/hr-jobs-response.dto';
 import { JobDetailResponseDto } from '../dtos/res/job.res';
 import { JobStatisticsResponseDto } from '../dtos/res/job-statistics.res';
 import { ListJobResponseDto } from '../dtos/res/list-job.res';
+import { TopJobsListResponseDto } from '../dtos/res/top-job.res';
 import { JobSchedulerService } from '../job-scheduler.service';
 
 @ApiTags('Jobs')
@@ -152,6 +153,31 @@ export class JobsController {
   }
 
   @Public()
+  @Get('top')
+  @ApiOperation({ summary: 'Get top jobs (featured/promoted jobs)' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of top jobs',
+    type: TopJobsListResponseDto,
+  })
+  async findTopJobs(
+    @Query() query: PaginationParamsDto,
+  ): Promise<TopJobsListResponseDto> {
+    const { jobs, count } = await this.jobService.findTopJobs(
+      query.limit,
+      query.offset,
+    );
+
+    return {
+      data: jobs,
+      meta: {
+        count,
+        page: Math.floor(query.offset / query.limit) + 1,
+      },
+    };
+  }
+
+  @Public()
   @Get(':id')
   @ApiOperation({ summary: 'Get job by ID' })
   @ApiResponse({
@@ -197,10 +223,10 @@ export class JobsController {
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: 'Delete job posting' })
+  @ApiOperation({ summary: 'Delete job posting (soft delete)' })
   @ApiResponse({
     status: 200,
-    description: 'Job deleted successfully',
+    description: 'Job deleted successfully (soft delete)',
   })
   async delete(
     @Param('id') id: string,
@@ -210,6 +236,58 @@ export class JobsController {
       throw new UnauthorizedException('User must be logged in');
     }
     await this.jobService.delete(ctx.user, id);
+  }
+
+  @Get('deleted')
+  @ApiOperation({ summary: 'Get deleted jobs for history' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of deleted jobs',
+    type: ListJobResponseDto,
+  })
+  async findDeletedJobs(
+    @Query() query: PaginationParamsDto,
+    @ReqContext() ctx: RequestContext,
+  ): Promise<ListJobResponseDto> {
+    if (!ctx.user) {
+      throw new UnauthorizedException('User must be logged in');
+    }
+    const { jobs, count } = await this.jobService.findDeletedJobs(
+      ctx.user,
+      query.limit,
+      query.offset,
+    );
+
+    return {
+      data: jobs,
+      meta: {
+        count,
+        page: Math.floor(query.offset / query.limit) + 1,
+      },
+    };
+  }
+
+  @Post(':id/restore')
+  @ApiOperation({ summary: 'Restore a deleted job' })
+  @ApiResponse({
+    status: 200,
+    description: 'Job restored successfully',
+    schema: {
+      example: JobDetailResponseDto.example,
+    },
+  })
+  async restoreJob(
+    @Param('id') id: string,
+    @ReqContext() ctx: RequestContext,
+  ): Promise<BaseApiResponse<JobDetailResponseDto>> {
+    if (!ctx.user) {
+      throw new UnauthorizedException('User must be logged in');
+    }
+    const job = await this.jobService.restoreJob(ctx.user, id);
+    return {
+      data: job,
+      meta: {},
+    };
   }
 
   @Post('test-vip-expiration')
