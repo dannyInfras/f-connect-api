@@ -78,6 +78,22 @@ export class JobResponseDto {
   @ApiProperty()
   updatedAt: Date;
 
+  @Expose()
+  @ApiProperty({
+    example: false,
+    description: 'Whether the job has been soft deleted',
+    required: false,
+  })
+  isDeleted: boolean;
+
+  @Expose()
+  @ApiProperty({
+    example: 1,
+    description: 'Top job position (1-16, where 0 means not a top job)',
+    required: false,
+  })
+  topJob: number;
+
   static example = {
     id: '1',
     title: 'Senior Software Engineer',
@@ -98,6 +114,8 @@ export class JobResponseDto {
     priorityPosition: 1,
     createdAt: '2024-01-01T00:00:00.000Z',
     updatedAt: '2024-01-01T00:00:00.000Z',
+    isDeleted: false,
+    topJob: 1,
   };
 }
 

@@ -30,6 +30,8 @@ export class CompanyMapper {
           location: job.location,
           typeOfEmployment: job.typeOfEmployment,
           status: job.status,
+          isDeleted: job.isDeleted || false,
+          topJob: job.topJob || 0,
           createdAt: job.createdAt,
           updatedAt: job.updatedAt,
         })),

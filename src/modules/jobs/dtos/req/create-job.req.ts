@@ -95,4 +95,16 @@ export class CreateJobReqDto {
   @Min(1)
   @Max(3)
   priorityPosition?: number;
+
+  @ApiProperty({
+    example: 1,
+    description: 'Top job position (1-16, where 0 means not a top job)',
+    required: false,
+    default: 0,
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(16)
+  topJob?: number;
 }

@@ -116,4 +116,10 @@ export class Job {
 
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
+
+  @Column({ name: 'is_deleted', type: 'boolean', default: false })
+  isDeleted: boolean;
+
+  @Column({ name: 'top_job', type: 'int', default: 0 })
+  topJob: number;
 }

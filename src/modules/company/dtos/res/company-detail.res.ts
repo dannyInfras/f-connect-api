@@ -154,6 +154,8 @@ export class CompanyDetailResponseDto {
         location: 'New York',
         typeOfEmployment: 'FullTime',
         status: 'OPEN',
+        isDeleted: false,
+        topJob: 1,
         createdAt: '2024-01-01T00:00:00.000Z',
         updatedAt: '2024-01-01T00:00:00.000Z',
       },

@@ -23,6 +23,7 @@ import {
   TopCandidateDto,
 } from '../dtos/res/job-statistics.res';
 import { JobResponseDto } from '../dtos/res/list-job.res';
+import { TopJobResponseDto } from '../dtos/res/top-job.res';
 import { JobMapper } from '../mapper/job.mapper';
 
 @Injectable()
@@ -196,6 +197,7 @@ export class JobService {
     await this.updatePriorityForExpiredVipJobs();
 
     const [jobs, count] = await this.repository.findAndCount({
+      where: { isDeleted: false },
       take: limit,
       skip: offset,
       relations: ['company', 'category', 'skills'],
@@ -211,8 +213,9 @@ export class JobService {
   // New method to update priority positions for expired VIP jobs
   private async updatePriorityForExpiredVipJobs(): Promise<void> {
     try {
-      // Call the PostgreSQL function directly instead of doing the update in TypeORM
-      await this.repository.query('SELECT check_vip_status()');
+      // Temporarily disable VIP status check until the function is created in database
+      // await this.repository.query('SELECT check_vip_status()');
+      // this.logger.log('VIP status check temporarily disabled');
     } catch (error) {
       // Create a minimal RequestContext for logging
       const ctx = new RequestContext();
@@ -238,16 +241,15 @@ export class JobService {
     await this.updatePriorityForExpiredVipJobs();
 
     const [jobs, count] = await this.repository.findAndCount({
-      where: { company: { id: companyId } },
+      where: { company: { id: companyId }, isDeleted: false },
       take: limit,
       skip: offset,
       relations: ['company', 'category', 'skills'],
       order: { priorityPosition: 'ASC', createdAt: 'DESC' },
     });
 
-    if (!jobs.length) {
-      throw new NotFoundException('No jobs found for this company');
-    }
+    // Don't throw error if no jobs found, just return empty array
+    // This is normal behavior after deleting jobs
 
     return {
       jobs: jobs.map((job) => JobMapper.toListJobResponse(job)),
@@ -273,6 +275,7 @@ export class JobService {
       .leftJoin('job_application', 'application', 'application.job_id = job.id')
       .addSelect('COUNT(application.id)', 'totalApplications')
       .where('company.id = :companyId', { companyId })
+      .andWhere('job.isDeleted = :isDeleted', { isDeleted: false })
       .groupBy('job.id')
       .addGroupBy('company.id')
       .orderBy('job.createdAt', 'DESC');
@@ -286,9 +289,8 @@ export class JobService {
       .take(limit)
       .getRawAndEntities();
 
-    if (!jobs.entities.length && offset === 0) {
-      throw new NotFoundException('No jobs found for this company');
-    }
+    // Don't throw error if no jobs found, just return empty array
+    // This is normal behavior after deleting jobs
 
     const jobData = jobs.entities.map((job, index) => ({
       jobId: job.id,
@@ -383,7 +385,7 @@ export class JobService {
     }
 
     const job = await this.repository.findOne({
-      where: { id },
+      where: { id, isDeleted: false },
       relations: ['company', 'category', 'skills'],
     });
 
@@ -400,15 +402,40 @@ export class JobService {
     dto: Partial<CreateJobReqDto>,
   ): Promise<JobDetailResponseDto> {
     const job = await this.repository.findOne({
-      where: { id },
-      relations: ['company', 'category', 'skills'],
+      where: { id, isDeleted: false },
+      relations: ['company', 'company.users', 'category', 'skills'],
     });
 
     if (!job) {
       throw new NotFoundException('Job not found');
     }
 
+    // Debug logging for ACL check
+    const ctx = new RequestContext();
+    ctx.requestID = 'job-update';
+    ctx.url = 'job-service';
+    ctx.user = null;
+
+    this.logger.log(
+      ctx,
+      `ACL check for job ${job.id}: actor=${actor.id}, roles=${actor.roles.join(',')}, companyUsers=${job.company?.users?.length || 0}, companyId=${job.company?.id || 'null'}`,
+    );
+
+    // Debug company users details
+    if (job.company?.users) {
+      this.logger.log(
+        ctx,
+        `Company users: ${job.company.users.map((u) => u.id).join(',')}`,
+      );
+    } else {
+      this.logger.log(ctx, 'Company users is null or undefined');
+    }
+
     if (!this.aclService.forActor(actor).canDoAction(Action.Update, job)) {
+      this.logger.error(
+        ctx,
+        `ACL check failed for job ${job.id}: actor=${actor.id}, roles=${actor.roles.join(',')}`,
+      );
       throw new UnauthorizedException();
     }
 
@@ -422,6 +449,17 @@ export class JobService {
       throw new BadRequestException(
         'Job can only be modified within 24 hours of creation',
       );
+    }
+
+    // Update category if categoryId is provided
+    if (dto.categoryId) {
+      const category = await this.categoryRepository.findOne({
+        where: { id: dto.categoryId },
+      });
+      if (!category) {
+        throw new NotFoundException('Category not found');
+      }
+      job.category = category;
     }
 
     // Update skills if skillIds are provided
@@ -463,6 +501,7 @@ export class JobService {
       vipExpired,
       typeOfEmployment,
       priorityPosition,
+      topJob,
     } = dto;
 
     // Create update object with only the fields that exist in the entity
@@ -482,6 +521,7 @@ export class JobService {
       updateData.typeOfEmployment = typeOfEmployment;
     if (priorityPosition !== undefined)
       updateData.priorityPosition = priorityPosition;
+    if (topJob !== undefined) updateData.topJob = topJob;
 
     // Update job with proper typing
     const updated = await this.repository.save({
@@ -504,7 +544,7 @@ export class JobService {
   async delete(actor: Actor, id: string): Promise<void> {
     const job = await this.repository.findOne({
       where: { id },
-      relations: ['company', 'company.user', 'category', 'skills'],
+      relations: ['company', 'company.users', 'category', 'skills'],
     });
 
     if (!job) {
@@ -515,6 +555,91 @@ export class JobService {
       throw new UnauthorizedException();
     }
 
-    await this.repository.remove(job);
+    // Soft delete: set isDeleted to true instead of removing from database
+    job.isDeleted = true;
+    await this.repository.save(job);
+  }
+
+  /**
+   * Get deleted jobs for history purpose
+   * This method will be used for future history feature
+   */
+  async findDeletedJobs(
+    actor: Actor,
+    limit: number,
+    offset: number,
+  ): Promise<{ jobs: JobResponseDto[]; count: number }> {
+    // Check if user has permission to view deleted jobs
+    await this.aclService.canList();
+
+    const [jobs, count] = await this.repository.findAndCount({
+      where: { isDeleted: true },
+      take: limit,
+      skip: offset,
+      relations: ['company', 'category', 'skills'],
+      order: { updatedAt: 'DESC' },
+    });
+
+    return {
+      jobs: jobs.map((job) => JobMapper.toListJobResponse(job)),
+      count,
+    };
+  }
+
+  /**
+   * Restore a deleted job
+   * This method will be used for future restore feature
+   */
+  async restoreJob(actor: Actor, id: string): Promise<JobDetailResponseDto> {
+    const job = await this.repository.findOne({
+      where: { id, isDeleted: true },
+      relations: ['company', 'company.users', 'category', 'skills'],
+    });
+
+    if (!job) {
+      throw new NotFoundException('Deleted job not found');
+    }
+
+    if (!this.aclService.forActor(actor).canDoAction(Action.Update, job)) {
+      throw new UnauthorizedException();
+    }
+
+    // Restore job by setting isDeleted to false
+    job.isDeleted = false;
+    await this.repository.save(job);
+
+    const restoredJob = await this.repository.findOne({
+      where: { id },
+      relations: ['company', 'category', 'skills'],
+    });
+
+    if (!restoredJob) {
+      throw new NotFoundException('Restored job not found');
+    }
+
+    return JobMapper.toResponse(restoredJob);
+  }
+
+  async findTopJobs(
+    limit: number,
+    offset: number,
+  ): Promise<{ jobs: TopJobResponseDto[]; count: number }> {
+    const [jobs, count] = await this.repository
+      .createQueryBuilder('job')
+      .leftJoinAndSelect('job.company', 'company')
+      .leftJoinAndSelect('job.category', 'category')
+      .leftJoinAndSelect('job.skills', 'skills')
+      .where('job.isDeleted = :isDeleted', { isDeleted: false })
+      .andWhere('job.topJob > :minTopJob', { minTopJob: 0 })
+      .orderBy('job.topJob', 'ASC')
+      .addOrderBy('job.createdAt', 'DESC')
+      .take(limit)
+      .skip(offset)
+      .getManyAndCount();
+
+    return {
+      jobs: jobs.map((job) => JobMapper.toTopJobResponse(job)),
+      count,
+    };
   }
 }
