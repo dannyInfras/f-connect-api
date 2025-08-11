@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { IsNull,Not, Repository } from 'typeorm';
+import { IsNull, Not, Repository } from 'typeorm';
 
 import { JobApplication } from '@/modules/applications/entities/job-application.entity';
 import { Company } from '@/modules/company/entities/company.entity';
@@ -60,7 +60,10 @@ export class AdminCompanyAnalyticsRepository
     const companies = await this.companyRepository
       .createQueryBuilder('company')
       .leftJoin('job', 'job', 'job.company_id = company.id')
-      .select(['company.employees', 'COUNT(DISTINCT job.id) as jobCount'])
+      .select([
+        'company.employees as employees',
+        'COUNT(DISTINCT job.id) as jobCount',
+      ])
       .groupBy('company.id, company.employees')
       .getRawMany();
 
@@ -120,7 +123,7 @@ export class AdminCompanyAnalyticsRepository
       .leftJoin('job', 'job', 'job.company_id = company.id')
       .leftJoin('job_application', 'app', 'app.job_id = job.id')
       .select([
-        'company.industry',
+        'company.industry as industry',
         'COUNT(DISTINCT company.id) as companyCount',
         'COUNT(DISTINCT job.id) as jobCount',
         'COUNT(app.id) as applicationCount',
@@ -169,7 +172,7 @@ export class AdminCompanyAnalyticsRepository
       .leftJoin('job_application', 'app', 'app.job_id = job.id')
       .select([
         'company.id as companyId',
-        'company.companyName',
+        'company.companyName as companyName',
         'COUNT(DISTINCT job.id) as totalJobs',
         'COUNT(app.id) as totalApplications',
         "COUNT(CASE WHEN app.status = 'HIRED' THEN 1 END) as totalHires",
@@ -208,15 +211,18 @@ export class AdminCompanyAnalyticsRepository
       .createQueryBuilder('company')
       .leftJoin('job', 'job', 'job.company_id = company.id')
       .select([
-        'company.address[0] as location', // Assuming first address element is city
+        // Prefer company city (first address element). PostgreSQL arrays are 1-based.
+        "COALESCE(NULLIF(TRIM(company.address[1]), ''), NULLIF(TRIM(job.location), ''), 'Unknown') as location",
         'COUNT(DISTINCT company.id) as companyCount',
         'COUNT(job.id) as jobCount',
         'AVG((job.salaryMin + job.salaryMax) / 2) as avgSalary',
       ])
       .where(
-        'company.address IS NOT NULL AND array_length(company.address, 1) > 0',
+        '(company.address IS NOT NULL AND array_length(company.address, 1) > 0) OR job.location IS NOT NULL',
       )
-      .groupBy('company.address[0]')
+      .groupBy(
+        "COALESCE(NULLIF(TRIM(company.address[1]), ''), NULLIF(TRIM(job.location), ''), 'Unknown')",
+      )
       .orderBy('companyCount', 'DESC')
       .limit(10)
       .getRawMany();
