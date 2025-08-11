@@ -11,6 +11,11 @@ class Config:
     
     # Database - Connection URL
     DATABASE_URL: str = os.getenv('DATABASE_URL', '')
+    DB_CONNECT_TIMEOUT: int = 10
+    KEEPALIVES_ENABLED: int = 1
+    KEEPALIVES_IDLE: int = 60
+    KEEPALIVES_INTERVAL: int = 15
+    KEEPALIVES_COUNT: int = 4
     
     # Perplexity AI
     PERPLEXITY_API_KEY: str = os.getenv('PERPLEXITY_API_KEY', '')
@@ -32,6 +37,8 @@ class Config:
     LISTEN_CHANNEL: str = os.getenv('LISTEN_CHANNEL', 'cv_analysis_channel')
     POLL_INTERVAL: float = float(os.getenv('POLL_INTERVAL', '0.1'))
     SHUTDOWN_TIMEOUT: int = int(os.getenv('SHUTDOWN_TIMEOUT', '30'))
+    LISTENER_HEARTBEAT_INTERVAL: int = int(os.getenv('LISTENER_HEARTBEAT_INTERVAL', '120'))
+    APPLICATION_NAME: str = os.getenv('APPLICATION_NAME', 'cv_analyzer_worker')
     
     # Logging
     LOG_LEVEL: str = os.getenv('LOG_LEVEL', 'INFO')

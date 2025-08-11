@@ -28,9 +28,16 @@ class ConnectionManager:
         self.connection_params = {
             'host': parsed.hostname,
             'port': parsed.port or 5432,
-            'database': parsed.path.lstrip('/'),
+            'dbname': parsed.path.lstrip('/'),
             'user': parsed.username,
-            'password': parsed.password
+            'password': parsed.password,
+            'sslmode': 'require',
+            'connect_timeout': config.DB_CONNECT_TIMEOUT,
+            'keepalives': config.KEEPALIVES_ENABLED,
+            'keepalives_idle': config.KEEPALIVES_IDLE,
+            'keepalives_interval': config.KEEPALIVES_INTERVAL,
+            'keepalives_count': config.KEEPALIVES_COUNT,
+            'application_name': config.APPLICATION_NAME,
         }
         logger.info("Database connection configured with DATABASE_URL")
     
@@ -281,52 +288,63 @@ def listen_for_notifications(channel: str = None) -> Generator[Dict[str, Any], N
     """
     channel = channel or config.LISTEN_CHANNEL
     conn = None
+    last_heartbeat = 0.0
+    import time
     
-    try:
-        conn = db_manager.get_connection()
-        conn.autocommit = True  # Required for LISTEN/NOTIFY
-        
-        cursor = conn.cursor()
-        cursor.execute(f"LISTEN {channel}")
-        logger.info(f"Listening for notifications on channel: {channel}")
-        
-        while True:
-            # Poll for notifications
-            conn.poll()
+    while True:
+        try:
+            conn = db_manager.get_connection()
+            conn.autocommit = True  # Required for LISTEN/NOTIFY
+            cursor = conn.cursor()
+            cursor.execute(f"LISTEN {channel}")
+            logger.info(f"Listening for notifications on channel: {channel}")
+            last_heartbeat = time.time()
             
-            while conn.notifies:
-                notification = conn.notifies.pop(0)
+            while True:
+                # Poll for notifications
+                conn.poll()
                 
+                while conn.notifies:
+                    notification = conn.notifies.pop(0)
+                    try:
+                        import json
+                        payload = json.loads(notification.payload)
+                        logger.info(
+                            f"Received notification",
+                            extra={
+                                'channel': notification.channel,
+                                'pid': notification.pid,
+                                'application_id': payload.get('applicationId')
+                            }
+                        )
+                        yield payload
+                    except (json.JSONDecodeError, KeyError) as e:
+                        logger.error(f"Invalid notification payload: {e}")
+                        continue
+                
+                # Heartbeat to keep session alive and detect dead connections
+                now = time.time()
+                if now - last_heartbeat >= config.LISTENER_HEARTBEAT_INTERVAL:
+                    try:
+                        cursor.execute("SELECT 1")
+                        last_heartbeat = now
+                        logger.debug("Heartbeat successful")
+                    except psycopg2.Error as e:
+                        logger.warning(f"Heartbeat failed: {e}. Reconnecting...")
+                        raise
+                
+                time.sleep(config.POLL_INTERVAL)
+        except psycopg2.Error as e:
+            logger.error(f"Failed to listen for notifications: {e}")
+            # Backoff before retrying
+            time.sleep(min(30, config.POLL_INTERVAL * 50))
+        except KeyboardInterrupt:
+            logger.info("Notification listener interrupted")
+            raise
+        finally:
+            if conn:
                 try:
-                    # Parse JSON payload
-                    import json
-                    payload = json.loads(notification.payload)
-                    
-                    logger.info(
-                        f"Received notification",
-                        extra={
-                            'channel': notification.channel,
-                            'pid': notification.pid,
-                            'application_id': payload.get('applicationId')
-                        }
-                    )
-                    
-                    yield payload
-                    
-                except (json.JSONDecodeError, KeyError) as e:
-                    logger.error(f"Invalid notification payload: {e}")
-                    continue
-            
-            # Short sleep to prevent busy waiting
-            import time
-            time.sleep(config.POLL_INTERVAL)
-            
-    except psycopg2.Error as e:
-        raise DatabaseError(f"Failed to listen for notifications: {e}")
-    except KeyboardInterrupt:
-        logger.info("Notification listener interrupted")
-        raise
-    finally:
-        if conn:
-            conn.close()
-            logger.info("Database connection closed")
+                    conn.close()
+                except Exception:
+                    pass
+                logger.info("Database connection closed")
