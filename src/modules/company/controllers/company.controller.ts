@@ -35,6 +35,7 @@ import { RequestContext } from '@/shared/request-context/request-context.dto';
 import { CreateCompanyReqDto } from '../dtos/req/create-company.req';
 import { UpdateCompanyDto } from '../dtos/req/update-company.req';
 import { CompanyDetailResponseDto } from '../dtos/res/company-detail.res';
+import { CompanyStatsResponseDto } from '../dtos/res/company-stats.res';
 import { CompanyService } from '../services/company.service';
 
 @ApiTags('Companies')
@@ -115,6 +116,23 @@ export class CompanyController {
   async findOne(@Param('id') id: string, @ReqContext() ctx: RequestContext) {
     const company = await this.companyService.findOne(id, ctx.user as Actor);
     return plainToInstance(CompanyDetailResponseDto, company, {
+      excludeExtraneousValues: true,
+    });
+  }
+
+  @Get(':id/stats')
+  @ApiOperation({
+    summary: 'Get company statistics (total jobs and applications)',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    type: CompanyStatsResponseDto,
+    description: 'Statistics for the specified company',
+    example: CompanyStatsResponseDto.example,
+  })
+  async getStats(@Param('id') id: string): Promise<CompanyStatsResponseDto> {
+    const stats = await this.companyService.getDetailedStatsByCompanyId(id);
+    return plainToInstance(CompanyStatsResponseDto, stats, {
       excludeExtraneousValues: true,
     });
   }
