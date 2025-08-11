@@ -1,6 +1,9 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
+import { JobApplication } from '@/modules/applications/entities/job-application.entity';
+import { Job } from '@/modules/jobs/entities/jobs.entity';
+
 import { BenefitAclService } from './acl/benefit.acl';
 import { CompanyAclService } from './acl/company.acl';
 import { CoreTeamAclService } from './acl/coreteam.acl';
@@ -15,7 +18,9 @@ import { CompanyService } from './services/company.service';
 import { CoreTeamService } from './services/core-team.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Company, Benefit, CoreTeam])],
+  imports: [
+    TypeOrmModule.forFeature([Company, Benefit, CoreTeam, Job, JobApplication]),
+  ],
   controllers: [CompanyController, BenefitController, CoreTeamController],
   providers: [
     CompanyService,
