@@ -1,4 +1,4 @@
-import { Inject,Injectable, UnauthorizedException } from '@nestjs/common';
+import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { plainToClass } from 'class-transformer';
 
 import { Action } from '@/shared/acl/action.constant';
@@ -189,10 +189,10 @@ export class AdminAnalyticsService {
       );
     }
 
-    // Set default date range if not provided
+    // Set default date range if not provided (extend to 365 days to avoid empty trends)
     const end = endDate || new Date();
     const start =
-      startDate || new Date(end.getTime() - 90 * 24 * 60 * 60 * 1000);
+      startDate || new Date(end.getTime() - 365 * 24 * 60 * 60 * 1000);
 
     const [
       jobPostingTrends,
