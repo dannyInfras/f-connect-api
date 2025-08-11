@@ -326,6 +326,7 @@ export class JobApplicationService {
           ai_score: app.ai_score || undefined,
           ai_analysis: app.ai_analysis || undefined,
           ai_status: app.ai_status || 'PENDING',
+          isRead: (app as any).isRead ?? (app as any).is_read ?? false,
         };
       });
 
@@ -401,6 +402,30 @@ export class JobApplicationService {
       }
       throw new BadRequestException('Failed to update job application');
     }
+  }
+
+  async markAsRead(
+    applicationId: number,
+    user: UserAccessTokenClaims,
+  ): Promise<UpdateApplicationServiceResponse> {
+    const application = await this.jobApplicationRepository.findOne({
+      where: { id: applicationId },
+      relations: ['user', 'job', 'job.company', 'job.company.users'],
+    });
+    if (!application) {
+      throw new NotFoundException('Application not found');
+    }
+    if (
+      !this.aclService.forActor(user).canDoAction(Action.Update, application)
+    ) {
+      throw new UnauthorizedException(
+        'You are not authorized to update this application',
+      );
+    }
+    await this.jobApplicationRepository.updateApplication(applicationId, {
+      isRead: true,
+    } as any);
+    return { message: 'Application marked as read', success: true };
   }
 
   async getApplicationById(
@@ -537,6 +562,7 @@ export class JobApplicationService {
         id: app.id.toString(),
         status: app.status,
         applied_at: app.applied_at,
+        isRead: (app as any).isRead ?? (app as any).is_read ?? false,
         candidate: {
           id: app.user.id.toString(),
           name: app.user.name,

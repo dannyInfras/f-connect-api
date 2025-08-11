@@ -46,6 +46,13 @@ export class JobApplicationResponseDto {
 
   @Expose()
   @ApiProperty({
+    description: 'Whether the application has been read',
+    default: false,
+  })
+  isRead: boolean;
+
+  @Expose()
+  @ApiProperty({
     description: 'AI analysis score (0-100)',
     required: false,
     type: Number,

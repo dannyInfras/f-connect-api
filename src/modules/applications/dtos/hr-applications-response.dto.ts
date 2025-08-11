@@ -40,6 +40,12 @@ export class HrApplicationResponseDto {
   @ApiProperty({ description: 'Date when application was submitted' })
   applied_at: Date;
 
+  @ApiProperty({
+    description: 'Whether the application has been read',
+    default: false,
+  })
+  isRead: boolean;
+
   @ApiProperty({ type: HrApplicationCandidateDto })
   candidate: HrApplicationCandidateDto;
 

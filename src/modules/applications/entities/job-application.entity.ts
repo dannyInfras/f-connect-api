@@ -47,6 +47,9 @@ export class JobApplication {
   })
   updated_at: Date;
 
+  @Column({ name: 'is_read', type: 'boolean', default: false })
+  isRead: boolean;
+
   // AI Analysis fields
   @Column({ type: 'int', nullable: true })
   ai_score: number;

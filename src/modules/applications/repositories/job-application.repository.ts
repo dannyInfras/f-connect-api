@@ -64,6 +64,7 @@ export class JobApplicationRepository {
     application.cv_id = params.cvId || '';
     application.cover_letter = params.coverLetter || '';
     application.status = ApplicationStatus.APPLIED;
+    application.isRead = false;
     // Set AI status based on whether cvId is provided and is a URL
     application.ai_status =
       params.cvId && params.cvId.startsWith('http')
@@ -274,6 +275,8 @@ export class JobApplicationRepository {
       cover_letter: application.cover_letter,
       applied_at: application.applied_at,
       updated_at: application.updated_at,
+      isRead:
+        (application as any).isRead ?? (application as any).is_read ?? false,
       ai_score: application.ai_score || undefined,
       ai_analysis: application.ai_analysis || undefined,
       ai_status: application.ai_status || 'PENDING',
@@ -392,6 +395,7 @@ export class JobApplicationRepository {
         'application.id',
         'application.status',
         'application.applied_at',
+        'application.is_read',
         'application.ai_score',
         'application.ai_analysis',
         'application.ai_status',

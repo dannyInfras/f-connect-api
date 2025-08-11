@@ -52,6 +52,12 @@ export class JobApplicationSimplifiedDto {
     example: 'COMPLETED',
   })
   ai_status?: string;
+
+  @ApiProperty({
+    description: 'Whether the application has been read',
+    default: false,
+  })
+  isRead: boolean;
 }
 
 export class JobApplicationsSimplifiedMetaDto {

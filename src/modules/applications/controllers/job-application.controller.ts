@@ -266,6 +266,20 @@ export class JobApplicationController {
     return result;
   }
 
+  @Patch(':id/read')
+  @ApiOperation({ summary: 'Mark job application as read' })
+  @ApiOkResponse({ type: UpdateJobApplicationResponseDto })
+  async markAsRead(
+    @Param('id') id: string,
+    @ReqContext() ctx: RequestContext,
+  ): Promise<UpdateApplicationResponse> {
+    const result = await this.jobApplicationService.markAsRead(
+      Number(id),
+      ctx.user!,
+    );
+    return result;
+  }
+
   @Get(':id/user')
   @ApiOperation({
     summary: 'Get application details for candidate user',
