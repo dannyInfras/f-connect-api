@@ -32,6 +32,7 @@ import { CreateJobReqDto } from '../dtos/req/create-job.req';
 import { UpdateJobDto } from '../dtos/req/update-job.req';
 import { HrJobsListResponseDto } from '../dtos/res/hr-jobs-response.dto';
 import { JobDetailResponseDto } from '../dtos/res/job.res';
+import { JobStatisticsResponseDto } from '../dtos/res/job-statistics.res';
 import { ListJobResponseDto } from '../dtos/res/list-job.res';
 import { JobSchedulerService } from '../job-scheduler.service';
 
@@ -239,5 +240,18 @@ export class JobsController {
       success: true,
       message: 'VIP expiration check triggered successfully',
     };
+  }
+
+  @Get(':id/stats')
+  @ApiOperation({ summary: 'Get job application statistics' })
+  @ApiResponse({
+    status: 200,
+    schema: { example: JobStatisticsResponseDto.example },
+  })
+  async getJobStatistics(
+    @Param('id') id: string,
+  ): Promise<BaseApiResponse<JobStatisticsResponseDto>> {
+    const data = await this.jobService.getJobStatistics(id);
+    return { data, meta: {} };
   }
 }
