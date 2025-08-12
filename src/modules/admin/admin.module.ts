@@ -13,6 +13,7 @@ import { SharedModule } from '@/shared/shared.module';
 
 import { ANALYTICS_REPOSITORY_TOKENS } from './constants/analytics-tokens';
 import { AdminAnalyticsController } from './controllers/admin-analytics.controller';
+import { AdminCompanyController } from './controllers/admin-company.controller';
 import { AdminUserController } from './controllers/admin-user.controller';
 import { AdminApplicationAnalyticsRepository } from './repositories/admin-application-analytics.repository';
 import { AdminCompanyAnalyticsRepository } from './repositories/admin-company-analytics.repository';
@@ -21,6 +22,8 @@ import { AdminJobAnalyticsRepository } from './repositories/admin-job-analytics.
 import { AdminUserAnalyticsRepository } from './repositories/admin-user-analytics.repository';
 import { AdminAnalyticsService } from './services/admin-analytics.service';
 import { AdminAnalyticsAclService } from './services/admin-analytics-acl.service';
+import { AdminCompanyService } from './services/admin-company.service';
+import { AdminCompanyAclService } from './services/admin-company-acl.service';
 import { AdminUserService } from './services/admin-user.service';
 import { AdminUserAclService } from './services/admin-user-acl.service';
 
@@ -42,6 +45,8 @@ import { AdminUserAclService } from './services/admin-user-acl.service';
     // User management services
     AdminUserService,
     AdminUserAclService,
+    AdminCompanyService,
+    AdminCompanyAclService,
 
     // Analytics services
     AdminAnalyticsService,
@@ -76,7 +81,11 @@ import { AdminUserAclService } from './services/admin-user-acl.service';
     AdminApplicationAnalyticsRepository,
     AdminCompanyAnalyticsRepository,
   ],
-  controllers: [AdminUserController, AdminAnalyticsController],
+  controllers: [
+    AdminUserController,
+    AdminAnalyticsController,
+    AdminCompanyController,
+  ],
   exports: [
     AdminUserService,
     AdminAnalyticsService,
