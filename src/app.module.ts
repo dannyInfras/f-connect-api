@@ -23,6 +23,7 @@ import { VideoCallModule } from '@/modules/video-call/video-call.module';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { AiQuizModule } from './modules/ai-quiz/ai-quiz.module';
 import { CvModule } from './modules/cv/cv.module';
 import { RoomModule } from './modules/room/room.module';
 import { SkillModule } from './modules/skill/skill.module';
@@ -55,6 +56,7 @@ import { SharedModule } from './shared/shared.module';
     MessengerModule,
     CouponModule,
     ScheduleManagementModule,
+    AiQuizModule,
   ],
   controllers: [AppController],
   providers: [AppService],
