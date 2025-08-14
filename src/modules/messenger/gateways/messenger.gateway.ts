@@ -39,19 +39,21 @@ interface VideoCallPayload {
 @WebSocketGateway({
   cors: {
     origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-    credentials: true
+    credentials: true,
   },
-  namespace: 'messenger'
+  namespace: 'messenger',
 })
 @Injectable()
 export class MessengerGateway
-  implements OnGatewayConnection, OnGatewayDisconnect {
+  implements OnGatewayConnection, OnGatewayDisconnect
+{
   @WebSocketServer()
   server: Server;
 
   private readonly logger = new Logger(MessengerGateway.name);
   private connectedUsers: Map<string, Socket> = new Map();
   private userConversations: Map<string, string[]> = new Map();
+  private activeCallSessions: Map<string, Set<string>> = new Map(); // Track active calls
 
   constructor(
     @InjectRepository(Message)
@@ -60,24 +62,25 @@ export class MessengerGateway
     private conversationRepository: Repository<Conversation>,
     private userService: UserService,
     private messagesService: MessagesService,
-  ) { }
+  ) {}
 
   handleConnection(client: Socket) {
     const userId = client.handshake.query.userId as string;
     if (userId) {
-      this.logger.log(`User ${userId} connected`);
+      this.logger.log(`User ${userId} connected with socket ${client.id}`);
       this.connectedUsers.set(userId, client);
 
       // Notify all users that this user is online
       this.server.emit('userStatus', { userId, isOnline: true });
 
       // Join user to all their conversations
-      this.findUserConversations(userId).then(conversationIds => {
+      this.findUserConversations(userId).then((conversationIds) => {
         if (!conversationIds.length) return;
 
         this.userConversations.set(userId, conversationIds);
-        conversationIds.forEach(convId => {
+        conversationIds.forEach((convId) => {
           client.join(convId);
+          this.logger.log(`User ${userId} joined conversation room: ${convId}`);
         });
       });
     }
@@ -90,6 +93,16 @@ export class MessengerGateway
       this.connectedUsers.delete(userId);
       this.userConversations.delete(userId);
 
+      // Clean up any active call sessions
+      this.activeCallSessions.forEach((users, convId) => {
+        if (users.has(userId)) {
+          users.delete(userId);
+          if (users.size === 0) {
+            this.activeCallSessions.delete(convId);
+          }
+        }
+      });
+
       // Notify all users that this user is offline
       this.server.emit('userStatus', { userId, isOnline: false });
     }
@@ -101,6 +114,9 @@ export class MessengerGateway
     @MessageBody() conversationId: string,
   ) {
     client.join(conversationId);
+    this.logger.log(
+      `Socket ${client.id} joined conversation: ${conversationId}`,
+    );
     return { success: true };
   }
 
@@ -110,6 +126,7 @@ export class MessengerGateway
     @MessageBody() conversationId: string,
   ) {
     client.leave(conversationId);
+    this.logger.log(`Socket ${client.id} left conversation: ${conversationId}`);
     return { success: true };
   }
 
@@ -121,7 +138,9 @@ export class MessengerGateway
     try {
       const { conversationId, content, senderId } = payload;
 
-      this.logger.log(`Received message from user ${senderId} in conversation ${conversationId}`);
+      this.logger.log(
+        `Received message from user ${senderId} in conversation ${conversationId}`,
+      );
 
       // Validate conversation exists
       const conversation = await this.conversationRepository.findOne({
@@ -172,19 +191,23 @@ export class MessengerGateway
       };
 
       // Emit to all clients in the conversation room
-      this.logger.log(`Emitting message to conversation room: ${conversationId}`);
+      this.logger.log(
+        `Emitting message to conversation room: ${conversationId}`,
+      );
       this.server.to(conversationId).emit('newMessage', fullMessage);
 
       // Determine recipient
-      const recipientId = conversation.user1Id === senderId
-        ? conversation.user2Id
-        : conversation.user1Id;
+      const recipientId =
+        conversation.user1Id === senderId
+          ? conversation.user2Id
+          : conversation.user1Id;
 
       // Check if recipient is online but not in this conversation
       const recipientSocket = this.connectedUsers.get(recipientId);
       if (recipientSocket) {
         // Send notification to recipient if they're not in this conversation
-        const recipientConversations = this.userConversations.get(recipientId) || [];
+        const recipientConversations =
+          this.userConversations.get(recipientId) || [];
         if (!recipientConversations.includes(conversationId)) {
           this.logger.log(`Sending notification to recipient: ${recipientId}`);
           recipientSocket.emit('messageNotification', {
@@ -198,11 +221,15 @@ export class MessengerGateway
       try {
         await this.conversationRepository.update(
           { id: conversationId },
-          { updatedAt: new Date() }
+          { updatedAt: new Date() },
         );
-        this.logger.log(`Updated conversation timestamp for: ${conversationId}`);
+        this.logger.log(
+          `Updated conversation timestamp for: ${conversationId}`,
+        );
       } catch (error: any) {
-        this.logger.error(`Error updating conversation timestamp: ${error.message}`);
+        this.logger.error(
+          `Error updating conversation timestamp: ${error.message}`,
+        );
       }
 
       return { success: true, message: fullMessage };
@@ -215,36 +242,93 @@ export class MessengerGateway
   private async findUserConversations(userId: string): Promise<string[]> {
     try {
       const conversations = await this.conversationRepository.find({
-        where: [
-          { user1Id: userId },
-          { user2Id: userId },
-        ],
+        where: [{ user1Id: userId }, { user2Id: userId }],
       });
-      return conversations.map(c => c.id);
+      return conversations.map((c) => c.id);
     } catch (error: any) {
       this.logger.error(`Error finding user conversations: ${error.message}`);
       return [];
     }
   }
 
-  // Video Call Event Handlers
+  // Video Call Event Handlers with improvements
   @SubscribeMessage('video-call-offer')
   handleVideoCallOffer(
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: VideoCallPayload,
   ) {
-    this.logger.log(`Video call offer from ${payload.from} to ${payload.to} in conversation ${payload.conversationId}`);
+    this.logger.log(
+      `[VideoCall] Offer from ${payload.from} to ${payload.to} in conversation ${payload.conversationId}`,
+    );
+
+    // Track active call session
+    if (!this.activeCallSessions.has(payload.conversationId)) {
+      this.activeCallSessions.set(payload.conversationId, new Set());
+    }
+    this.activeCallSessions.get(payload.conversationId)?.add(payload.from);
 
     const recipientSocket = this.connectedUsers.get(payload.to);
     if (recipientSocket) {
+      // Forward the offer with signal to recipient
       recipientSocket.emit('video-call-offer', {
         from: payload.from,
         signal: payload.signal,
         conversationId: payload.conversationId,
       });
-      this.logger.log(`Video call offer sent to recipient: ${payload.to}`);
+      this.logger.log(
+        `[VideoCall] Offer forwarded to recipient: ${payload.to} on socket ${recipientSocket.id}`,
+      );
+
+      // Notify caller that offer was sent
+      client.emit('video-call-offer-sent', { to: payload.to });
     } else {
-      this.logger.log(`Recipient ${payload.to} is not online`);
+      this.logger.log(`[VideoCall] Recipient ${payload.to} is not online`);
+      client.emit('video-call-user-offline', { userId: payload.to });
+
+      // Clean up call session
+      const session = this.activeCallSessions.get(payload.conversationId);
+      if (session) {
+        session.delete(payload.from);
+        if (session.size === 0) {
+          this.activeCallSessions.delete(payload.conversationId);
+        }
+      }
+    }
+
+    return { success: true };
+  }
+
+  @SubscribeMessage('video-call-answer')
+  handleVideoCallAnswer(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: VideoCallPayload,
+  ) {
+    this.logger.log(
+      `[VideoCall] Answer from ${payload.from} to ${payload.to} with signal`,
+    );
+
+    // Add answerer to active call session
+    const session = this.activeCallSessions.get(payload.conversationId);
+    if (session) {
+      session.add(payload.from);
+    }
+
+    const recipientSocket = this.connectedUsers.get(payload.to);
+    if (recipientSocket) {
+      // Forward the answer signal to the original caller
+      recipientSocket.emit('video-call-answer', {
+        from: payload.from,
+        signal: payload.signal,
+        conversationId: payload.conversationId,
+      });
+      this.logger.log(
+        `[VideoCall] Answer forwarded to caller: ${payload.to} on socket ${recipientSocket.id}`,
+      );
+
+      // Emit call started event
+      this.handleVideoCallStarted(client, payload);
+    } else {
+      this.logger.log(`[VideoCall] Caller ${payload.to} is no longer online`);
       client.emit('video-call-user-offline', { userId: payload.to });
     }
 
@@ -256,7 +340,18 @@ export class MessengerGateway
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: VideoCallPayload,
   ) {
-    this.logger.log(`Video call declined by ${payload.from} for ${payload.to}`);
+    this.logger.log(
+      `[VideoCall] Call declined by ${payload.from} for ${payload.to}`,
+    );
+
+    // Clean up call session
+    const session = this.activeCallSessions.get(payload.conversationId);
+    if (session) {
+      session.delete(payload.from);
+      if (session.size === 0) {
+        this.activeCallSessions.delete(payload.conversationId);
+      }
+    }
 
     const recipientSocket = this.connectedUsers.get(payload.to);
     if (recipientSocket) {
@@ -264,6 +359,9 @@ export class MessengerGateway
         from: payload.from,
         conversationId: payload.conversationId,
       });
+      this.logger.log(
+        `[VideoCall] Decline notification sent to: ${payload.to}`,
+      );
     }
 
     // Create system message for declined call
@@ -271,17 +369,18 @@ export class MessengerGateway
       const systemMessage = await this.messagesService.createMessage(
         payload.conversationId,
         payload.from,
-        '📞 Video call declined',
-        'text'
+        '📞 Cuộc gọi video bị từ chối',
+        'text',
       );
 
       this.server.to(payload.conversationId).emit('newMessage', {
         ...systemMessage,
-        sender: { id: payload.from, name: 'System' }
+        sender: { id: payload.from, name: 'System' },
       });
-
     } catch (error: any) {
-      this.logger.error(`Error creating declined call message: ${error.message}`);
+      this.logger.error(
+        `[VideoCall] Error creating declined call message: ${error.message}`,
+      );
     }
 
     return { success: true };
@@ -292,43 +391,27 @@ export class MessengerGateway
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: VideoCallPayload,
   ) {
-    this.logger.log(`Video call started between ${payload.from} and ${payload.to}`);
-    
+    this.logger.log(
+      `[VideoCall] Call started between ${payload.from} and ${payload.to}`,
+    );
+
     // Create system message for call started
     try {
       const systemMessage = await this.messagesService.createMessage(
         payload.conversationId,
         payload.from,
-        '📞 Video call started',
-        'text'
+        '📞 Cuộc gọi video đã bắt đầu',
+        'text',
       );
 
       this.server.to(payload.conversationId).emit('newMessage', {
         ...systemMessage,
-        sender: { id: payload.from, name: 'System' }
+        sender: { id: payload.from, name: 'System' },
       });
-
     } catch (error: any) {
-      this.logger.error(`Error creating call started message: ${error.message}`);
-    }
-
-    return { success: true };
-  }
-
-  @SubscribeMessage('video-call-answer')
-  handleVideoCallAnswer(
-    @ConnectedSocket() client: Socket,
-    @MessageBody() payload: VideoCallPayload,
-  ) {
-    this.logger.log(`Video call answer from ${payload.from} to ${payload.to}`);
-
-    const recipientSocket = this.connectedUsers.get(payload.to);
-    if (recipientSocket) {
-      recipientSocket.emit('video-call-answer', {
-        from: payload.from,
-        signal: payload.signal,
-        conversationId: payload.conversationId,
-      });
+      this.logger.error(
+        `[VideoCall] Error creating call started message: ${error.message}`,
+      );
     }
 
     return { success: true };
@@ -339,7 +422,19 @@ export class MessengerGateway
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: VideoCallPayload,
   ) {
-    this.logger.log(`Video call ended by ${payload.from} for ${payload.to}, reason: ${payload.reason || 'normal'}`);
+    this.logger.log(
+      `[VideoCall] Call ended by ${payload.from} for ${payload.to}, reason: ${payload.reason || 'normal'}`,
+    );
+
+    // Clean up call session
+    const session = this.activeCallSessions.get(payload.conversationId);
+    if (session) {
+      session.delete(payload.from);
+      session.delete(payload.to);
+      if (session.size === 0) {
+        this.activeCallSessions.delete(payload.conversationId);
+      }
+    }
 
     const recipientSocket = this.connectedUsers.get(payload.to);
     if (recipientSocket) {
@@ -348,34 +443,38 @@ export class MessengerGateway
         conversationId: payload.conversationId,
         reason: payload.reason,
       });
+      this.logger.log(`[VideoCall] End notification sent to: ${payload.to}`);
     }
 
-    // Create system message for missed call or call ended
+    // Create system message for call end
     try {
       let messageContent = '';
       if (payload.reason === 'timeout') {
-        messageContent = '📞 Missed video call';
+        messageContent = '📞 Cuộc gọi video bị nhỡ';
       } else if (payload.reason === 'busy') {
-        messageContent = '📞 Video call - User busy';
+        messageContent = '📞 Cuộc gọi video - Người dùng bận';
+      } else if (payload.reason === 'error') {
+        messageContent = '📞 Cuộc gọi video bị lỗi';
       } else {
-        messageContent = '📞 Video call ended';
+        messageContent = '📞 Cuộc gọi video đã kết thúc';
       }
 
       const systemMessage = await this.messagesService.createMessage(
         payload.conversationId,
         payload.from,
         messageContent,
-        'text'
+        'text',
       );
 
       // Emit the system message to both users
       this.server.to(payload.conversationId).emit('newMessage', {
         ...systemMessage,
-        sender: { id: payload.from, name: 'System' }
+        sender: { id: payload.from, name: 'System' },
       });
-
     } catch (error: any) {
-      this.logger.error(`Error creating call end message: ${error.message}`);
+      this.logger.error(
+        `[VideoCall] Error creating call end message: ${error.message}`,
+      );
     }
 
     return { success: true };
@@ -386,6 +485,10 @@ export class MessengerGateway
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: VideoCallPayload,
   ) {
+    this.logger.log(
+      `[VideoCall] Video toggled by ${payload.from}: ${payload.enabled}`,
+    );
+
     const recipientSocket = this.connectedUsers.get(payload.to);
     if (recipientSocket) {
       recipientSocket.emit('video-call-toggle-video', {
@@ -393,6 +496,7 @@ export class MessengerGateway
         enabled: payload.enabled,
         conversationId: payload.conversationId,
       });
+      this.logger.log(`[VideoCall] Video toggle sent to: ${payload.to}`);
     }
 
     return { success: true };
@@ -403,6 +507,10 @@ export class MessengerGateway
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: VideoCallPayload,
   ) {
+    this.logger.log(
+      `[VideoCall] Audio toggled by ${payload.from}: ${payload.enabled}`,
+    );
+
     const recipientSocket = this.connectedUsers.get(payload.to);
     if (recipientSocket) {
       recipientSocket.emit('video-call-toggle-audio', {
@@ -410,6 +518,7 @@ export class MessengerGateway
         enabled: payload.enabled,
         conversationId: payload.conversationId,
       });
+      this.logger.log(`[VideoCall] Audio toggle sent to: ${payload.to}`);
     }
 
     return { success: true };
