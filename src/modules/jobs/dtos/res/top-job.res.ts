@@ -69,6 +69,10 @@ export class TopJobResponseDto {
   typeOfEmployment: string;
 
   @Expose()
+  @ApiProperty({ example: 'OPEN', description: 'Job status (OPEN or CLOSED)' })
+  status: string;
+
+  @Expose()
   @ApiProperty({ example: '2024-01-01T00:00:00.000Z', required: true })
   deadline: Date;
 
@@ -107,6 +111,7 @@ export class TopJobResponseDto {
     salaryMax: 120000,
     experienceYears: 5,
     typeOfEmployment: 'FULL_TIME',
+    status: 'OPEN',
     deadline: '2024-01-01T00:00:00.000Z',
     isDeleted: false,
     topJob: 1,

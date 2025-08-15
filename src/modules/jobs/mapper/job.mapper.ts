@@ -99,6 +99,7 @@ export class JobMapper {
       salaryMax: job.salaryMax,
       experienceYears: job.experienceYears,
       typeOfEmployment: job.typeOfEmployment,
+      status: job.status,
       deadline: job.deadline,
       isDeleted: job.isDeleted || false,
       topJob: job.topJob || 0,
