@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   NotFoundException,
   UnauthorizedException,
@@ -419,5 +420,56 @@ export class UserService {
 
   async deleteUser(userId: number): Promise<void> {
     await this.repository.delete(userId);
+  }
+
+  async checkAiPoints(
+    userId: number,
+    requiredPoints: number = 1,
+  ): Promise<boolean> {
+    const user = await this.repository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+    return user.point >= requiredPoints;
+  }
+
+  async deductAiPoints(userId: number, points: number = 1): Promise<User> {
+    const user = await this.repository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    if (user.point < points) {
+      throw new BadRequestException(
+        'Insufficient AI points. Please upgrade your plan or purchase more points.',
+      );
+    }
+
+    user.point -= points;
+    return this.repository.save(user);
+  }
+
+  /**
+   * Lấy số points còn lại
+   */
+  async getAiPoints(userId: number): Promise<number> {
+    const user = await this.repository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+    return user.point;
+  }
+
+  /**
+   * Thêm points (dùng khi nạp thêm)
+   */
+  async addAiPoints(userId: number, points: number): Promise<User> {
+    const user = await this.repository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    user.point += points;
+    return this.repository.save(user);
   }
 }

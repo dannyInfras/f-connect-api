@@ -1,11 +1,12 @@
-import { BadRequestException,Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 import { v4 as uuidv4 } from 'uuid';
 
 import { Roadmap } from '../../roadmap/entities/roadmap.entity';
 import { RoadmapRepository } from '../../roadmap/repositories/roadmap.repository';
-import { QuizAnswer,QuizQuestion } from '../entities/quiz.entity';
+import { UserService } from '../../user/services/user.service';
+import { QuizAnswer, QuizQuestion } from '../entities/quiz.entity';
 import { QuizAttempt, QuizFeedback } from '../entities/quiz-attempt.entity';
 import { QuizService } from './quiz.service';
 
@@ -17,6 +18,7 @@ export class QuizAiService {
     private readonly configService: ConfigService,
     private readonly quizService: QuizService,
     private readonly roadmapRepository: RoadmapRepository,
+    private readonly userService: UserService,
   ) {
     this.openaiApiKey = this.configService.get<string>('OPENAI_API_KEY') || '';
   }
@@ -408,6 +410,13 @@ export class QuizAiService {
         return this.generateFallbackQuestions(roadmap);
       }
 
+      const hasPoints = await this.userService.checkAiPoints(roadmap.userId);
+      if (!hasPoints) {
+        throw new BadRequestException(
+          'You have reached your AI usage limit. Please upgrade your plan or purchase more points.',
+        );
+      }
+
       const prompt = this.buildPrompt(roadmap);
       const messages = [
         {
@@ -427,6 +436,8 @@ export class QuizAiService {
         max_tokens: 4000,
         response_format: { type: 'json_object' },
       });
+
+      await this.userService.deductAiPoints(roadmap.userId);
 
       return this.processAIResponse(aiQuestions, roadmap);
     } catch (error) {

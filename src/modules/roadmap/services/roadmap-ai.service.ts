@@ -1,8 +1,9 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 import { v4 as uuidv4 } from 'uuid';
 
+import { UserService } from '../../user/services/user.service';
 import {
   CVAnalysis,
   CVSnapshot,
@@ -16,7 +17,10 @@ export class RoadmapAiService {
   private readonly logger = new Logger(RoadmapAiService.name);
   private readonly openaiApiKey: string;
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly userService: UserService,
+  ) {
     this.openaiApiKey = this.configService.get<string>('OPENAI_API_KEY') || '';
   }
 
@@ -24,6 +28,7 @@ export class RoadmapAiService {
    * Generate comprehensive roadmap with CV analysis
    */
   async generateRoadmap(
+    userId: number,
     cvData: any,
     jobDetails: any,
   ): Promise<{
@@ -35,6 +40,13 @@ export class RoadmapAiService {
     cvAnalysis: CVAnalysis;
   }> {
     try {
+      const hasPoints = await this.userService.checkAiPoints(userId);
+      if (!hasPoints) {
+        throw new BadRequestException(
+          'You have reached your AI usage limit. Please upgrade your plan or purchase more points.',
+        );
+      }
+
       // Step 1: Create CV snapshot
       const cvSnapshot = this.createCVSnapshot(cvData);
 
@@ -51,6 +63,8 @@ export class RoadmapAiService {
         jobDetails,
         industry,
       );
+
+      await this.userService.deductAiPoints(userId);
 
       return {
         title: `Roadmap to ${jobDetails.title}`,

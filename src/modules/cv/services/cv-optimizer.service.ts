@@ -1,7 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 
+import { UserService } from '../../user/services/user.service';
 import { CV } from '../entities/cv.entity';
 import { CvOptimizationHistory } from '../entities/cv-optimization-history.entity';
 import {
@@ -21,12 +22,20 @@ export class CvOptimizerService {
   constructor(
     private readonly configService: ConfigService,
     private readonly historyRepository: CvOptimizationHistoryRepository,
+    private readonly userService: UserService,
   ) {
     this.openaiApiKey = this.configService.get<string>('OPENAI_API_KEY') || '';
   }
 
   async optimizeCv(input: AiOptimizerInput): Promise<AiOptimizerOutput> {
     try {
+      const hasPoints = await this.userService.checkAiPoints(input.userId);
+      if (!hasPoints) {
+        throw new BadRequestException(
+          'You have reached your AI usage limit. Please upgrade your plan or purchase more points.',
+        );
+      }
+
       this.logger.log(
         `Optimizing CV ${input.cv.id} for job: ${input.jobTitle || 'No title provided'}`,
       );
@@ -40,6 +49,8 @@ export class CvOptimizerService {
       );
 
       this.applySuggestions(optimizedCv, suggestions);
+
+      await this.userService.deductAiPoints(input.userId);
 
       const result = {
         optimizedCv,

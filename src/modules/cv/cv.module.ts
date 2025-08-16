@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { User } from '../user/entities/user.entity';
+import { UserModule } from '../user/user.module';
 import { CvAclService } from './acl/cv.acl';
 import { CvController } from './controllers/cv.controller';
 import { CV } from './entities/cv.entity';
@@ -16,6 +17,7 @@ import { CvOptimizerService } from './services/cv-optimizer.service';
   imports: [
     TypeOrmModule.forFeature([CV, User, CvOptimizationHistory]),
     ConfigModule,
+    UserModule,
   ],
   controllers: [CvController],
   providers: [
