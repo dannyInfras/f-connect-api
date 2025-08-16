@@ -4,6 +4,7 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { compare, hash } from 'bcrypt';
 import { plainToClass } from 'class-transformer';
 import { EntityManager } from 'typeorm';
@@ -18,6 +19,7 @@ import { UserRepository } from '@/modules/user/repositories/user.repository';
 import { AppEvents } from '@/shared/events/event.constants';
 import { EventEmitterService } from '@/shared/events/event-emitter.service';
 import { AppLogger } from '@/shared/logger/logger.service';
+import { MailService } from '@/shared/mail/mail.service';
 import { RequestContext } from '@/shared/request-context/request-context.dto';
 
 import { Company } from '../../company/entities/company.entity';
@@ -29,6 +31,8 @@ export class UserService {
     private readonly logger: AppLogger,
     private readonly companyRepository: CompanyRepository,
     private readonly eventEmitter: EventEmitterService,
+    private readonly jwtService: JwtService,
+    private readonly mailService: MailService,
   ) {
     this.logger.setContext(UserService.name);
   }
@@ -471,5 +475,70 @@ export class UserService {
 
     user.point += points;
     return this.repository.save(user);
+  }
+
+  /**
+   * Change user password with security validations
+   */
+  async changePassword(
+    ctx: RequestContext,
+    userId: number,
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<boolean> {
+    this.logger.log(ctx, `${this.changePassword.name} was called`);
+
+    // Get the user with current password
+    const user = await this.repository.findOne({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (user.provider === 'google' || !user.password) {
+      throw new UnauthorizedException(
+        'User has no password set (OAuth account)',
+      );
+    }
+
+    // Validate current password
+    const isCurrentPasswordValid = await compare(
+      currentPassword,
+      user.password,
+    );
+    if (!isCurrentPasswordValid) {
+      throw new UnauthorizedException('Current password is incorrect');
+    }
+
+    // Hash new password
+    const hashedPassword = await hash(newPassword, 10);
+
+    // Update user with new password
+    user.password = hashedPassword;
+    await this.repository.save(user);
+
+    // Send password change notification email
+    await this.mailService.sendMail(
+      user.email,
+      'Password Changed Successfully',
+      'password-changed',
+      {
+        name: user.name,
+        timestamp: new Date().toLocaleString(),
+        currentYear: new Date().getFullYear(),
+        supportUrl: process.env.FRONTEND_URL
+          ? `${process.env.FRONTEND_URL}/support`
+          : '#',
+      },
+    );
+
+    // Send event through event emitter
+    this.eventEmitter.emit(AppEvents.PASSWORD_CHANGED, {
+      userId: user.id,
+    });
+
+    return true;
   }
 }

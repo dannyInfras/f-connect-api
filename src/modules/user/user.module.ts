@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { JwtModule } from '@nestjs/jwt';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { JwtAuthStrategy } from '@/modules/auth/strategies/jwt-auth.strategy';
@@ -11,7 +12,11 @@ import { UserAclService } from '@/modules/user/services/user-acl.service';
 import { SharedModule } from '@/shared/shared.module';
 
 @Module({
-  imports: [SharedModule, TypeOrmModule.forFeature([User])],
+  imports: [
+    SharedModule,
+    TypeOrmModule.forFeature([User]),
+    JwtModule.register({}),
+  ],
   providers: [
     UserService,
     JwtAuthStrategy,

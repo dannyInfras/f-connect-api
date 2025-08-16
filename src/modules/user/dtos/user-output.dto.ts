@@ -63,4 +63,8 @@ export class UserOutput {
   @Expose()
   @ApiProperty({ type: String, nullable: true })
   companyId?: string | null;
+
+  @Expose()
+  @ApiProperty({ type: String })
+  provider: string;
 }

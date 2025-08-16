@@ -7,8 +7,11 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import { InjectRepository } from '@nestjs/typeorm';
+import { hash } from 'bcrypt';
 import { plainToClass } from 'class-transformer';
 import { firstValueFrom } from 'rxjs';
+import { Repository } from 'typeorm';
 
 import { RegisterCompanyInput } from '@/modules/auth/dtos/auth-register-company-input.dto';
 import { RegisterInput } from '@/modules/auth/dtos/auth-register-input.dto';
@@ -17,9 +20,11 @@ import {
   AuthTokenOutput,
   UserAccessTokenClaims,
 } from '@/modules/auth/dtos/auth-token-output.dto';
+import { PasswordResetToken } from '@/modules/auth/entities/password-reset-token.entity';
 import { EmailVerificationService } from '@/modules/auth/services/email-verification.service';
 import { CompanyService } from '@/modules/company/services/company.service';
 import { UserOutput } from '@/modules/user/dtos/user-output.dto';
+import { User } from '@/modules/user/entities/user.entity';
 import { UserService } from '@/modules/user/services/user.service';
 import { AppEvents } from '@/shared/events/event.constants';
 import { EventEmitterService } from '@/shared/events/event-emitter.service';
@@ -43,6 +48,8 @@ export class AuthService {
     private readonly eventEmitter: EventEmitterService,
     private readonly unitOfWork: UnitOfWork,
     private readonly emailVerificationService: EmailVerificationService,
+    @InjectRepository(PasswordResetToken)
+    private readonly passwordResetTokenRepository: Repository<PasswordResetToken>,
   ) {
     this.logger.setContext(AuthService.name);
   }
@@ -366,5 +373,186 @@ export class AuthService {
     return {
       message: 'Report sent successfully. Admin will review within 24 hours.',
     };
+  }
+
+  /**
+   * Send password reset email if user exists
+   * Always returns same message to prevent user enumeration
+   */
+  async forgotPassword(
+    ctx: RequestContext,
+    email: string,
+  ): Promise<{ message: string }> {
+    this.logger.log(ctx, `${this.forgotPassword.name} was called`);
+
+    try {
+      // Try to find user by email - need to get raw user entity to check provider
+      const userEntity = await this.userService.findByEmail(ctx, email);
+
+      if (userEntity) {
+        // Check if this is a local account (not OAuth) by accessing the raw repository
+        const userRepository =
+          this.passwordResetTokenRepository.manager.getRepository(User);
+        const fullUser = await userRepository.findOne({
+          where: { id: userEntity.id },
+        });
+
+        // Only send email if user has a password set (not OAuth)
+        if (fullUser && fullUser.provider === 'local') {
+          // Invalidate any existing tokens for this user
+          await this.passwordResetTokenRepository.update(
+            { user: { id: userEntity.id }, isUsed: false },
+            { isUsed: true },
+          );
+
+          // Generate secure reset token (expires in 1 hour)
+          const resetToken = this.jwtService.sign(
+            { userId: userEntity.id, type: 'password_reset' },
+            { expiresIn: '1h' },
+          );
+
+          // Store token in database
+          const passwordResetToken = new PasswordResetToken();
+          passwordResetToken.token = resetToken;
+          passwordResetToken.user = fullUser; // TypeORM relationship
+          passwordResetToken.expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+          passwordResetToken.isUsed = false;
+
+          await this.passwordResetTokenRepository.save(passwordResetToken);
+
+          // Send reset email
+          const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+          await this.mailService.sendMail(
+            userEntity.email,
+            'Password Reset Request',
+            'password-reset',
+            {
+              name: userEntity.name,
+              resetLink,
+              expirationTime: '1 hour',
+              currentYear: new Date().getFullYear(),
+            },
+          );
+
+          this.logger.log(ctx, `Password reset email sent to ${email}`);
+        } else {
+          this.logger.log(
+            ctx,
+            `Password reset attempted for OAuth user: ${email}`,
+          );
+        }
+      } else {
+        this.logger.log(
+          ctx,
+          `Password reset attempted for non-existent user: ${email}`,
+        );
+      }
+    } catch (error) {
+      // Log error but don't expose it to prevent enumeration
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(ctx, `Error in forgotPassword: ${errorMessage}`);
+    }
+
+    // Always return the same message for security
+    return {
+      message:
+        'If this email exists in our system, we have sent a password reset link.',
+    };
+  }
+
+  /**
+   * Reset password using valid token
+   */
+  async resetPassword(
+    ctx: RequestContext,
+    token: string,
+    newPassword: string,
+  ): Promise<{ message: string; success: boolean }> {
+    this.logger.log(ctx, `${this.resetPassword.name} was called`);
+
+    try {
+      // Verify and decode the JWT token
+      const decoded = this.jwtService.verify(token);
+
+      if (decoded.type !== 'password_reset') {
+        throw new BadRequestException('Invalid token type');
+      }
+
+      // Find the reset token in database
+      const resetTokenRecord = await this.passwordResetTokenRepository.findOne({
+        where: { token, isUsed: false },
+        relations: ['user'],
+      });
+
+      if (!resetTokenRecord) {
+        throw new BadRequestException('Invalid or expired reset token');
+      }
+
+      // Check if token is expired
+      if (new Date() > resetTokenRecord.expiresAt) {
+        // Mark as used to prevent reuse
+        resetTokenRecord.isUsed = true;
+        await this.passwordResetTokenRepository.save(resetTokenRecord);
+        throw new BadRequestException('Reset token has expired');
+      }
+
+      // Check if user still exists
+      const user = resetTokenRecord.user;
+      if (!user) {
+        throw new BadRequestException('User not found');
+      }
+
+      // Hash new password
+      const hashedPassword = await hash(newPassword, 10);
+
+      // Update user password directly in database
+      const userRepository =
+        this.passwordResetTokenRepository.manager.getRepository(User);
+      await userRepository.update(user.id, {
+        password: hashedPassword,
+      });
+
+      // Mark token as used
+      resetTokenRecord.isUsed = true;
+      await this.passwordResetTokenRepository.save(resetTokenRecord);
+
+      // Send confirmation email
+      await this.mailService.sendMail(
+        user.email,
+        'Password Reset Successful',
+        'password-changed',
+        {
+          name: user.name,
+          timestamp: new Date().toLocaleString(),
+          currentYear: new Date().getFullYear(),
+          supportUrl: process.env.FRONTEND_URL
+            ? `${process.env.FRONTEND_URL}/support`
+            : '#',
+        },
+      );
+
+      // Emit password change event to invalidate old sessions
+      this.eventEmitter.emit(AppEvents.PASSWORD_CHANGED, {
+        userId: user.id,
+      });
+
+      this.logger.log(ctx, `Password successfully reset for user ${user.id}`);
+
+      return {
+        message: 'Password has been reset successfully',
+        success: true,
+      };
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(ctx, `Error in resetPassword: ${errorMessage}`);
+
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+
+      throw new BadRequestException('Invalid or expired reset token');
+    }
   }
 }
