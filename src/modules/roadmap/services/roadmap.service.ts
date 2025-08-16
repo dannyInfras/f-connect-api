@@ -305,6 +305,7 @@ export class RoadmapService {
 
     // Step 3: Generate roadmap using AI with CV snapshot and analysis
     const generatedRoadmap = await this.aiService.generateRoadmap(
+      cv.userId,
       cv,
       jobDetails,
     );

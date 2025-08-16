@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { CvModule } from '../cv/cv.module';
 import { JobsModule } from '../jobs/jobs.module';
+import { UserModule } from '../user/user.module';
 import { RoadmapAclService } from './acl/roadmap.acl';
 import { RoadmapController } from './controllers/roadmap.controller';
 import { Roadmap } from './entities/roadmap.entity';
@@ -17,6 +18,7 @@ import { RoadmapAiService } from './services/roadmap-ai.service';
     CvModule,
     JobsModule,
     ConfigModule,
+    UserModule,
   ],
   controllers: [RoadmapController],
   providers: [

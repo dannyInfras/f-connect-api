@@ -5,6 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Roadmap } from '../roadmap/entities/roadmap.entity';
 import { RoadmapRepository } from '../roadmap/repositories/roadmap.repository';
 import { RoadmapModule } from '../roadmap/roadmap.module';
+import { UserModule } from '../user/user.module';
 import { QuizAclService } from './acl/quiz.acl';
 import { QuizController } from './controllers/quiz.controller';
 import { Quiz } from './entities/quiz.entity';
@@ -20,6 +21,7 @@ import { QuizAttemptService } from './services/quiz-attempt.service';
     TypeOrmModule.forFeature([Quiz, QuizAttempt, Roadmap]),
     RoadmapModule,
     ConfigModule,
+    UserModule,
   ],
   controllers: [QuizController],
   providers: [

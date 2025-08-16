@@ -148,4 +148,26 @@ export class UserController {
     const user = await this.userService.updateUser(ctx, ctx.user!.id, input);
     return { data: user, meta: {} };
   }
+
+  @ApiBearerAuth()
+  @Get('ai-points')
+  @ApiOperation({ summary: 'Get current AI points balance' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns current AI points',
+    schema: {
+      type: 'object',
+      properties: {
+        points: { type: 'number' },
+        userId: { type: 'number' },
+      },
+    },
+  })
+  async getAiPoints(@ReqContext() ctx: RequestContext) {
+    const points = await this.userService.getAiPoints(ctx.user!.id);
+    return {
+      points,
+      userId: ctx.user!.id,
+    };
+  }
 }
