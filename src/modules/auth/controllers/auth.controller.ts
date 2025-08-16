@@ -17,11 +17,13 @@ import { ConfigService } from '@nestjs/config';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
 
+import { ForgotPasswordDto } from '@/modules/auth/dtos/auth-forgot-password.dto';
 import { LoginInput } from '@/modules/auth/dtos/auth-login-input.dto';
 import { RefreshTokenInput } from '@/modules/auth/dtos/auth-refresh-token-input.dto';
 import { RegisterCompanyInput } from '@/modules/auth/dtos/auth-register-company-input.dto';
 import { RegisterInput } from '@/modules/auth/dtos/auth-register-input.dto';
 import { RegisterOutput } from '@/modules/auth/dtos/auth-register-output.dto';
+import { ResetPasswordDto } from '@/modules/auth/dtos/auth-reset-password.dto';
 import { AuthTokenOutput } from '@/modules/auth/dtos/auth-token-output.dto';
 import { GoogleAuthGuard } from '@/modules/auth/guards/google-auth.guard';
 import { JwtRefreshGuard } from '@/modules/auth/guards/jwt-refresh.guard';
@@ -162,6 +164,61 @@ export class AuthController {
     @Body('email') email: string,
   ): Promise<{ message: string }> {
     return this.authService.resendVerificationEmail(ctx, email);
+  }
+
+  // -------- Password reset functionality --------
+
+  @Post('forgot-password')
+  @ApiOperation({ summary: 'Request password reset link' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Password reset link sent (generic message for security)',
+    schema: {
+      type: 'object',
+      properties: {
+        message: { type: 'string' },
+      },
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    type: BaseApiErrorResponse,
+  })
+  async forgotPassword(
+    @ReqContext() ctx: RequestContext,
+    @Body() forgotPasswordDto: ForgotPasswordDto,
+  ): Promise<{ message: string }> {
+    this.logger.log(ctx, `${this.forgotPassword.name} was called`);
+    return this.authService.forgotPassword(ctx, forgotPasswordDto.email);
+  }
+
+  @Post('reset-password')
+  @ApiOperation({ summary: 'Reset password using token' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Password reset successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        message: { type: 'string' },
+        success: { type: 'boolean' },
+      },
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    type: BaseApiErrorResponse,
+  })
+  async resetPassword(
+    @ReqContext() ctx: RequestContext,
+    @Body() resetPasswordDto: ResetPasswordDto,
+  ): Promise<{ message: string; success: boolean }> {
+    this.logger.log(ctx, `${this.resetPassword.name} was called`);
+    return this.authService.resetPassword(
+      ctx,
+      resetPasswordDto.token,
+      resetPasswordDto.newPassword,
+    );
   }
 
   @Get('google')

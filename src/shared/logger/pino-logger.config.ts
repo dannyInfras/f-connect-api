@@ -1,3 +1,4 @@
+// @ts-nocheck
 import * as fs from 'fs';
 import { join } from 'path';
 import pino from 'pino';

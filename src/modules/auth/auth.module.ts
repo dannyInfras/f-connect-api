@@ -12,9 +12,11 @@ import { SharedModule } from '@/shared/shared.module';
 import { STRATEGY_JWT_AUTH } from './constants/strategy.constant';
 import { AuthController } from './controllers/auth.controller';
 import { EmailVerificationToken } from './entities/email-verification-token.entity';
+import { PasswordResetToken } from './entities/password-reset-token.entity';
 import { GoogleAuthGuard } from './guards/google-auth.guard';
 import { AuthService } from './services/auth.service';
 import { EmailVerificationService } from './services/email-verification.service';
+import { PasswordChangeListenerService } from './services/password-change-listener.service';
 import { GoogleStrategy } from './strategies/google.strategy';
 import { JwtAuthStrategy } from './strategies/jwt-auth.strategy';
 import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
@@ -24,7 +26,7 @@ import { LocalStrategy } from './strategies/local.strategy';
   imports: [
     SharedModule,
     HttpModule,
-    TypeOrmModule.forFeature([EmailVerificationToken]),
+    TypeOrmModule.forFeature([EmailVerificationToken, PasswordResetToken]),
     PassportModule.register({ defaultStrategy: STRATEGY_JWT_AUTH }),
     JwtModule.registerAsync({
       imports: [SharedModule],
@@ -49,6 +51,7 @@ import { LocalStrategy } from './strategies/local.strategy';
     GoogleStrategy,
     GoogleAuthGuard,
     EmailVerificationService,
+    PasswordChangeListenerService,
   ],
 })
 export class AuthModule {}

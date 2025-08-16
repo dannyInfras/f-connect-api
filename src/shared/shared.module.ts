@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { configModuleOptions } from './configs/module-options';
@@ -34,6 +35,7 @@ import { UnitOfWork } from './unit-of-work/unit-of-work.service';
         debug: configService.get<string>('env') === 'development',
       }),
     }),
+    EventEmitterModule.forRoot(),
     AppLoggerModule,
   ],
   exports: [
@@ -47,7 +49,6 @@ import { UnitOfWork } from './unit-of-work/unit-of-work.service';
   ],
   providers: [
     { provide: APP_INTERCEPTOR, useClass: LoggingInterceptor },
-
     {
       provide: APP_FILTER,
       useClass: AllExceptionsFilter,

@@ -1,10 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 
 import { STRATEGY_JWT_AUTH } from '@/modules/auth/constants/strategy.constant';
 import { UserAccessTokenClaims } from '@/modules/auth/dtos/auth-token-output.dto';
+import { PasswordChangeListenerService } from '@/modules/auth/services/password-change-listener.service';
 
 @Injectable()
 export class JwtAuthStrategy extends PassportStrategy(
@@ -21,6 +22,16 @@ export class JwtAuthStrategy extends PassportStrategy(
 
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   async validate(payload: any): Promise<UserAccessTokenClaims> {
+    // Check if token was issued before password change
+    const userId = payload.sub;
+    const tokenIssuedAt = new Date(payload.iat * 1000); // JWT iat is in seconds, convert to milliseconds
+
+    if (!PasswordChangeListenerService.isTokenValid(userId, tokenIssuedAt)) {
+      throw new UnauthorizedException(
+        'Session invalidated due to password change',
+      );
+    }
+
     // Passport automatically creates a user object, based on the value we return from the validate() method,
     // and assigns it to the Request object as req.user
     return {

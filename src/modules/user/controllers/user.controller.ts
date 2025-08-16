@@ -6,6 +6,7 @@ import {
   HttpStatus,
   Param,
   Patch,
+  Post,
   Query,
   UseGuards,
   UseInterceptors,
@@ -21,6 +22,7 @@ import { ROLE } from '@/modules/auth/constants/role.constant';
 import { Roles } from '@/modules/auth/decorators/role.decorator';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@/modules/auth/guards/roles.guard';
+import { ChangePasswordDto } from '@/modules/user/dtos/user-change-password.dto';
 import { UserOutput } from '@/modules/user/dtos/user-output.dto';
 import { UpdateUserInput } from '@/modules/user/dtos/user-update-input.dto';
 import { UserService } from '@/modules/user/services/user.service';
@@ -168,6 +170,57 @@ export class UserController {
     return {
       points,
       userId: ctx.user!.id,
+    };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Post('change-password')
+  @ApiOperation({ summary: 'Change user password securely' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Password successfully changed',
+    schema: {
+      type: 'object',
+      properties: {
+        message: { type: 'string' },
+        success: { type: 'boolean' },
+      },
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    type: BaseApiErrorResponse,
+    description:
+      'Invalid input, password confirmation mismatch, or current password is incorrect',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    type: BaseApiErrorResponse,
+  })
+  async changePassword(
+    @ReqContext() ctx: RequestContext,
+    @Body() changePasswordDto: ChangePasswordDto,
+  ): Promise<{ message: string; success: boolean }> {
+    this.logger.log(ctx, `${this.changePassword.name} was called`);
+
+    if (changePasswordDto.newPassword !== changePasswordDto.confirmPassword) {
+      return {
+        message: 'New password and confirmation password do not match',
+        success: false,
+      };
+    }
+
+    await this.userService.changePassword(
+      ctx,
+      ctx.user!.id,
+      changePasswordDto.currentPassword,
+      changePasswordDto.newPassword,
+    );
+
+    return {
+      message: 'Password changed successfully',
+      success: true,
     };
   }
 }
