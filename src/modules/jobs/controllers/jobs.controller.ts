@@ -17,6 +17,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 
+import { JobApplicationRepository } from '@/modules/applications/repositories/job-application.repository';
 import { ROLE } from '@/modules/auth/constants/role.constant';
 import { Roles } from '@/modules/auth/decorators/role.decorator';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
@@ -45,6 +46,7 @@ export class JobsController {
   constructor(
     private readonly jobService: JobService,
     private readonly jobSchedulerService: JobSchedulerService,
+    private readonly jobApplicationRepository: JobApplicationRepository,
   ) {}
 
   @Post()
@@ -64,6 +66,36 @@ export class JobsController {
       throw new UnauthorizedException('User must be logged in');
     }
     return this.jobService.create(ctx.user, dto);
+  }
+
+  @Get(':id/is-apply')
+  @ApiOperation({ summary: 'Check if current user has applied to the job' })
+  @ApiResponse({
+    status: 200,
+    description: 'Whether the user has applied to the job',
+    schema: {
+      type: 'object',
+      properties: {
+        isApply: { type: 'boolean', example: true },
+      },
+    },
+  })
+  async checkUserApplied(
+    @Param('id') id: string,
+    @ReqContext() ctx: RequestContext,
+  ): Promise<{ isApply: boolean }> {
+    if (!ctx.user) {
+      throw new UnauthorizedException('User must be logged in');
+    }
+
+    const existing = await this.jobApplicationRepository.findOne({
+      where: {
+        job: { id: String(id) },
+        user: { id: ctx.user.id },
+      },
+    });
+
+    return { isApply: !!existing };
   }
 
   @Public()
