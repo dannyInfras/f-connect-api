@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { SharedModule } from '@/shared/shared.module';
 
+import { ApplicationsModule } from '../applications/applications.module';
 import { CategoryModule } from '../category/category.module';
 import { SkillModule } from '../skill/skill.module';
 import { JobAclService } from './acl/jobs.acl';
@@ -18,6 +19,7 @@ import { JobService } from './services/jobs.service';
     forwardRef(() => CategoryModule),
     SkillModule,
     SharedModule,
+    forwardRef(() => ApplicationsModule),
   ],
   controllers: [JobsController],
   providers: [JobService, JobRepository, JobAclService, JobSchedulerService],
