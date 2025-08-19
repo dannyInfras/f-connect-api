@@ -4,59 +4,99 @@ Perplexity AI integration for CV analysis.
 
 import json
 import requests
-from typing import Dict, Any
+from typing import Dict, Any, List
 from config import config
+from constants.default_checklist import DEFAULT_HR_CHECKLIST, get_default_checklist_name
 from logger import get_logger
 from .retry import retry_on_exception, RetryError
 
 logger = get_logger('perplexity')
 
 
+def build_checklist_section(checklist_items: List[Dict[str, Any]]) -> str:
+    """
+    Build the checklist section for the analysis prompt.
+    
+    Args:
+        checklist_items: List of checklist items
+        
+    Returns:
+        Formatted checklist section
+    """
+    checklist_text = "**CV Screening Checklist:**\n"
+    checklist_text += "For each item, mark with ✅ (meets) or ❌ (gap) with a brief explanation:\n\n"
+    
+    for item in checklist_items:
+        required_indicator = "(REQUIRED)" if item.get('required', False) else "(Optional)"
+        weight_indicator = f"Weight: {item.get('weight', 5)}/10"
+        
+        checklist_text += f"- **{item['criterion']}** {required_indicator} - {weight_indicator}\n"
+        if item.get('description'):
+            checklist_text += f"  *{item['description']}*\n"
+        checklist_text += "\n"
+    
+    return checklist_text
+
 def build_analysis_prompt(cv_text: str, job_details: Dict[str, Any]) -> str:
     """
-    Build analysis prompt for Perplexity AI.
+    Build analysis prompt for Perplexity AI using CV screening checklist.
     
     Args:
         cv_text: Extracted CV text
-        job_details: Job information from database
+        job_details: Job information from database including checklist
         
     Returns:
         Formatted prompt for AI analysis
     """
     job_title = job_details.get('title', 'Unknown Position')
     job_description = job_details.get('description', '')
-    job_requirements = job_details.get('requirements', '')
     experience_years = job_details.get('experience_years', 0)
     company_name = job_details.get('company_name', 'Unknown Company')
     
+    # Get checklist - use company's custom checklist or default
+    checklist_items = job_details.get('checklist_items')
+    checklist_name = job_details.get('checklist_name')
+    
+    if not checklist_items:
+        # Use default checklist
+        checklist_items = DEFAULT_HR_CHECKLIST
+        checklist_name = get_default_checklist_name()
+        logger.info("Using default HR checklist for CV analysis")
+    else:
+        logger.info(f"Using company checklist: {checklist_name}")
+    
+    checklist_section = build_checklist_section(checklist_items)
+    
     prompt = f"""
-Analyze this CV against the job requirements and provide a detailed assessment.
+You are an HR professional conducting CV screening using a standardized checklist.
 
 **Job Information:**
 - Position: {job_title}
 - Company: {company_name}
 - Required Experience: {experience_years} years
 - Description: {job_description}
-- Requirements: {job_requirements}
+
+**Checklist Used:** {checklist_name}
+
+{checklist_section}
 
 **CV Content:**
 {cv_text}
 
 **Analysis Instructions:**
-Please analyze how well this CV matches the job requirements and provide:
-1. A score from 0-100 (where 100 is a perfect match)
-2. A detailed analysis covering:
-   - Relevant experience and skills match
-   - Education background fit
-   - Strengths for this role
-   - Areas of concern or gaps
-   - Overall recommendation
+1. Review the CV against each checklist item above
+2. For each item, provide ✅ (meets) or ❌ (gap) with 1-2 lines of explanation
+3. Calculate a weighted score from 0-100 based on the checklist items and their weights
+4. Provide recommendation for the HR to consider with 1-2 lines of explanation
 
+**Output Format:**
 Respond ONLY with a JSON object in this exact format:
 {{
     "score": <integer 0-100>,
-    "analysis": "<detailed text analysis>"
+    "analysis": "<detailed checklist analysis with ✅ and ❌ markers for each item>"
 }}
+
+Focus on objective evaluation using the checklist criteria. Be concise but thorough.
 """
     
     return prompt.strip()
