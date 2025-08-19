@@ -180,13 +180,13 @@ def mark_application_failed(application_id: int, error_message: str) -> None:
 
 def get_application_details(application_id: int) -> Optional[Dict[str, Any]]:
     """
-    Get application details including job information.
+    Get application details including job information and company CV checklist.
     
     Args:
         application_id: ID of the application
         
     Returns:
-        Application details or None if not found
+        Application details with checklist or None if not found
         
     Raises:
         DatabaseError: If query fails
@@ -204,10 +204,16 @@ def get_application_details(application_id: int) -> Optional[Dict[str, Any]]:
                 j.description,
                 j.location,
                 j.experience_years,
-                c.company_name
+                c.id as company_id,
+                c.company_name,
+                ccl.checklist_name,
+                ccl.checklist_items
             FROM job_application ja
             JOIN job j ON ja.job_id = j.id
             LEFT JOIN company c ON j.company_id = c.id
+            LEFT JOIN company_cv_checklist ccl ON c.id = ccl.company_id 
+                AND ccl.is_default = true 
+                AND ccl.is_active = true
             WHERE ja.id = %s
         """, (application_id,))
         
