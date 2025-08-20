@@ -25,6 +25,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AiQuizModule } from './modules/ai-quiz/ai-quiz.module';
 import { BookmarkModule } from './modules/bookmark/bookmark.module';
+import { BookmarkCandidateModule } from './modules/bookmark-candidate/bookmark-candidate.module';
 import { CvModule } from './modules/cv/cv.module';
 import { RoomModule } from './modules/room/room.module';
 import { SkillModule } from './modules/skill/skill.module';
@@ -59,6 +60,7 @@ import { SharedModule } from './shared/shared.module';
     ScheduleManagementModule,
     AiQuizModule,
     BookmarkModule,
+    BookmarkCandidateModule,
   ],
   controllers: [AppController],
   providers: [AppService],
