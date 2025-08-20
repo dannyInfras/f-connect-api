@@ -33,6 +33,7 @@ export class BookmarkRepository {
   ): Promise<(Bookmark & { isApply: boolean })[]> {
     const qb: SelectQueryBuilder<Bookmark> = this.repository
       .createQueryBuilder('bookmark')
+      .where('bookmark.userId = :userId', { userId })
       .leftJoinAndSelect('bookmark.job', 'job')
       .leftJoinAndSelect('job.company', 'company')
       .leftJoinAndSelect('job.category', 'category')
