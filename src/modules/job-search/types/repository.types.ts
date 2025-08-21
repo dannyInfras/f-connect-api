@@ -59,5 +59,19 @@ export interface JobSearchJobResult {
 }
 
 export interface JobSearchSuggestionsResult {
-  suggestions: string[];
+  keywords: string[];
+  jobs: Array<{
+    id: string;
+    title: string;
+    companyName: string;
+    companyLogo?: string;
+    location?: string;
+    typeOfEmployment: string;
+  }>;
+  companies: Array<{
+    id: string;
+    name: string;
+    logoUrl?: string;
+    industry?: string;
+  }>;
 }

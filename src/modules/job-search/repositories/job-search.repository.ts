@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository, SelectQueryBuilder } from 'typeorm';
 
 import { JobApplication } from '@/modules/applications/entities/job-application.entity';
+import { Company } from '@/modules/company/entities/company.entity';
 import { Job } from '@/modules/jobs/entities/jobs.entity';
 
 import { JobSearchSortBy } from '../enums';
@@ -44,6 +45,8 @@ export class JobSearchRepository {
     private readonly jobRepo: Repository<Job>,
     @InjectRepository(JobApplication)
     private readonly applicationRepo: Repository<JobApplication>,
+    @InjectRepository(Company)
+    private readonly companyRepo: Repository<Company>,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -144,23 +147,108 @@ export class JobSearchRepository {
   async getJobSuggestions(
     params: JobSearchSuggestionsParams,
   ): Promise<JobSearchSuggestionsResult> {
-    const { query, limit } = params;
+    const { query } = params;
 
     if (!query || query.trim().length < 2) {
-      return { suggestions: [] };
+      return { keywords: [], jobs: [], companies: [] };
     }
 
-    const suggestions = await this.jobRepo
+    const trimmedQuery = query.trim();
+
+    // Fetch keyword suggestions (job titles and company names)
+    const jobTitleRows = await this.jobRepo
       .createQueryBuilder('job')
-      .select('DISTINCT job.title', 'title')
-      .where('job.title ILIKE :query', { query: `%${query}%` })
+      .select('DISTINCT job.title', 'value')
+      .where('job.title ILIKE :query', { query: `%${trimmedQuery}%` })
       .andWhere('job.status = :status', { status: 'OPEN' })
       .orderBy('job.title')
-      .limit(limit)
+      .limit(3)
       .getRawMany();
 
+    const companyNameRows = await this.companyRepo
+      .createQueryBuilder('company')
+      .select('DISTINCT company.companyName', 'value')
+      .where('company.companyName ILIKE :query', {
+        query: `%${trimmedQuery}%`,
+      })
+      .orderBy('company.companyName')
+      .limit(3)
+      .getRawMany();
+
+    // Merge and de-duplicate keywords
+    const keywordValues = [
+      ...jobTitleRows.map((r: any) => r.value),
+      ...companyNameRows.map((r: any) => r.value),
+    ];
+
+    const seen = new Set<string>();
+    const keywords = [] as string[];
+    for (const val of keywordValues) {
+      const normalized = typeof val === 'string' ? val.trim() : val;
+      if (!normalized) continue;
+      if (!seen.has(normalized)) {
+        seen.add(normalized);
+        keywords.push(normalized);
+      }
+      if (keywords.length >= 3) break;
+    }
+
+    // Fetch related jobs with detailed info
+    const jobRows = await this.jobRepo
+      .createQueryBuilder('job')
+      .leftJoinAndSelect('job.company', 'company')
+      .select([
+        'job.id',
+        'job.title',
+        'job.location',
+        'job.typeOfEmployment',
+        'company.companyName',
+        'company.logoUrl',
+      ])
+      .where('job.title ILIKE :query OR company.companyName ILIKE :query', {
+        query: `%${trimmedQuery}%`,
+      })
+      .andWhere('job.status = :status', { status: 'OPEN' })
+      .orderBy('job.created_at', 'DESC')
+      .limit(5)
+      .getMany();
+
+    const jobs = jobRows.map((job: any) => ({
+      id: job.id,
+      title: job.title,
+      companyName: job.company.companyName,
+      companyLogo: job.company.logoUrl,
+      location: job.location,
+      typeOfEmployment: job.typeOfEmployment,
+    }));
+
+    // Fetch companies with detailed info
+    const companyRows = await this.companyRepo
+      .createQueryBuilder('company')
+      .select([
+        'company.id',
+        'company.companyName',
+        'company.logoUrl',
+        'company.industry',
+      ])
+      .where('company.companyName ILIKE :query', {
+        query: `%${trimmedQuery}%`,
+      })
+      .orderBy('company.companyName')
+      .limit(2)
+      .getMany();
+
+    const companies = companyRows.map((company: any) => ({
+      id: company.id,
+      name: company.companyName,
+      logoUrl: company.logoUrl,
+      industry: company.industry,
+    }));
+
     return {
-      suggestions: suggestions.map((s) => s.title),
+      keywords,
+      jobs,
+      companies,
     };
   }
 
@@ -202,6 +290,10 @@ export class JobSearchRepository {
       // Add exact title matching for better relevance
       searchCondition += ' OR job.title ILIKE :titleQuery';
       searchParams.titleQuery = `%${normalizedQuery}%`;
+
+      // Add company name matching for better results when searching by company
+      searchCondition += ' OR company.companyName ILIKE :companyQuery';
+      searchParams.companyQuery = `%${normalizedQuery}%`;
 
       // Add synonym matching
       if (synonyms.length > 0) {
@@ -418,7 +510,10 @@ export class JobSearchRepository {
    * Get approximate total count for performance
    */
   private async getTotalCount(params: JobSearchQueryParams): Promise<number> {
-    let queryBuilder = this.jobRepo.createQueryBuilder('job');
+    let queryBuilder = this.jobRepo
+      .createQueryBuilder('job')
+      .leftJoin('job.company', 'company')
+      .leftJoin('job.category', 'category');
 
     queryBuilder = this.applyFilters(queryBuilder, params);
 
