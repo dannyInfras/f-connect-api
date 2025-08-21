@@ -43,7 +43,21 @@ export interface JobSearchServiceResponse {
 }
 
 export interface JobSuggestionsServiceResponse {
-  suggestions: string[];
+  keywords: string[];
+  jobs: Array<{
+    id: string;
+    title: string;
+    companyName: string;
+    companyLogo?: string;
+    location?: string;
+    typeOfEmployment: string;
+  }>;
+  companies: Array<{
+    id: string;
+    name: string;
+    logoUrl?: string;
+    industry?: string;
+  }>;
 }
 
 // Controller interaction types

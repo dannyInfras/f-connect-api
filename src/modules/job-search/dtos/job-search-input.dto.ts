@@ -33,11 +33,12 @@ const sanitizeQuery = (value: string): string => {
  */
 export class JobSearchDto {
   /**
-   * Search query for full-text search on job title, description, and responsibilities
-   * @example "Senior React Developer"
+   * Search query for full-text search on job title, description, responsibilities, and company name
+   * @example "Senior React Developer" or "Vinamilk"
    */
   @ApiPropertyOptional({
-    description: 'Search query for full-text search (max 100 characters)',
+    description:
+      'Search query for full-text search on job titles, descriptions, and company names (max 100 characters)',
     example: 'Senior React Developer',
     maxLength: 100,
   })

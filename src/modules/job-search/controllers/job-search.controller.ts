@@ -7,8 +7,13 @@ import { RequestContext } from '@/shared/request-context/request-context.dto';
 
 import { JobSearchDto } from '../dtos/job-search-input.dto';
 import { JobSearchResponseDto } from '../dtos/job-search-output.dto';
-import { JobSearchSuggestionsResponseDto } from '../dtos/job-search-suggestions-output.dto';
-import { EmploymentType,JobSearchSortBy } from '../enums';
+import {
+  CompanySuggestionDto,
+  JobSearchSuggestionsResponseDto,
+  JobSuggestionDto,
+  KeywordSuggestionDto,
+} from '../dtos/job-search-suggestions-output.dto';
+import { EmploymentType, JobSearchSortBy } from '../enums';
 import { JobSearchService } from '../services/job-search.service';
 
 /**
@@ -28,14 +33,16 @@ export class JobSearchController {
     summary: 'Search jobs with advanced filtering',
     description: `
       Perform advanced job search with full-text search capabilities and comprehensive filtering options.
-      Supports search by job title, description, responsibilities, location, category, company, salary range, and more.
+      Supports search by job title, description, responsibilities, company name, location, category, salary range, and more.
+      When using the 'q' parameter, it searches across job titles, descriptions, and company names (e.g., searching "vinamilk" will return all jobs from Vinamilk company).
       Returns paginated results with application statistics and relevance scoring for text searches.
     `,
   })
   @ApiQuery({
     name: 'q',
     required: false,
-    description: 'Search query for full-text search',
+    description:
+      'Search query for full-text search (searches job titles, descriptions, and company names)',
   })
   @ApiQuery({
     name: 'location',
@@ -136,7 +143,7 @@ export class JobSearchController {
     summary: 'Get search suggestions',
     description: `
       Get search suggestions for autocomplete functionality.
-      Returns suggestions for job titles, company names, and locations based on the provided query.
+      Returns suggestions for job titles and company names based on the provided query.
       Minimum query length is 2 characters.
     `,
   })
@@ -167,6 +174,32 @@ export class JobSearchController {
       },
     );
 
-    return { suggestions: result.suggestions };
+    // Transform service response to DTO format
+    const keywords: KeywordSuggestionDto[] = result.keywords.map((keyword) => ({
+      value: keyword,
+      type: 'keyword' as const,
+    }));
+
+    const jobs: JobSuggestionDto[] = result.jobs.map((job) => ({
+      id: job.id,
+      title: job.title,
+      companyName: job.companyName,
+      companyLogo: job.companyLogo,
+      location: job.location,
+      typeOfEmployment: job.typeOfEmployment,
+      type: 'job' as const,
+    }));
+
+    const companies: CompanySuggestionDto[] = result.companies.map(
+      (company) => ({
+        id: company.id,
+        name: company.name,
+        logoUrl: company.logoUrl,
+        industry: company.industry,
+        type: 'company' as const,
+      }),
+    );
+
+    return { keywords, jobs, companies };
   }
 }

@@ -210,28 +210,27 @@ export class JobSearchService {
 
     try {
       if (!query?.trim() || query.length < 2) {
-        return { suggestions: [] };
+        return { keywords: [], jobs: [], companies: [] };
       }
 
       // Check cache first
-      const cacheKey = this.cacheService.generateSuggestionsKey(query, 10);
+      const cacheKey = this.cacheService.generateSuggestionsKey(query, 3);
       const cachedSuggestions =
         await this.cacheService.getSuggestions(cacheKey);
       if (cachedSuggestions) {
-        return { suggestions: cachedSuggestions };
+        // For now, we'll disable caching for structured responses
+        // TODO: Update cache service to handle structured data
       }
 
       const result = await this.jobSearchRepository.getJobSuggestions({
         query: query.trim(),
-        limit: 10,
+        limit: 3,
       });
 
-      // Cache the suggestions
-      await this.cacheService.setSuggestions(cacheKey, result.suggestions);
+      // TODO: Update caching to handle structured responses
+      // await this.cacheService.setSuggestions(cacheKey, result);
 
-      return {
-        suggestions: result.suggestions,
-      };
+      return result;
     } catch (error) {
       throw error;
     }
@@ -264,7 +263,7 @@ export class JobSearchService {
     limit?: number;
     user: UserAccessTokenClaims | undefined;
   }): Promise<JobSuggestionsServiceResponse> {
-    const { query, limit = 5, user } = params;
+    const { query, user } = params;
 
     // Basic search suggestions are available to all authenticated users
     if (!this.hasBasicSearchPermission(user, query)) {
@@ -275,28 +274,27 @@ export class JobSearchService {
 
     try {
       if (!query?.trim() || query.length < 2) {
-        return { suggestions: [] };
+        return { keywords: [], jobs: [], companies: [] };
       }
 
       // Check cache first
-      const cacheKey = this.cacheService.generateSuggestionsKey(query, limit);
+      const cacheKey = this.cacheService.generateSuggestionsKey(query, 3);
       const cachedSuggestions =
         await this.cacheService.getSuggestions(cacheKey);
       if (cachedSuggestions) {
-        return { suggestions: cachedSuggestions };
+        // For now, we'll disable caching for structured responses
+        // TODO: Update cache service to handle structured data
       }
 
       const result = await this.jobSearchRepository.getJobSuggestions({
         query: query.trim(),
-        limit,
+        limit: 3,
       });
 
-      // Cache the suggestions
-      await this.cacheService.setSuggestions(cacheKey, result.suggestions);
+      // TODO: Update caching to handle structured responses
+      // await this.cacheService.setSuggestions(cacheKey, result);
 
-      return {
-        suggestions: result.suggestions,
-      };
+      return result;
     } catch (error) {
       throw error;
     }
