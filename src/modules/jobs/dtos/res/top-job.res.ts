@@ -88,6 +88,14 @@ export class TopJobResponseDto {
   })
   topJob: number;
 
+  @Expose()
+  @ApiProperty({
+    example: '2024-12-31T23:59:59.999Z',
+    description: 'Date when Top Job status expires',
+    required: false,
+  })
+  topJobExpired?: Date;
+
   static example = {
     id: '1',
     title: 'Senior Software Engineer',
@@ -110,6 +118,7 @@ export class TopJobResponseDto {
     deadline: '2024-01-01T00:00:00.000Z',
     isDeleted: false,
     topJob: 1,
+    topJobExpired: '2024-12-31T23:59:59.999Z',
   };
 }
 

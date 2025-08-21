@@ -35,6 +35,11 @@ export class CompanyMapper {
           createdAt: job.createdAt,
           updatedAt: job.updatedAt,
         })),
+        // include new fields explicitly in case excludeExtraneousValues is used
+        priorityPosition: company.priorityPosition,
+        vipExpired: company.vipExpired,
+        topCompany: company.topCompany,
+        topJobExpired: company.topJobExpired,
       },
       { excludeExtraneousValues: true },
     );

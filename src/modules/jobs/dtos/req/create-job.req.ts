@@ -107,4 +107,14 @@ export class CreateJobReqDto {
   @Min(0)
   @Max(16)
   topJob?: number;
+
+  @ApiProperty({
+    example: '2024-12-31T23:59:59.999Z',
+    description: 'Top job expiration date',
+    required: false,
+  })
+  @IsOptional()
+  @Type(() => Date)
+  @IsDate()
+  topJobExpired?: Date;
 }

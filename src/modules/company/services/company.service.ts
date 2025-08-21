@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   NotFoundException,
   UnauthorizedException,
@@ -30,6 +31,24 @@ export class CompanyService {
   ) {}
 
   async create(dto: CreateCompanyReqDto, manager?: EntityManager) {
+    // Validate future dates
+    if (dto.vipExpired) {
+      const vip = new Date(dto.vipExpired);
+      if (vip <= new Date()) {
+        throw new BadRequestException(
+          'VIP expiration date must be in the future',
+        );
+      }
+    }
+    if (dto.topJobExpired) {
+      const top = new Date(dto.topJobExpired);
+      if (top <= new Date()) {
+        throw new BadRequestException(
+          'Top company expiration date must be in the future',
+        );
+      }
+    }
+
     const companyData: DeepPartial<Company> = {
       ...dto,
       phone: dto.phone || 0,
@@ -94,6 +113,24 @@ export class CompanyService {
       !this.aclService.forActor(actor).canDoAction(Action.Update, company)
     ) {
       throw new UnauthorizedException();
+    }
+
+    // Validate future dates
+    if (dto.vipExpired) {
+      const vip = new Date(dto.vipExpired);
+      if (vip <= new Date()) {
+        throw new BadRequestException(
+          'VIP expiration date must be in the future',
+        );
+      }
+    }
+    if (dto.topJobExpired) {
+      const top = new Date(dto.topJobExpired);
+      if (top <= new Date()) {
+        throw new BadRequestException(
+          'Top company expiration date must be in the future',
+        );
+      }
     }
 
     Object.assign(company, dto);

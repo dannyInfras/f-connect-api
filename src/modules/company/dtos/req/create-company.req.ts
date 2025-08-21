@@ -117,6 +117,34 @@ export class CreateCompanyReqDto {
   @IsBoolean()
   isVerified: boolean;
 
+  @ApiProperty({
+    example: 3,
+    description: 'Priority position (1-3)',
+    required: false,
+  })
+  @IsOptional()
+  @IsInt()
+  priorityPosition?: number;
+
+  @ApiProperty({ example: '2024-12-31T23:59:59.999Z', required: false })
+  @IsOptional()
+  @IsDateString()
+  vipExpired?: Date;
+
+  @ApiProperty({
+    example: 0,
+    description: 'Top company position (1-16)',
+    required: false,
+  })
+  @IsOptional()
+  @IsInt()
+  topCompany?: number;
+
+  @ApiProperty({ example: '2024-12-31T23:59:59.999Z', required: false })
+  @IsOptional()
+  @IsDateString()
+  topJobExpired?: Date;
+
   static example = {
     companyName: 'OpenAI',
     foundedAt: '2024-01-01T00:00:00.000Z',
@@ -131,5 +159,9 @@ export class CreateCompanyReqDto {
     taxCode: '123456789',
     businessLicenseUrl: 'https://license.url/doc.pdf',
     isVerified: false,
+    priorityPosition: 3,
+    vipExpired: '2024-12-31T23:59:59.999Z',
+    topCompany: 1,
+    topJobExpired: '2024-12-31T23:59:59.999Z',
   };
 }

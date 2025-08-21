@@ -16,6 +16,7 @@ import { AppLogger } from '@/shared/logger/logger.service';
 import { RequestContext } from '@/shared/request-context/request-context.dto';
 
 import { CreateJobReqDto } from '../dtos/req/create-job.req';
+import { UpdateJobDto } from '../dtos/req/update-job.req';
 import { HrJobResponseDto } from '../dtos/res/hr-jobs-response.dto';
 import { JobDetailResponseDto } from '../dtos/res/job.res';
 import {
@@ -362,7 +363,31 @@ export class JobService {
       }
     }
 
+    // If top job expiration date is provided, validate it's in the future
+    if (dto.topJobExpired) {
+      const topJobExpiredDate = new Date(dto.topJobExpired);
+      const now = new Date();
+
+      if (topJobExpiredDate <= now) {
+        throw new BadRequestException(
+          'Top job expiration date must be in the future',
+        );
+      }
+    }
+
     // Priority position will be set by the database trigger based on vipExpired
+
+    // If top job expiration date is provided, validate it's in the future
+    if (dto.topJobExpired) {
+      const topJobExpiredDate = new Date(dto.topJobExpired);
+      const now = new Date();
+
+      if (topJobExpiredDate <= now) {
+        throw new BadRequestException(
+          'Top job expiration date must be in the future',
+        );
+      }
+    }
 
     const jobData = {
       ...dto,
@@ -399,7 +424,7 @@ export class JobService {
   async update(
     actor: Actor,
     id: string,
-    dto: Partial<CreateJobReqDto>,
+    dto: UpdateJobDto,
   ): Promise<JobDetailResponseDto> {
     const job = await this.repository.findOne({
       where: { id, isDeleted: false },
@@ -445,10 +470,26 @@ export class JobService {
     const timeDiff = now.getTime() - createdAt.getTime();
     const hoursDiff = timeDiff / (1000 * 60 * 60);
 
+    // Only enforce 24h rule if updating non-exempt fields
     if (hoursDiff > 24) {
-      throw new BadRequestException(
-        'Job can only be modified within 24 hours of creation',
-      );
+      const nonExemptProvided = [
+        'title',
+        'description',
+        'location',
+        'salaryMin',
+        'salaryMax',
+        'experienceYears',
+        'benefit',
+        'typeOfEmployment',
+        'categoryId',
+        'skillIds',
+      ].some((key) => (dto as any)[key] !== undefined);
+
+      if (nonExemptProvided) {
+        throw new BadRequestException(
+          'Job can only be modified within 24 hours of creation',
+        );
+      }
     }
 
     // Update category if categoryId is provided
@@ -488,6 +529,18 @@ export class JobService {
       }
     }
 
+    // If top job expiration date is provided, validate it's in the future
+    if (dto.topJobExpired) {
+      const topJobExpiredDate = new Date(dto.topJobExpired);
+      const now = new Date();
+
+      if (topJobExpiredDate <= now) {
+        throw new BadRequestException(
+          'Top job expiration date must be in the future',
+        );
+      }
+    }
+
     // Extract fields from DTO
     const {
       title,
@@ -499,9 +552,11 @@ export class JobService {
       deadline,
       benefit,
       vipExpired,
+      topJobExpired,
       typeOfEmployment,
       priorityPosition,
       topJob,
+      status,
     } = dto;
 
     // Create update object with only the fields that exist in the entity
@@ -517,11 +572,13 @@ export class JobService {
     if (deadline !== undefined) updateData.deadline = deadline;
     if (benefit !== undefined) updateData.benefit = benefit;
     if (vipExpired !== undefined) updateData.vipExpired = vipExpired;
+    if (topJobExpired !== undefined) updateData.topJobExpired = topJobExpired;
     if (typeOfEmployment !== undefined)
       updateData.typeOfEmployment = typeOfEmployment;
     if (priorityPosition !== undefined)
       updateData.priorityPosition = priorityPosition;
     if (topJob !== undefined) updateData.topJob = topJob;
+    if (status !== undefined) updateData.status = status;
 
     // Update job with proper typing
     const updated = await this.repository.save({

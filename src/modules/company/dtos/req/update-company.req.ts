@@ -75,5 +75,9 @@ export class UpdateCompanyDto extends PartialType(CreateCompanyReqDto) {
     businessLicenseUrl: 'https://license.url/openai.pdf',
     createdAt: '2024-01-01T00:00:00.000Z',
     updatedAt: '2024-01-01T00:00:00.000Z',
+    priorityPosition: 1,
+    vipExpired: '2024-12-31T23:59:59.999Z',
+    topCompany: 2,
+    topJobExpired: '2024-12-31T23:59:59.999Z',
   };
 }

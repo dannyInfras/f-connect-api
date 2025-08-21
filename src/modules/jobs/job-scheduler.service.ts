@@ -132,6 +132,38 @@ export class JobSchedulerService {
   }
 
   /**
+   * Runs every day at midnight to reset top job positions for expired top jobs
+   */
+  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+  async checkExpiredTopJobs() {
+    try {
+      this.logger.log('Running check for expired Top Jobs');
+
+      // Execute the database function that handles resetting top_job
+      await this.jobRepository.query('SELECT daily_check_top_job_expired()');
+
+      const countResult = await this.jobRepository.query(`
+        SELECT COUNT(*) FROM job 
+        WHERE top_job = 0 
+        AND updated_at > NOW() - INTERVAL '1 day'
+        AND top_job_expired IS NOT NULL
+        AND top_job_expired < NOW()
+      `);
+
+      const count = parseInt(countResult[0]?.count || '0', 10);
+      this.logger.log(
+        `Reset top_job to 0 for approximately ${count} jobs with expired top_job_expired`,
+      );
+    } catch (error) {
+      this.appLogger.error(
+        this.requestContext,
+        'Failed to check for expired Top Jobs',
+        error instanceof Error ? error.stack : undefined,
+      );
+    }
+  }
+
+  /**
    * Send notifications for expired VIP jobs
    */
   private async sendExpiredJobNotifications(expiredJobs: Job[]) {

@@ -61,6 +61,19 @@ export class Company {
   @Column({ name: 'business_license_url', length: 255, nullable: true })
   businessLicenseUrl: string;
 
+  // New fields for paid packages (similar to Job)
+  @Column({ name: 'priority_position', type: 'int', default: 3 })
+  priorityPosition: number;
+
+  @Column({ name: 'vip_expired', type: 'timestamp', nullable: true })
+  vipExpired: Date;
+
+  @Column({ name: 'top_company', type: 'int', default: 0 })
+  topCompany: number;
+
+  @Column({ name: 'top_job_expired', type: 'timestamp', nullable: true })
+  topJobExpired: Date;
+
   @OneToMany(() => Benefit, (benefit) => benefit.company)
   benefits: Benefit[];
 
