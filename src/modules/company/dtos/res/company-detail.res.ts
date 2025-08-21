@@ -24,7 +24,7 @@ export class CompanyDetailResponseDto {
   phone: number;
 
   @Expose()
-  @ApiProperty({ example: '...@example.com' })
+  @ApiProperty({ example: '..@example.com' })
   email: string;
 
   @Expose()
@@ -81,6 +81,30 @@ export class CompanyDetailResponseDto {
   @Expose()
   @ApiProperty({ example: 'https://license.url/openai.pdf' })
   businessLicenseUrl: string;
+
+  @Expose()
+  @ApiProperty({ example: 3, description: 'Priority position (1-3)' })
+  priorityPosition: number;
+
+  @Expose()
+  @ApiProperty({
+    example: '2024-12-31T23:59:59.999Z',
+    description: 'VIP expiration date',
+    required: false,
+  })
+  vipExpired?: Date;
+
+  @Expose()
+  @ApiProperty({ example: 0, description: 'Top company position (1-16)' })
+  topCompany: number;
+
+  @Expose()
+  @ApiProperty({
+    example: '2024-12-31T23:59:59.999Z',
+    description: 'Top company expiration date',
+    required: false,
+  })
+  topJobExpired?: Date;
 
   @Expose()
   @ApiProperty()
@@ -162,6 +186,10 @@ export class CompanyDetailResponseDto {
     ],
     taxCode: '123456789',
     businessLicenseUrl: 'https://license.url/openai.pdf',
+    priorityPosition: 3,
+    vipExpired: '2024-12-31T23:59:59.999Z',
+    topCompany: 1,
+    topJobExpired: '2024-12-31T23:59:59.999Z',
     createdAt: '2024-01-01T00:00:00.000Z',
     updatedAt: '2024-01-01T00:00:00.000Z',
   };

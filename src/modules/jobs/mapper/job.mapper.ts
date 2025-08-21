@@ -40,6 +40,7 @@ export class JobMapper {
       priorityPosition: job.priorityPosition,
       isDeleted: job.isDeleted || false,
       topJob: job.topJob || 0,
+      topJobExpired: job.topJobExpired,
       createdAt: job.createdAt,
       updatedAt: job.updatedAt,
     };
@@ -70,6 +71,7 @@ export class JobMapper {
       priorityPosition: job.priorityPosition,
       isDeleted: job.isDeleted || false,
       topJob: job.topJob || 0,
+      topJobExpired: job.topJobExpired,
       createdAt: job.createdAt,
       updatedAt: job.updatedAt,
     };
@@ -102,6 +104,7 @@ export class JobMapper {
       deadline: job.deadline,
       isDeleted: job.isDeleted || false,
       topJob: job.topJob || 0,
+      topJobExpired: job.topJobExpired,
     };
   }
 }

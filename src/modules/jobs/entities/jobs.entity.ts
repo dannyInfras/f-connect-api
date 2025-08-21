@@ -86,6 +86,9 @@ export class Job {
   @Column({ name: 'vip_expired', type: 'timestamp', nullable: true })
   vipExpired: Date;
 
+  @Column({ name: 'top_job_expired', type: 'timestamp', nullable: true })
+  topJobExpired: Date;
+
   @Column({ name: 'priority_position', type: 'int', default: 3 })
   priorityPosition: number;
 

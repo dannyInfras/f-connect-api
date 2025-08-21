@@ -92,6 +92,14 @@ export class JobDetailResponseDto {
   vipExpired?: Date;
 
   @Expose()
+  @ApiProperty({
+    example: '2024-12-31T23:59:59.999Z',
+    description: 'Date when Top Job status expires',
+    required: false,
+  })
+  topJobExpired?: Date;
+
+  @Expose()
   @ApiProperty({ example: 1, description: 'Priority position (1-3)' })
   priorityPosition: number;
 
@@ -140,6 +148,7 @@ export class JobDetailResponseDto {
     experienceYears: 5,
     status: 'OPEN',
     vipExpired: '2024-12-31T23:59:59.999Z',
+    topJobExpired: '2024-12-31T23:59:59.999Z',
     deadline: '2024-01-01T00:00:00.000Z',
     typeOfEmployment: 'FULL_TIME',
     benefit: ['Health insurance', 'Gym membership'],
