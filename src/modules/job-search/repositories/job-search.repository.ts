@@ -77,6 +77,11 @@ export class JobSearchRepository {
       .leftJoinAndSelect('job.company', 'company')
       .leftJoinAndSelect('job.category', 'category');
 
+    // Always filter out deleted jobs
+    queryBuilder = queryBuilder.andWhere('job.isDeleted = :isDeleted', {
+      isDeleted: false,
+    });
+
     // Apply filters
     queryBuilder = this.applyFilters(queryBuilder, {
       query,
@@ -161,6 +166,7 @@ export class JobSearchRepository {
       .select('DISTINCT job.title', 'value')
       .where('job.title ILIKE :query', { query: `%${trimmedQuery}%` })
       .andWhere('job.status = :status', { status: 'OPEN' })
+      // .andWhere('job.isDeleted = :isDeleted', { isDeleted: false })
       .orderBy('job.title')
       .limit(3)
       .getRawMany();
@@ -205,10 +211,11 @@ export class JobSearchRepository {
         'company.companyName',
         'company.logoUrl',
       ])
-      .where('job.title ILIKE :query OR company.companyName ILIKE :query', {
+      .where('(job.title ILIKE :query OR company.companyName ILIKE :query)', {
         query: `%${trimmedQuery}%`,
       })
       .andWhere('job.status = :status', { status: 'OPEN' })
+      // .andWhere('job.isDeleted = :isDeleted', { isDeleted: false })
       .orderBy('job.created_at', 'DESC')
       .limit(5)
       .getMany();
@@ -514,6 +521,11 @@ export class JobSearchRepository {
       .createQueryBuilder('job')
       .leftJoin('job.company', 'company')
       .leftJoin('job.category', 'category');
+
+    // Always filter out deleted jobs
+    queryBuilder = queryBuilder.andWhere('job.isDeleted = :isDeleted', {
+      isDeleted: false,
+    });
 
     queryBuilder = this.applyFilters(queryBuilder, params);
 

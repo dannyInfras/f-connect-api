@@ -15,7 +15,7 @@ export class JobSearchCacheService {
 
   private readonly CACHE_TTL = {
     SEARCH_RESULTS: 3000, // 5 minutes in milliseconds
-    SUGGESTIONS: 3600000, // 1 hour in milliseconds
+    SUGGESTIONS: 0, // 1 hour in milliseconds
     HOT_QUERIES: 1800000, // 30 minutes in milliseconds
     FILTERS: 7200000, // 2 hours in milliseconds
   };
