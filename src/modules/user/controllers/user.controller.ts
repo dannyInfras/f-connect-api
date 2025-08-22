@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   ClassSerializerInterceptor,
   Controller,
@@ -8,6 +9,7 @@ import {
   Patch,
   Post,
   Query,
+  UnauthorizedException,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
@@ -101,6 +103,45 @@ export class UserController {
     return { data: users, meta: { count } };
   }
 
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Get('ai-points')
+  @ApiOperation({ summary: 'Get current AI points balance' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns current AI points',
+    schema: {
+      type: 'object',
+      properties: {
+        points: { type: 'number' },
+        userId: { type: 'number' },
+      },
+    },
+  })
+  async getAiPoints(@ReqContext() ctx: RequestContext) {
+    // Safely extract and validate user ID from JWT payload
+    if (!ctx.user || !ctx.user.id) {
+      throw new UnauthorizedException('User not authenticated');
+    }
+
+    const userId = parseInt(ctx.user.id.toString(), 10);
+    if (isNaN(userId) || userId <= 0) {
+      console.error('Invalid user ID detected:', {
+        original: ctx.user.id,
+        parsed: userId,
+        isNaN: isNaN(userId),
+        isPositive: userId > 0,
+      });
+      throw new BadRequestException(`Invalid user ID in token: ${ctx.user.id}`);
+    }
+
+    const points = await this.userService.getAiPoints(userId);
+    return {
+      points,
+      userId,
+    };
+  }
+
   // TODO: ADD RoleGuard
   // NOTE : This can be made a admin only endpoint. For normal users they can use GET /me
   @UseInterceptors(ClassSerializerInterceptor)
@@ -138,7 +179,7 @@ export class UserController {
   })
   @ApiResponse({
     status: HttpStatus.NOT_FOUND,
-    type: BaseApiErrorResponse,
+    type: BaseApiResponse,
   })
   @UseInterceptors(ClassSerializerInterceptor)
   async updateUser(
@@ -149,28 +190,6 @@ export class UserController {
 
     const user = await this.userService.updateUser(ctx, ctx.user!.id, input);
     return { data: user, meta: {} };
-  }
-
-  @ApiBearerAuth()
-  @Get('ai-points')
-  @ApiOperation({ summary: 'Get current AI points balance' })
-  @ApiResponse({
-    status: 200,
-    description: 'Returns current AI points',
-    schema: {
-      type: 'object',
-      properties: {
-        points: { type: 'number' },
-        userId: { type: 'number' },
-      },
-    },
-  })
-  async getAiPoints(@ReqContext() ctx: RequestContext) {
-    const points = await this.userService.getAiPoints(ctx.user!.id);
-    return {
-      points,
-      userId: ctx.user!.id,
-    };
   }
 
   @UseGuards(JwtAuthGuard)
