@@ -36,6 +36,7 @@ import { CreateCompanyReqDto } from '../dtos/req/create-company.req';
 import { UpdateCompanyDto } from '../dtos/req/update-company.req';
 import { CompanyDetailResponseDto } from '../dtos/res/company-detail.res';
 import { CompanyStatsResponseDto } from '../dtos/res/company-stats.res';
+import { TopCompanyResponseDto } from '../dtos/res/top-company.res';
 import { CompanyService } from '../services/company.service';
 
 @ApiTags('Companies')
@@ -76,6 +77,41 @@ export class CompanyController {
 
     return {
       data,
+      meta: {
+        count,
+        page: query.offset / query.limit + 1,
+      },
+    };
+  }
+
+  @Public()
+  @Get('top')
+  @ApiOperation({
+    summary: 'Get top companies with priority position 1',
+    description: 'Lấy danh sách các công ty top có priority_position = 1',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    type: SwaggerBaseApiResponse([TopCompanyResponseDto]),
+    description: 'List of top companies with pagination metadata',
+    example: {
+      data: [TopCompanyResponseDto.example],
+      meta: {
+        count: 1,
+        page: 1,
+      },
+    },
+  })
+  async findTopCompanies(
+    @Query() query: PaginationParamsDto,
+  ): Promise<BaseApiResponse<TopCompanyResponseDto[]>> {
+    const { companies, count } = await this.companyService.findTopCompanies(
+      query.limit,
+      query.offset,
+    );
+
+    return {
+      data: companies,
       meta: {
         count,
         page: query.offset / query.limit + 1,

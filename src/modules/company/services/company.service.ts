@@ -16,6 +16,7 @@ import { Job } from '@/modules/jobs/entities/jobs.entity';
 import { Action } from '@/shared/acl/action.constant';
 import { Actor } from '@/shared/acl/actor.constant';
 
+import { TopCompanyResponseDto } from '../dtos/res/top-company.res';
 import { Company } from '../entities/company.entity';
 
 @Injectable()
@@ -357,5 +358,38 @@ export class CompanyService {
         today: applicationsToday,
       },
     };
+  }
+
+  /**
+   * Lấy danh sách top companies có priority_position = 1
+   * @param limit Số lượng company tối đa trả về
+   * @param offset Số lượng company bỏ qua
+   * @returns Danh sách top companies với pagination
+   */
+  async findTopCompanies(
+    limit: number,
+    offset: number,
+  ): Promise<{ companies: TopCompanyResponseDto[]; count: number }> {
+    const [companies, count] = await this.companyRepo.findAndCount({
+      where: { priorityPosition: 1 },
+      take: limit,
+      skip: offset,
+      order: {
+        createdAt: 'DESC',
+      },
+    });
+
+    // Map entity sang DTO response
+    const topCompanies: TopCompanyResponseDto[] = companies.map((company) => ({
+      companyName: company.companyName,
+      foundedAt: company.foundedAt,
+      employees: company.employees,
+      address: company.address,
+      website: company.website,
+      industry: company.industry,
+      logoUrl: company.logoUrl,
+    }));
+
+    return { companies: topCompanies, count };
   }
 }
