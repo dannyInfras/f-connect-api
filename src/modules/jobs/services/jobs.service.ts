@@ -688,6 +688,7 @@ export class JobService {
       .leftJoinAndSelect('job.skills', 'skills')
       .where('job.isDeleted = :isDeleted', { isDeleted: false })
       .andWhere('job.topJob > :minTopJob', { minTopJob: 0 })
+      .andWhere('job.status != :closedStatus', { closedStatus: 'CLOSED' })
       .orderBy('job.topJob', 'ASC')
       .addOrderBy('job.createdAt', 'DESC')
       .take(limit)
