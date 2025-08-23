@@ -194,6 +194,69 @@ export class AdminCompanyService {
     });
   }
 
+  async unverifyCompany(
+    ctx: RequestContext,
+    admin: Actor,
+    companyId: string,
+  ): Promise<AdminCompanyOutput> {
+    this.logger.log(ctx, `${this.unverifyCompany.name} was called`);
+
+    if (!this.aclService.forActor(admin).canDoAction(Action.Update)) {
+      throw new UnauthorizedException(
+        'Insufficient permissions to unverify company',
+      );
+    }
+
+    const company = await this.companyRepo.findOne({
+      where: { id: companyId },
+    });
+    if (!company) throw new NotFoundException('Company not found');
+
+    if (company.isVerified) {
+      company.isVerified = false;
+      await this.companyRepo.save(company);
+
+      // Optionally disable all users under this company (business rule)
+      const users = await this.userService.findUserByCompanyId(companyId);
+      await Promise.all(
+        users
+          .filter((u) => !u.isAccountDisabled)
+          .map((u) => this.userService.verifyUser(ctx, u.id, true)), // true = disable
+      );
+
+      // Send notifications via email (best-effort)
+      const emailsToNotify = [
+        ...(company.email ? [company.email] : []),
+        ...users
+          .map((u) => u.email)
+          .filter((e): e is string => typeof e === 'string' && !!e),
+      ];
+
+      const uniqueEmails = Array.from(new Set(emailsToNotify));
+      const subject = `Company Verification Revoked: ${company.companyName}`;
+
+      await Promise.all(
+        uniqueEmails.map(async (to) => {
+          try {
+            await this.mailService.sendMail(to, subject, 'company-unverified', {
+              companyName: company.companyName,
+              supportEmail: process.env.SUPPORT_EMAIL || 'support@fcareer.net',
+            });
+          } catch (error: any) {
+            this.logger.error(
+              ctx,
+              `Failed to send company unverification email to ${to}: ${error?.message || error}`,
+            );
+          }
+        }),
+      );
+    }
+
+    return plainToClass(AdminCompanyOutput, company, {
+      excludeExtraneousValues: true,
+    });
+  }
+
   async rejectCompany(
     ctx: RequestContext,
     admin: Actor,
