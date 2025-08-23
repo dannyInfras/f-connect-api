@@ -285,9 +285,7 @@ export class AuthService {
       return { message: 'User already verified.' };
     }
 
-    // Enable account
-    user.isAccountDisabled = false;
-    await this.userService.verifyUser(ctx, user.id, false);
+    await this.userService.verifyUser(ctx, user.id, true);
 
     return { message: 'Email verified successfully!' };
   }
