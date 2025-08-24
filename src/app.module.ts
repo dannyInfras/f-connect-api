@@ -7,6 +7,7 @@ import { ArticleModule } from '@/modules/article/article.module';
 import { AuthModule } from '@/modules/auth/auth.module';
 import { CandidateProfileModule } from '@/modules/candidate-profile/candidate-profile.module';
 import { CompanyModule } from '@/modules/company/company.module';
+import { CompanySearchModule } from '@/modules/company-search/company-search.module';
 import { CouponModule } from '@/modules/coupon/coupon.module';
 import { EducationModule } from '@/modules/education/education.module';
 import { ExperienceModule } from '@/modules/experience/experience.module';
@@ -44,6 +45,7 @@ import { SharedModule } from './shared/shared.module';
     CompanyModule,
     JobsModule,
     JobSearchModule,
+    CompanySearchModule,
     SkillModule,
     EducationModule,
     ExperienceModule,
