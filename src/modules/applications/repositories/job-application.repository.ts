@@ -370,6 +370,7 @@ export class JobApplicationRepository {
       birthDate: candidateProfile.birthDate,
       experiences: candidateProfile.experiences || [],
       educations: candidateProfile.educations || [],
+      skills: candidateProfile.skills || [],
     };
   }
 

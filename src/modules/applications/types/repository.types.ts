@@ -77,6 +77,7 @@ export interface DetailedApplicationData {
       birthDate?: string;
       experiences?: any[];
       educations?: any[];
+      skills?: { name: string; proficiencyLevel?: string }[];
     };
   };
   job: {
@@ -108,6 +109,7 @@ export interface CandidateProfileRaw {
   birthDate?: string;
   experiences?: any[];
   educations?: any[];
+  skills?: { name: string; proficiencyLevel?: string }[];
 }
 
 // Application with full relations for detailed view

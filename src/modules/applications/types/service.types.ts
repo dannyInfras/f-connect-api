@@ -86,6 +86,7 @@ export interface ApplicationDetailResponse {
     birthDate?: string;
     experiences?: any[];
     educations?: any[];
+    skills?: { name: string; proficiencyLevel?: string }[];
   } | null;
   job: {
     id: string;
@@ -174,6 +175,7 @@ export interface DetailedApplicationWithProfile extends DetailedApplication {
     birthDate?: string;
     experiences?: any[];
     educations?: any[];
+    skills?: { name: string; proficiencyLevel?: string }[];
   };
 }
 

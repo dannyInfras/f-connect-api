@@ -83,6 +83,13 @@ export class CandidateProfileDetailDto {
   @Expose()
   @ApiProperty()
   educations?: any[];
+
+  @Expose()
+  @ApiProperty({
+    description: 'List of skills in the candidate profile',
+    required: false,
+  })
+  skills?: { name: string; proficiencyLevel?: string }[];
 }
 
 export class JobSummaryDto {
