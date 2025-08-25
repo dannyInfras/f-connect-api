@@ -116,6 +116,26 @@ export class AdminCompanyController {
     return { data: company, meta: { apiVersion: '1.0' } };
   }
 
+  @Patch(':id/approve')
+  @ApiOperation({ summary: 'Approve company (alias of verify)' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    type: SwaggerBaseApiResponse(AdminCompanyOutput),
+  })
+  @ApiResponse({ status: HttpStatus.UNAUTHORIZED, type: BaseApiErrorResponse })
+  async approveCompany(
+    @ReqContext() ctx: RequestContext,
+    @Param('id') id: string,
+  ): Promise<BaseApiResponse<AdminCompanyOutput>> {
+    this.logger.log(ctx, `${this.approveCompany.name} was called`);
+    const company = await this.adminCompanyService.approveCompanyUsers(
+      ctx,
+      ctx.user!,
+      id,
+    );
+    return { data: company, meta: { apiVersion: '1.0' } };
+  }
+
   @Patch(':id/unverify')
   @ApiOperation({
     summary: 'Unverify (revoke verification of) a verified company',
