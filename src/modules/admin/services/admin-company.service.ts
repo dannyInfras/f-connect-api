@@ -257,6 +257,35 @@ export class AdminCompanyService {
     });
   }
 
+  async approveCompanyUsers(
+    ctx: RequestContext,
+    admin: Actor,
+    companyId: string,
+  ): Promise<AdminCompanyOutput> {
+    this.logger.log(ctx, `${this.approveCompanyUsers.name} was called`);
+
+    if (!this.aclService.forActor(admin).canDoAction(Action.Update)) {
+      throw new UnauthorizedException(
+        'Insufficient permissions to approve company users',
+      );
+    }
+
+    const company = await this.companyRepo.findOne({
+      where: { id: companyId },
+    });
+    if (!company) throw new NotFoundException('Company not found');
+
+    // Only verify users; do not change company status or send emails
+    const users = await this.userService.findUserByCompanyId(companyId);
+    await Promise.all(
+      users.map((u) => this.userService.verifyUser(ctx, u.id, false)),
+    );
+
+    return plainToClass(AdminCompanyOutput, company, {
+      excludeExtraneousValues: true,
+    });
+  }
+
   async rejectCompany(
     ctx: RequestContext,
     admin: Actor,
