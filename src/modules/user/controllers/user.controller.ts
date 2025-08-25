@@ -194,6 +194,58 @@ export class UserController {
 
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
+  @Post('add-ai-points')
+  @ApiOperation({ summary: 'Add AI points to user account' })
+  @ApiResponse({
+    status: 200,
+    description: 'AI points added successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        message: { type: 'string' },
+        success: { type: 'boolean' },
+        newPoints: { type: 'number' },
+        userId: { type: 'number' },
+      },
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    type: BaseApiErrorResponse,
+    description: 'User not found or invalid points amount',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    type: BaseApiErrorResponse,
+  })
+  async addAiPoints(
+    @ReqContext() ctx: RequestContext,
+    @Body() body: { points: number },
+  ) {
+    this.logger.log(ctx, `${this.addAiPoints.name} was called`);
+
+    if (!body.points || body.points <= 0) {
+      return {
+        message: 'Points must be a positive number',
+        success: false,
+      };
+    }
+
+    const updatedUser = await this.userService.addAiPoints(
+      ctx.user!.id,
+      body.points,
+    );
+
+    return {
+      message: 'AI points added successfully',
+      success: true,
+      newPoints: updatedUser.point,
+      userId: ctx.user!.id,
+    };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @Post('change-password')
   @ApiOperation({ summary: 'Change user password securely' })
   @ApiResponse({

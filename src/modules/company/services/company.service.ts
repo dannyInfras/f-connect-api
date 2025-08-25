@@ -381,6 +381,7 @@ export class CompanyService {
 
     // Map entity sang DTO response
     const topCompanies: TopCompanyResponseDto[] = companies.map((company) => ({
+      id: company.id,
       companyName: company.companyName,
       foundedAt: company.foundedAt,
       employees: company.employees,

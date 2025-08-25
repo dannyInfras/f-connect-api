@@ -3,6 +3,13 @@ import { Expose } from 'class-transformer';
 
 export class TopCompanyResponseDto {
   @ApiProperty({
+    example: '1',
+    description: 'ID của công ty',
+  })
+  @Expose()
+  id: string;
+
+  @ApiProperty({
     example: 'FPT Software',
     description: 'Tên công ty',
   })
@@ -59,6 +66,7 @@ export class TopCompanyResponseDto {
   logoUrl: string | null;
 
   static example: TopCompanyResponseDto = {
+    id: '1',
     companyName: 'FPT Software',
     foundedAt: new Date('1999-01-13'),
     employees: 500,
