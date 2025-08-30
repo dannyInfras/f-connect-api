@@ -29,6 +29,7 @@ import { AiQuizModule } from './modules/ai-quiz/ai-quiz.module';
 import { BookmarkModule } from './modules/bookmark/bookmark.module';
 import { BookmarkCandidateModule } from './modules/bookmark-candidate/bookmark-candidate.module';
 import { CvModule } from './modules/cv/cv.module';
+import { ReportModule } from './modules/report/report.module';
 import { RoomModule } from './modules/room/room.module';
 import { SkillModule } from './modules/skill/skill.module';
 import { RequestLoggerMiddleware } from './shared/middleware/request-logger.middleware';
@@ -65,6 +66,7 @@ import { SharedModule } from './shared/shared.module';
     AiQuizModule,
     BookmarkModule,
     BookmarkCandidateModule,
+    ReportModule,
   ],
   controllers: [AppController],
   providers: [AppService],

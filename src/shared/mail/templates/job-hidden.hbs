@@ -1,0 +1,27 @@
+<div style="font-family: Arial, sans-serif; line-height: 1.5; color: #333">
+  <h2 style="margin-bottom: 8px;">Job Hidden Notification</h2>
+  <p>Dear {{companyName}},</p>
+
+  <p>
+    Your job posting <strong>{{jobTitle}}</strong> (ID: {{jobId}}) has been
+    hidden by our moderation team.
+  </p>
+
+  {{#if reason}}
+    <p><strong>Reason:</strong> {{reason}}</p>
+  {{/if}}
+
+  <p>
+    You can review the job details and take action from your dashboard:
+    <a href="{{dashboardUrl}}" target="_blank">Open Job Dashboard</a>
+  </p>
+
+  <p>
+    If you believe this action was taken in error, please contact our support
+    team.
+  </p>
+
+  <p>Best regards,<br/>F Career Connect Team</p>
+</div>
+
+
