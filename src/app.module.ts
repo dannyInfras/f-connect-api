@@ -16,6 +16,7 @@ import { JobsModule } from '@/modules/jobs/jobs.module';
 import { MessengerModule } from '@/modules/messenger/messenger.module';
 import { NotificationModule } from '@/modules/notification/notification.module';
 import { PackageModule } from '@/modules/package/package.module';
+import { PaymentModule } from '@/modules/payment/payment.module';
 import { PayosModule } from '@/modules/payos/payos.module';
 import { RoadmapModule } from '@/modules/roadmap/roadmap.module';
 import { ScheduleModule as ScheduleManagementModule } from '@/modules/schedule/schedule.module';
@@ -54,6 +55,7 @@ import { SharedModule } from './shared/shared.module';
     NotificationModule,
     VideoCallModule,
     PayosModule,
+    PaymentModule,
     PackageModule,
     RoomModule,
     RoadmapModule,
