@@ -1,0 +1,24 @@
+<div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+  <h2>Report Status Updated</h2>
+  <p>Hello {{reporterName}},</p>
+  <p>
+    Your report <strong>{{reportTitle}}</strong> for job <strong>{{jobTitle}}</strong>
+    has been updated to status: <strong>{{status}}</strong>.
+  </p>
+  {{#if adminNote}}
+  <p>
+    <strong>Admin note:</strong><br/>
+    {{adminNote}}
+  </p>
+  {{/if}}
+  <p>
+    You can view your report details here:
+    <a href="{{reportUrl}}" target="_blank">View Report</a>
+  </p>
+  <p>
+    Job link: <a href="{{jobUrl}}" target="_blank">{{jobTitle}}</a>
+  </p>
+  <p style="color:#666; font-size:12px;">Updated at: {{updatedAt}}</p>
+  <br />
+  <p>Best regards,<br />F Career Connect Team</p>
+</div>
